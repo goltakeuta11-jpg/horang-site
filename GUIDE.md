@@ -166,7 +166,7 @@
 📌 호랑봇 안내소가 열렸습니다
 
 명령어 · 멤버 소개 · 매칭/외출 현황 · 패치노트를 여기서 볼 수 있어요.
-https://forldent.github.io/horang-site/
+https://goltakeuta11-jpg.github.io/horang-site/
 
 - 명령어 검색되니 뭐 치는지 기억 안 나면 여기서 찾으세요
 - 자기소개 올리고 싶으면 운영자에게 톡 주세요

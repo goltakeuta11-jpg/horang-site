@@ -6,13 +6,13 @@
 
 ## 어떤 링크를 누구에게 주면 되나
 
-배포 주소가 `https://forldent.github.io/horang-site/` 라고 할 때,
+배포 주소가 `https://goltakeuta11-jpg.github.io/horang-site/` 라고 할 때,
 **주소 뒤에 `?key=...`가 붙었는지 아닌지** 하나로 갈립니다.
 
 ### 방 사람들에게 (공지·프로필에 올릴 주소)
 
 ```
-https://forldent.github.io/horang-site/
+https://goltakeuta11-jpg.github.io/horang-site/
 ```
 
 명령어, 멤버 소개, 매칭·외출을 **보기만** 합니다.
@@ -21,7 +21,7 @@ https://forldent.github.io/horang-site/
 ### 운영진에게만 (개인 메시지로 전달)
 
 ```
-https://forldent.github.io/horang-site/?key=horang-2026
+https://goltakeuta11-jpg.github.io/horang-site/?key=horang-2026
 ```
 
 세 페이지 모두 추가 · 수정 · 삭제 버튼이 생깁니다.
@@ -123,7 +123,7 @@ git init
 git add .
 git commit -m "호랑봇 안내소 초기 버전"
 git branch -M main
-git remote add origin https://github.com/ForldENT/horang-site.git
+git remote add origin https://github.com/goltakeuta11-jpg/horang-site.git
 git push -u origin main
 ```
 
