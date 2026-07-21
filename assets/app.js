@@ -37,7 +37,8 @@
   }
 
   function link(page) {
-    return isAdmin() ? page + "?key=" + encodeURIComponent(CONFIG.ADMIN_KEY) : page;
+    if (!isAdmin()) return page;
+    return page + (page.indexOf("?") >= 0 ? "&" : "?") + "key=" + encodeURIComponent(CONFIG.ADMIN_KEY);
   }
 
   function esc(s) {
@@ -59,7 +60,8 @@
     const nav = [
       ["index.html", "홈"],
       ["commands.html", "명령어"],
-      ["members.html", "자소서"],
+      ["members.html?g=남자", "남자 자소서"],
+      ["members.html?g=여자", "여자 자소서"],
       ["patchnotes.html", "패치노트"]
     ];
     const el = document.querySelector("[data-header]");
