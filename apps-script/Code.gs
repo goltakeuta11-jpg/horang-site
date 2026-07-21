@@ -7,7 +7,7 @@
    ============================================================ */
 
 /* 사이트 config.js 의 ADMIN_KEY 와 똑같이 맞추세요. */
-const ADMIN_KEY = "gongju-2026";
+const ADMIN_KEY = "tiger2026";
 
 /* 시트 ID.
    시트에서 [확장 프로그램 → Apps Script] 로 만들었다면 비워둬도 됩니다.
