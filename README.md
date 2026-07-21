@@ -1,6 +1,6 @@
 # 호랑봇 안내소
 
-카카오톡 오픈채팅방 멤버들이 봇 명령어, 멤버 소개, 매칭·외출 현황을 찾아보는 웹사이트입니다.
+카카오톡 오픈채팅방 멤버들이 봇 명령어, 멤버 소개, 패치노트를 찾아보는 웹사이트입니다.
 
 ---
 
@@ -15,7 +15,7 @@
 https://goltakeuta11-jpg.github.io/horang-site/
 ```
 
-명령어, 멤버 소개, 매칭·외출을 **보기만** 합니다.
+명령어, 멤버 소개, 패치노트를 **보기만** 합니다.
 수정 버튼은 화면에 나타나지도 않으므로, 이 주소만 아는 사람은 어떤 내용도 바꿀 수 없습니다.
 
 ### 운영진에게만 (개인 메시지로 전달)
@@ -44,7 +44,6 @@ git push
 - 특정 페이지를 바로 열게 하려면 뒤에 파일명을 붙이면 됩니다.
   - 명령어만: `.../horang-site/commands.html`
   - 멤버 소개만: `.../horang-site/members.html`
-  - 매칭·외출만: `.../horang-site/status.html`
   - 패치노트만: `.../horang-site/patchnotes.html`
 
 ---
@@ -55,13 +54,13 @@ git push
 horang-site/
 ├─ index.html        홈 (관리자 진입도 여기)
 ├─ commands.html     명령어
-├─ members.html      멤버 소개 (자소서)
-├─ status.html       매칭 · 외출 현황
+├─ members.html      멤버 소개 (자소서, 남/여 분리)
+├─ patchnotes.html   패치노트 (홈에도 최근 항목 표시)
 ├─ theme-lab.html    디자인 색을 고르는 도구 (작업용)
 ├─ SHEETS.md         구글 시트 연동 안내
 ├─ DESIGN.md         꾸미는 사람용 안내
 ├─ apps-script/      시트에 붙일 Apps Script (사이트에서 시트에 저장)
-├─ sheet-template/   시트에 넣을 CSV 4개
+├─ sheet-template/   시트에 넣을 CSV 3개
 └─ assets/
    ├─ config.js      ← 관리자 키, 구글 시트 주소
    ├─ style.css      ← 꾸미는 사람은 이 파일만 만지면 됩니다
