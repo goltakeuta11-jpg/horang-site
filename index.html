@@ -69,7 +69,7 @@
   function renderPatchHome() {
     const box = document.querySelector("[data-patch-home]");
     const recent = (Store.get().patchnotes || []).slice()
-      .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+      .sort((a, b) => App.verCmp(b.ver, a.ver) || (b.date || "").localeCompare(a.date || ""))
       .slice(0, 3);
 
     let inner = `<div class="toolbar" style="margin:0 0 14px">

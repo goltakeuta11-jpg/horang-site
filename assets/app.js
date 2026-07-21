@@ -102,5 +102,18 @@
     }
   }
 
-  window.App = { isAdmin, link, esc, toast, header, signIn };
+  /* 버전 오름차순 비교 — 숫자 단위로 비교해서 "1.10 < 1.2" 같은 문자열 오류 방지.
+     "1.0" < "1.1" < "1.1.1" < "1.2" < "1.2.1" < "1.10". 버전 없으면 0 취급. */
+  function verCmp(a, b) {
+    const pa = String(a == null ? "" : a).split(/[^\d]+/).filter(Boolean).map(Number);
+    const pb = String(b == null ? "" : b).split(/[^\d]+/).filter(Boolean).map(Number);
+    const n = Math.max(pa.length, pb.length);
+    for (var i = 0; i < n; i++) {
+      var x = pa[i] || 0, y = pb[i] || 0;
+      if (x !== y) return x - y;
+    }
+    return 0;
+  }
+
+  window.App = { isAdmin, link, esc, toast, header, signIn, verCmp };
 })();
