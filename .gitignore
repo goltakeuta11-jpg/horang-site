@@ -5,3 +5,9 @@ Desktop.ini
 *~
 .vscode/
 .idea/
+
+# 스크린샷 (사이트 자산 아님, 저장소에 안 올림)
+스크린샷*.png
+Screenshot*.png
+*.jpg
+*.jpeg
