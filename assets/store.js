@@ -63,17 +63,14 @@
     ],
     members: [
       {
-        nick: "호랑", age: "30", height: "178", job: "게임 개발",
+        nick: "호랑", gender: "남자", age: "30", height: "178", job: "게임 개발",
         off: "주말", hobby: "헬스, 게임", mbti: "ENTJ",
         charm: "말 잘 들어줍니다", ideal: "웃음 많은 사람",
         smoke: "비흡연 / 소주 1병", say: "잘 부탁드립니다!"
       }
     ],
-    status: [
-      { nick: "호랑", state: "외출", partner: "", back: "오늘 22시", note: "저녁 약속" }
-    ],
     patchnotes: [
-      { date: "2026-07-20", cat: "신규 기능 추가", ver: "1.0.0", body: "안내소 사이트를 열었습니다. 명령어, 멤버 소개, 매칭·외출 현황을 볼 수 있습니다." }
+      { date: "2026-07-20", cat: "신규 기능 추가", ver: "1.0.0", body: "안내소 사이트를 열었습니다. 명령어와 멤버 소개를 볼 수 있습니다." }
     ]
   };
 
@@ -81,7 +78,7 @@
   /* 빠진 항목이 있어도 화면이 깨지지 않게 채워줍니다. */
   function normalize(d) {
     d = d || {};
-    ["commands", "members", "status", "patchnotes"].forEach(k => {
+    ["commands", "members", "patchnotes"].forEach(k => {
       if (!Array.isArray(d[k])) d[k] = [];
     });
     return d;
@@ -116,19 +113,13 @@
       keep: x => !!x.cmd
     },
     members: {
-      head: ["닉네임", "나이", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
+      head: ["닉네임", "성별", "나이", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
              "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말"],
-      toObj: r => ({ nick: r[0] || "", age: r[1] || "", height: r[2] || "", job: r[3] || "",
-                     off: r[4] || "", hobby: r[5] || "", mbti: r[6] || "", charm: r[7] || "",
-                     ideal: r[8] || "", smoke: r[9] || "", say: r[10] || "" }),
-      toRow: m => [m.nick, m.age, m.height, m.job, m.off, m.hobby, m.mbti, m.charm, m.ideal, m.smoke, m.say],
-      keep: x => !!x.nick
-    },
-    status: {
-      head: ["닉네임", "상태", "상대", "복귀 예정", "메모"],
-      toObj: r => ({ nick: r[0] || "", state: (r[1] || "매칭").indexOf("외출") >= 0 ? "외출" : "매칭",
-                     partner: r[2] || "", back: r[3] || "", note: r[4] || "" }),
-      toRow: s => [s.nick, s.state, s.partner, s.back, s.note],
+      toObj: r => ({ nick: r[0] || "", gender: (r[1] || "").indexOf("여") >= 0 ? "여자" : "남자",
+                     age: r[2] || "", height: r[3] || "", job: r[4] || "",
+                     off: r[5] || "", hobby: r[6] || "", mbti: r[7] || "", charm: r[8] || "",
+                     ideal: r[9] || "", smoke: r[10] || "", say: r[11] || "" }),
+      toRow: m => [m.nick, m.gender, m.age, m.height, m.job, m.off, m.hobby, m.mbti, m.charm, m.ideal, m.smoke, m.say],
       keep: x => !!x.nick
     },
     patchnotes: {

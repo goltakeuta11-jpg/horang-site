@@ -34,7 +34,6 @@ window.CONFIG = {
   SHEETS: {
     commands: "명령어",
     members: "자소서",
-    status: "매칭외출",
     patchnotes: "패치노트"
   }
 };

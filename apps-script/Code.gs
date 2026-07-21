@@ -18,16 +18,14 @@ const SHEET_ID = "1aYSJxF7fICdud5SpTIXjQTCIlldru1trP-Hpf_bvrOU";
 const TABS = {
   commands: "명령어",
   members: "자소서",
-  status: "매칭외출",
   patchnotes: "패치노트"
 };
 
 /* 탭을 새로 만들 때 넣을 제목 줄 */
 const HEADERS = {
   commands: ["명령어", "설명", "분류", "관리자전용"],
-  members: ["닉네임", "나이", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
+  members: ["닉네임", "성별", "나이", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
             "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말"],
-  status: ["닉네임", "상태", "상대", "복귀 예정", "메모"],
   patchnotes: ["날짜", "분류", "버전", "내용"]
 };
 

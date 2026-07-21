@@ -14,7 +14,7 @@
   <section class="hero">
     <h1 class="hero__title">방에서 궁금한 건<br><em>여기서</em> 다 찾습니다.</h1>
     <p class="hero__desc">
-      봇 명령어, 멤버 소개, 지금 누가 매칭 중이고 누가 외출했는지.
+      봇 명령어, 멤버 소개, 그리고 무엇이 바뀌었는지까지.
       채팅 위로 올려가며 찾지 말고 이 페이지를 열어두세요.
     </p>
   </section>
@@ -28,19 +28,12 @@
     <a class="tile" href="members.html" data-tile="members">
       <span class="tile__no">02</span>
       <h2 class="tile__title">멤버 소개</h2>
-      <p class="tile__desc">닉네임부터 이상형까지, 방 사람들 자기소개.</p>
-    </a>
-    <a class="tile" href="status.html" data-tile="status">
-      <span class="tile__no">03</span>
-      <h2 class="tile__title">매칭 · 외출</h2>
-      <p class="tile__desc">지금 누가 매칭 중이고, 누가 자리를 비웠는지.</p>
-    </a>
-    <a class="tile" href="patchnotes.html" data-tile="patchnotes">
-      <span class="tile__no">04</span>
-      <h2 class="tile__title">패치노트</h2>
-      <p class="tile__desc">봇과 방 규칙이 언제 어떻게 바뀌었는지.</p>
+      <p class="tile__desc">남자 · 여자로 나눠 보는 방 사람들 자기소개.</p>
     </a>
   </section>
+
+  <!-- 홈에 최근 패치노트 -->
+  <section style="margin-top:44px" data-patch-home></section>
 
   <section style="margin-top:40px" data-admin-box></section>
 
@@ -61,6 +54,50 @@
     a.href = App.link(a.getAttribute("href"));
   });
 
+  /* ---------- 홈 최근 패치노트 ---------- */
+  function pretty(d) {
+    const m = (d || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? `${m[1]}. ${+m[2]}. ${+m[3]}` : d;
+  }
+  const CAT_CLASS = { "신규 기능 추가": "cat--new", "오류 수정": "cat--fix", "기존 기능 삭제": "cat--del" };
+
+  function renderPatchHome() {
+    const box = document.querySelector("[data-patch-home]");
+    const recent = (Store.get().patchnotes || []).slice()
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+      .slice(0, 5);
+
+    let inner = `<div class="toolbar" style="margin:0 0 14px">
+        <h2 style="font-size:18px;font-weight:800;margin:0">📰 최근 패치노트</h2>
+        <span class="toolbar__spacer"></span>
+        <a class="btn btn--sm" href="${App.link("patchnotes.html")}">전체 보기 →</a>
+      </div>`;
+
+    if (!recent.length) {
+      inner += `<div class="empty" style="padding:34px 20px">
+        <strong>아직 패치노트가 없습니다</strong>바뀐 내용이 생기면 여기에 올라옵니다.</div>`;
+    } else {
+      inner += `<div class="card" style="padding:6px 10px"><div class="patches">` +
+        recent.map(n => `
+          <article class="patch">
+            <div class="patch__when">
+              <span class="patch__date">${App.esc(pretty(n.date))}</span>
+              ${n.ver ? `<span class="patch__ver">v${App.esc(n.ver)}</span>` : ""}
+            </div>
+            <div class="patch__main">
+              <span class="patch__cat ${CAT_CLASS[n.cat] || "cat--new"}">${App.esc(n.cat)}</span>
+              <p class="patch__body" style="margin:0">${App.esc(n.body)}</p>
+            </div>
+            <span></span>
+          </article>`).join("") +
+        `</div></div>`;
+    }
+    box.innerHTML = inner;
+  }
+
+  Store.load().then(renderPatchHome).catch(() => renderPatchHome());
+
+  /* ---------- 관리자 박스 ---------- */
   const box = document.querySelector("[data-admin-box]");
   if (App.isAdmin()) {
     box.innerHTML = `
@@ -98,7 +135,7 @@
     box.querySelector("[data-import]").onchange = e => {
       const f = e.target.files[0];
       if (!f) return;
-      Store.import(f, err => err ? App.toast(err.message, true) : (App.toast("데이터를 가져왔습니다.")));
+      Store.import(f, err => err ? App.toast(err.message, true) : (App.toast("데이터를 가져왔습니다."), renderPatchHome()));
     };
   } else {
     box.innerHTML = `
