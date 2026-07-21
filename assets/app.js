@@ -59,7 +59,7 @@
     const nav = [
       ["index.html", "홈"],
       ["commands.html", "명령어"],
-      ["members.html", "멤버 소개"],
+      ["members.html", "자소서"],
       ["patchnotes.html", "패치노트"]
     ];
     const el = document.querySelector("[data-header]");
