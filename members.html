@@ -61,6 +61,7 @@ const FORM = [
   { k: "nick",   label: "닉네임",          type: "text" },
   { k: "age",    label: "나이",            type: "text" },
   { k: "height", label: "키",              type: "text" },
+  { k: "region", label: "사는 곳",          type: "text" },
   { k: "job",    label: "전공 or 직업",     type: "text" },
   { k: "off",    label: "쉬는 요일",        type: "text" },
   { k: "hobby",  label: "취미",            type: "text" },
@@ -84,11 +85,11 @@ function card(m, i) {
     <article class="card member">
       <div class="member__top">
         <span class="member__nick">${App.esc(m.nick)}</span>
-        <span class="member__meta">${[m.age && m.age + "세", m.height && m.height + "cm"].filter(Boolean).map(App.esc).join(" · ")}</span>
+        <span class="member__meta">${[m.age && m.age + "세", m.height && m.height + "cm", m.region].filter(Boolean).map(App.esc).join(" · ")}</span>
         ${m.mbti ? `<span class="member__mbti">${App.esc(m.mbti)}</span>` : ""}
       </div>
       <div class="rows">
-        ${FORM.filter(f => !["nick", "age", "height", "mbti"].includes(f.k) && m[f.k])
+        ${FORM.filter(f => !["nick", "age", "height", "region", "mbti"].includes(f.k) && m[f.k])
           .map(f => `<div class="row"><span class="row__k">${f.label}</span><span class="row__v">${App.esc(m[f.k])}</span></div>`)
           .join("")}
       </div>
