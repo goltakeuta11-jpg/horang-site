@@ -159,41 +159,52 @@ function doPost(e) {
     lock.waitLock(20000);   // 두 사람이 동시에 저장해도 섞이지 않도록
 
     const body = JSON.parse(e.postData.contents);
-
-    if (body.key !== ADMIN_KEY) {
-      return json({ ok: false, error: "관리자 키가 맞지 않습니다." });
-    }
-
+    const isAdmin = (body.key === ADMIN_KEY);
     const incoming = body.data || {};
 
-    // 단순 탭 (명령어·패치노트)
-    Object.keys(TABS).forEach(function (k) {
-      if (!incoming[k]) return;          // 안 보낸 항목은 그대로 둡니다
-      const head = HEADERS[k];
-      const rows = incoming[k].map(function (r) {
-        const row = [];
-        for (var i = 0; i < head.length; i++) row.push(r[i] == null ? "" : r[i]);
-        return row;
+    // 명령어·패치노트: 관리자만 (전체 다시쓰기)
+    if (isAdmin) {
+      Object.keys(TABS).forEach(function (k) {
+        if (!incoming[k]) return;
+        const head = HEADERS[k];
+        const rows = incoming[k].map(function (r) {
+          const row = [];
+          for (var i = 0; i < head.length; i++) row.push(r[i] == null ? "" : r[i]);
+          return row;
+        });
+        writeTab(TABS[k], head, rows);
       });
-      writeTab(TABS[k], head, rows);
-    });
+    }
 
-    // 자소서: 성별(index 1)로 갈라 각 탭에. 성별 열은 떼고 11칸으로 저장.
-    //   들어온 행 [닉, 성별, 나이, 키, ...] (12) → 탭행 [닉, 나이, 키, ...] (11)
+    // 자소서: 들어온 행 [닉, 성별, 나이, ...] (12) → 성별별 탭행 [닉, 나이, ...] (11)
     if (incoming.members) {
-      const byGender = { "남자": [], "여자": [] };
+      const incByG = { "남자": [], "여자": [] };
       incoming.members.forEach(function (r) {
         const g = (String(r[1] || "").indexOf("여") >= 0) ? "여자" : "남자";
         const row = [r[0] == null ? "" : r[0]];
         for (var i = 2; i < MEMBER_HEADER.length + 1; i++) row.push(r[i] == null ? "" : r[i]);
-        byGender[g].push(row);
+        incByG[g].push(row);
       });
+
       Object.keys(MEMBER_TABS).forEach(function (g) {
-        writeTab(MEMBER_TABS[g], MEMBER_HEADER, byGender[g]);
+        if (isAdmin) {
+          // 관리자: 전체 다시쓰기 (삭제 가능)
+          writeTab(MEMBER_TABS[g], MEMBER_HEADER, incByG[g]);
+        } else {
+          // 비관리자: 병합 — 기존 유지 + 닉 같으면 수정 + 새 닉이면 등록. 삭제 불가.
+          var byNick = {}, order = [];
+          readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
+            var n = row[0]; if (!(n in byNick)) order.push(n); byNick[n] = row;
+          });
+          incByG[g].forEach(function (row) {
+            var n = row[0]; if (!n) return; if (!(n in byNick)) order.push(n); byNick[n] = row;
+          });
+          writeTab(MEMBER_TABS[g], MEMBER_HEADER, order.map(function (n) { return byNick[n]; }));
+        }
       });
     }
 
-    return json({ ok: true, savedAt: new Date().toISOString() });
+    return json({ ok: true, admin: isAdmin });
   } catch (err) {
     return json({ ok: false, error: String(err) });
   } finally {

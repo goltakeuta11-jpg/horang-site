@@ -13,7 +13,7 @@
 <main class="wrap page">
   <p class="page__eyebrow" data-eyebrow>자소서</p>
   <h1 class="page__title" data-title>방 사람들 자기소개</h1>
-  <p class="page__desc">새 인원이 들어오면 운영자가 여기에 추가합니다.</p>
+  <p class="page__desc">누구나 자기 소개를 <b>등록 · 수정</b>할 수 있어요. (삭제는 운영자만)</p>
 
   <div class="toolbar">
     <input class="input" style="max-width:260px" placeholder="닉네임 · 취미 · MBTI 검색" data-search>
@@ -49,8 +49,9 @@ document.querySelector("[data-eyebrow]").textContent = GENDER + " 자소서";
 document.querySelector("[data-title]").textContent = GENDER + " 방 사람들 자기소개";
 
 const admin = App.isAdmin();
-const readOnly = !Store.canWrite;
-const canEdit = admin && !readOnly;
+const readOnly = !Store.canWrite;      // 읽기전용(CSV) 시트 모드면 아무도 못 씀
+const canWrite = !readOnly;            // 자소서는 누구나 등록·수정
+const canDelete = admin && !readOnly;  // 삭제는 운영자만
 const listEl = document.querySelector("[data-list]");
 const modal = document.querySelector("[data-modal]");
 let editIndex = -1;
@@ -70,14 +71,12 @@ const FORM = [
   { k: "say",    label: "하고싶은 말",      type: "area" }
 ];
 
-if (admin) {
-  const tools = document.querySelector("[data-admin-tools]");
-  if (readOnly) {
-    tools.innerHTML = `<a class="btn btn--primary" target="_blank" rel="noopener" href="${Store.sheetEditUrl()}">시트에서 수정하기</a>`;
-  } else {
-    tools.innerHTML = `<button class="btn btn--primary" data-add>${GENDER} 추가</button>`;
-    tools.querySelector("[data-add]").onclick = () => open(-1);
-  }
+const tools = document.querySelector("[data-admin-tools]");
+if (readOnly) {
+  if (admin) tools.innerHTML = `<a class="btn btn--primary" target="_blank" rel="noopener" href="${Store.sheetEditUrl()}">시트에서 수정하기</a>`;
+} else {
+  tools.innerHTML = `<button class="btn btn--primary" data-add>${GENDER} 등록</button>`;
+  tools.querySelector("[data-add]").onclick = () => open(-1);
 }
 
 function card(m, i) {
@@ -93,9 +92,9 @@ function card(m, i) {
           .map(f => `<div class="row"><span class="row__k">${f.label}</span><span class="row__v">${App.esc(m[f.k])}</span></div>`)
           .join("")}
       </div>
-      ${canEdit ? `<div class="member__tools">
+      ${canWrite ? `<div class="member__tools">
         <button class="btn btn--sm btn--ghost" data-edit="${i}">수정</button>
-        <button class="btn btn--sm btn--danger" data-del="${i}">삭제</button>
+        ${canDelete ? `<button class="btn btn--sm btn--danger" data-del="${i}">삭제</button>` : ""}
       </div>` : ""}
     </article>`;
 }
@@ -109,22 +108,20 @@ function render() {
 
   if (!list.length) {
     listEl.innerHTML = `<div class="empty" style="grid-column:1/-1">
-      <strong>보여줄 ${GENDER} 멤버가 없습니다</strong>${canEdit ? "‘" + GENDER + " 추가’로 등록해 보세요." : "운영자가 등록하면 여기에 나타납니다."}</div>`;
+      <strong>보여줄 ${GENDER} 멤버가 없습니다</strong>${canWrite ? "‘" + GENDER + " 등록’으로 첫 소개를 남겨보세요." : "운영자가 등록하면 여기에 나타납니다."}</div>`;
     return;
   }
 
   listEl.innerHTML = list.map(({ m, i }) => card(m, i)).join("");
 
-  if (canEdit) {
-    listEl.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => open(+b.dataset.edit));
-    listEl.querySelectorAll("[data-del]").forEach(b => b.onclick = () => remove(+b.dataset.del));
-  }
+  if (canWrite) listEl.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => open(+b.dataset.edit));
+  if (canDelete) listEl.querySelectorAll("[data-del]").forEach(b => b.onclick = () => remove(+b.dataset.del));
 }
 
 function open(i) {
   editIndex = i;
   const m = i < 0 ? {} : Store.get().members[i];
-  document.querySelector("[data-modal-title]").textContent = i < 0 ? GENDER + " 추가" : App.esc(m.nick) + " 수정";
+  document.querySelector("[data-modal-title]").textContent = i < 0 ? GENDER + " 등록" : App.esc(m.nick) + " 수정";
   document.querySelector("[data-form]").innerHTML = FORM.map(f => `
     <label class="field"><span class="field__label">${f.label}</span>
       ${f.type === "area"
@@ -148,7 +145,7 @@ document.querySelector("[data-save]").onclick = () => {
   if (editIndex < 0) data.members.push(item); else data.members[editIndex] = item;
   Store.set(data);
   close(); render();
-  App.toast(editIndex < 0 ? item.nick + "님을 추가했습니다." : "수정했습니다.");
+  App.toast(editIndex < 0 ? item.nick + "님을 등록했습니다." : "수정했습니다.");
 };
 
 function remove(i) {
