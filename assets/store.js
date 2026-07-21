@@ -113,13 +113,13 @@
       keep: x => !!x.cmd
     },
     members: {
-      head: ["닉네임", "성별", "나이", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
-             "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "사는 곳"],
+      head: ["닉네임", "성별", "나이", "사는 곳", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
+             "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말"],
       toObj: r => ({ nick: r[0] || "", gender: (r[1] || "").indexOf("여") >= 0 ? "여자" : "남자",
-                     age: r[2] || "", height: r[3] || "", job: r[4] || "",
-                     off: r[5] || "", hobby: r[6] || "", mbti: r[7] || "", charm: r[8] || "",
-                     ideal: r[9] || "", smoke: r[10] || "", say: r[11] || "", region: r[12] || "" }),
-      toRow: m => [m.nick, m.gender, m.age, m.height, m.job, m.off, m.hobby, m.mbti, m.charm, m.ideal, m.smoke, m.say, m.region],
+                     age: r[2] || "", region: r[3] || "", height: r[4] || "", job: r[5] || "",
+                     off: r[6] || "", hobby: r[7] || "", mbti: r[8] || "", charm: r[9] || "",
+                     ideal: r[10] || "", smoke: r[11] || "", say: r[12] || "" }),
+      toRow: m => [m.nick, m.gender, m.age, m.region, m.height, m.job, m.off, m.hobby, m.mbti, m.charm, m.ideal, m.smoke, m.say],
       keep: x => !!x.nick
     },
     patchnotes: {
