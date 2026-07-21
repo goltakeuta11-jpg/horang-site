@@ -66,7 +66,7 @@
         nick: "호랑", gender: "남자", age: "30", height: "178", job: "게임 개발",
         off: "주말", hobby: "헬스, 게임", mbti: "ENTJ",
         charm: "말 잘 들어줍니다", ideal: "웃음 많은 사람",
-        smoke: "비흡연", drink: "소주 1병", say: "잘 부탁드립니다!"
+        smoke: "비흡연 / 소주 1병", say: "잘 부탁드립니다!"
       }
     ],
     patchnotes: [
@@ -114,12 +114,12 @@
     },
     members: {
       head: ["닉네임", "성별", "나이", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
-             "본인의 매력", "이상형", "흡연유무", "주량", "하고싶은 말"],
+             "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말"],
       toObj: r => ({ nick: r[0] || "", gender: (r[1] || "").indexOf("여") >= 0 ? "여자" : "남자",
                      age: r[2] || "", height: r[3] || "", job: r[4] || "",
                      off: r[5] || "", hobby: r[6] || "", mbti: r[7] || "", charm: r[8] || "",
-                     ideal: r[9] || "", smoke: r[10] || "", drink: r[11] || "", say: r[12] || "" }),
-      toRow: m => [m.nick, m.gender, m.age, m.height, m.job, m.off, m.hobby, m.mbti, m.charm, m.ideal, m.smoke, m.drink, m.say],
+                     ideal: r[9] || "", smoke: r[10] || "", say: r[11] || "" }),
+      toRow: m => [m.nick, m.gender, m.age, m.height, m.job, m.off, m.hobby, m.mbti, m.charm, m.ideal, m.smoke, m.say],
       keep: x => !!x.nick
     },
     patchnotes: {
