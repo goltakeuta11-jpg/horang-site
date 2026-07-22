@@ -99,7 +99,7 @@ function render() {
     .map((n, i) => ({ n, i }))
     .filter(({ n }) => (!cat || n.cat === cat) &&
       (!q || (n.body + " " + (n.ver || "")).toLowerCase().includes(q)))
-    .sort((a, b) => App.verCmp(a.n.ver, b.n.ver) || (a.n.date || "").localeCompare(b.n.date || ""));  // 버전 오름차순
+    .sort((a, b) => b.i - a.i);  // 업로드 최신순 (나중에 추가한 글이 맨 위, 처음 글이 맨 아래)
 
   if (!list.length) {
     listEl.innerHTML = `<div class="empty" style="border:none">

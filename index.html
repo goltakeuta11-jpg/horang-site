@@ -68,9 +68,7 @@
 
   function renderPatchHome() {
     const box = document.querySelector("[data-patch-home]");
-    const recent = (Store.get().patchnotes || []).slice()
-      .sort((a, b) => App.verCmp(b.ver, a.ver) || (b.date || "").localeCompare(a.date || ""))
-      .slice(0, 3);
+    const recent = (Store.get().patchnotes || []).slice(-3).reverse();  // 업로드 최신순 상위 3개
 
     let inner = `<div class="toolbar" style="margin:0 0 14px">
         <h2 style="font-size:18px;font-weight:800;margin:0">📰 최근 패치노트</h2>
