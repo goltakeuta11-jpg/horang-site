@@ -14,10 +14,11 @@ const ADMIN_KEY = "tiger2026";
    script.google.com 에서 따로 만들었다면 반드시 채워야 합니다. */
 const SHEET_ID = "1aYSJxF7fICdud5SpTIXjQTCIlldru1trP-Hpf_bvrOU";
 
-/* 한 종류 = 한 탭 (명령어·패치노트) */
+/* 한 종류 = 한 탭 (명령어·패치노트·외출). TABS 는 doPost 에서 "관리자만" 쓰기 가능. */
 const TABS = {
   commands: "명령어",
-  patchnotes: "패치노트"
+  patchnotes: "패치노트",
+  outings: "외출"
 };
 
 /* 자소서는 성별별로 탭 2개. 성별은 "탭"이 정합니다(열이 아니라). */
@@ -26,7 +27,8 @@ const MEMBER_TABS = { "남자": "남자 자소서", "여자": "여자 자소서"
 /* 탭을 새로 만들 때 넣을 제목 줄 */
 const HEADERS = {
   commands: ["명령어", "설명", "분류", "관리자전용"],
-  patchnotes: ["날짜", "분류", "버전", "내용"]
+  patchnotes: ["날짜", "분류", "버전", "내용"],
+  outings: ["날짜", "시간", "장소", "내용", "비고"]
 };
 
 /* 자소서 탭 헤더 — 성별 열은 없습니다(탭 이름이 성별) */

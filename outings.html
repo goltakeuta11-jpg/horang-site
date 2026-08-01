@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>외출 · 호랑봇 안내소</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page">
+  <p class="page__eyebrow">외출</p>
+  <h1 class="page__title">번개 · 모임 일정</h1>
+  <p class="page__desc">누구나 볼 수 있어요. <b>등록 · 수정 · 삭제는 운영자만</b> 합니다.</p>
+
+  <div class="toolbar">
+    <input class="input" style="max-width:260px" placeholder="장소 · 내용 검색" data-search>
+    <span class="toolbar__spacer"></span>
+    <span data-admin-tools></span>
+  </div>
+
+  <div class="grid grid--2" data-list></div>
+</main>
+
+<!-- 외출 입력 창 -->
+<div class="modal" data-modal>
+  <div class="modal__box">
+    <h2 class="modal__title" data-modal-title>외출 추가</h2>
+    <div data-form></div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" data-cancel>취소</button>
+      <button class="btn btn--primary" data-save>저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/config.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/app.js"></script>
+<script>
+App.header("outings.html");
+
+const admin = App.isAdmin();
+const readOnly = !Store.canWrite;      // 읽기전용(CSV) 시트 모드면 아무도 못 씀
+const canWrite = admin && !readOnly;   // ★ 외출은 등록·수정·삭제 모두 운영자만
+const listEl = document.querySelector("[data-list]");
+const modal = document.querySelector("[data-modal]");
+let editIndex = -1;
+
+/* 외출 양식 (칸) */
+const FORM = [
+  { k: "date",  label: "날짜",  type: "text", ph: "예: 2026-08-10" },
+  { k: "time",  label: "시간",  type: "text", ph: "예: 저녁 7시" },
+  { k: "place", label: "장소",  type: "text", ph: "예: 홍대입구역 2번 출구" },
+  { k: "body",  label: "내용",  type: "area", ph: "무슨 모임인지 적어주세요." },
+  { k: "note",  label: "비고",  type: "text", ph: "예: 선착순 6명 (선택)" }
+];
+
+/* 관리자 도구 */
+const tools = document.querySelector("[data-admin-tools]");
+if (admin) {
+  if (readOnly) {
+    tools.innerHTML = `<a class="btn btn--primary" target="_blank" rel="noopener" href="${Store.sheetEditUrl()}">시트에서 수정하기</a>`;
+  } else {
+    tools.innerHTML = `<button class="btn btn--primary" data-add>외출 추가</button>`;
+    tools.querySelector("[data-add]").onclick = () => open(-1);
+  }
+}
+
+/* 보기 좋은 날짜 */
+function pretty(d) {
+  const m = (d || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[1]}. ${+m[2]}. ${+m[3]}` : d;
+}
+
+function card(o, i) {
+  return `
+    <article class="card member">
+      <div class="member__top">
+        <span class="member__nick">${App.esc(pretty(o.date) || "날짜 미정")}</span>
+        <span class="member__meta">${[o.time, o.place].filter(Boolean).map(App.esc).join(" · ")}</span>
+      </div>
+      <div class="rows">
+        ${o.body ? `<div class="row"><span class="row__k">내용</span><span class="row__v">${App.esc(o.body)}</span></div>` : ""}
+        ${o.note ? `<div class="row"><span class="row__k">비고</span><span class="row__v">${App.esc(o.note)}</span></div>` : ""}
+      </div>
+      ${canWrite ? `<div class="member__tools">
+        <button class="btn btn--sm btn--ghost" data-edit="${i}">수정</button>
+        <button class="btn btn--sm btn--danger" data-del="${i}">삭제</button>
+      </div>` : ""}
+    </article>`;
+}
+
+function render() {
+  const q = (document.querySelector("[data-search]").value || "").toLowerCase().trim();
+  const list = Store.get().outings
+    .map((o, i) => ({ o, i }))
+    .filter(({ o }) => !q || Object.values(o).join(" ").toLowerCase().includes(q))
+    .sort((a, b) => String(b.o.date || "").localeCompare(String(a.o.date || "")));  // 최근/가까운 날짜 위로
+
+  if (!list.length) {
+    listEl.innerHTML = `<div class="empty" style="grid-column:1/-1">
+      <strong>예정된 외출이 없습니다</strong>${canWrite ? "‘외출 추가’로 첫 일정을 올려보세요." : "운영자가 등록하면 여기에 나타납니다."}</div>`;
+    return;
+  }
+
+  listEl.innerHTML = list.map(({ o, i }) => card(o, i)).join("");
+
+  if (canWrite) {
+    listEl.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => open(+b.dataset.edit));
+    listEl.querySelectorAll("[data-del]").forEach(b => b.onclick = () => remove(+b.dataset.del));
+  }
+}
+
+function open(i) {
+  editIndex = i;
+  const o = i < 0 ? {} : Store.get().outings[i];
+  document.querySelector("[data-modal-title]").textContent = i < 0 ? "외출 추가" : "외출 수정";
+  document.querySelector("[data-form]").innerHTML = FORM.map(f => `
+    <label class="field"><span class="field__label">${f.label}</span>
+      ${f.type === "area"
+        ? `<textarea class="textarea" data-k="${f.k}" placeholder="${f.ph || ""}">${App.esc(o[f.k] || "")}</textarea>`
+        : `<input class="input" data-k="${f.k}" placeholder="${f.ph || ""}" value="${App.esc(o[f.k] || "")}">`}
+    </label>`).join("");
+  modal.classList.add("is-on");
+  modal.querySelector("[data-k]").focus();
+}
+
+function close() { modal.classList.remove("is-on"); }
+document.querySelector("[data-cancel]").onclick = close;
+modal.onclick = e => { if (e.target === modal) close(); };
+
+document.querySelector("[data-save]").onclick = () => {
+  const item = {};
+  modal.querySelectorAll("[data-k]").forEach(el => item[el.dataset.k] = el.value.trim());
+  if (!item.date && !item.place && !item.body) return App.toast("날짜·장소·내용 중 하나는 적어주세요.", true);
+  const data = Store.get();
+  if (editIndex < 0) data.outings.push(item); else data.outings[editIndex] = item;
+  Store.set(data);
+  close(); render();
+  App.toast(editIndex < 0 ? "외출 일정을 등록했습니다." : "수정했습니다.");
+};
+
+function remove(i) {
+  const data = Store.get();
+  if (!confirm(`${pretty(data.outings[i].date) || "이"} 외출 일정을 삭제할까요?`)) return;
+  data.outings.splice(i, 1);
+  Store.set(data);
+  render();
+  App.toast("삭제했습니다.");
+}
+
+document.querySelector("[data-search]").oninput = render;
+
+/* 서버 모드면 데이터를 받아온 뒤 그립니다. 아니면 즉시 그립니다. */
+Store.load()
+  .then(render)
+  .catch(e => { render(); App.toast(e.message, true); });
+</script>
+</body>
+</html>

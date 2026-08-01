@@ -71,6 +71,9 @@
     ],
     patchnotes: [
       { date: "2026-07-20", cat: "신규 기능 추가", ver: "1.0.0", body: "안내소 사이트를 열었습니다. 명령어와 멤버 소개를 볼 수 있습니다." }
+    ],
+    outings: [
+      { date: "2026-08-10", time: "저녁 7시", place: "홍대입구역 2번 출구", body: "같이 저녁 먹고 보드게임 하실 분 모여요!", note: "선착순 6명" }
     ]
   };
 
@@ -78,7 +81,7 @@
   /* 빠진 항목이 있어도 화면이 깨지지 않게 채워줍니다. */
   function normalize(d) {
     d = d || {};
-    ["commands", "members", "patchnotes"].forEach(k => {
+    ["commands", "members", "patchnotes", "outings"].forEach(k => {
       if (!Array.isArray(d[k])) d[k] = [];
     });
     return d;
@@ -127,6 +130,12 @@
       toObj: r => ({ date: normDate(r[0]), cat: normCat(r[1]), ver: r[2] || "", body: r[3] || "" }),
       toRow: n => [n.date, n.cat, n.ver, n.body],
       keep: x => !!x.date && !!x.body
+    },
+    outings: {
+      head: ["날짜", "시간", "장소", "내용", "비고"],
+      toObj: r => ({ date: r[0] || "", time: r[1] || "", place: r[2] || "", body: r[3] || "", note: r[4] || "" }),
+      toRow: o => [o.date, o.time, o.place, o.body, o.note],
+      keep: x => !!(x.date || x.place || x.body)   // 날짜·장소·내용 중 하나라도 있으면 유지
     }
   };
 
