@@ -49,13 +49,10 @@ const listEl = document.querySelector("[data-list]");
 const modal = document.querySelector("[data-modal]");
 let editIndex = -1;
 
-/* 외출 양식 (칸) */
+/* 외출 양식 — 칸 구분 없이 내용 하나만 */
 const FORM = [
-  { k: "date",  label: "날짜",  type: "text", ph: "예: 2026-08-10" },
-  { k: "time",  label: "시간",  type: "text", ph: "예: 저녁 7시" },
-  { k: "place", label: "장소",  type: "text", ph: "예: 홍대입구역 2번 출구" },
-  { k: "body",  label: "내용",  type: "area", ph: "무슨 모임인지 적어주세요." },
-  { k: "note",  label: "비고",  type: "text", ph: "예: 선착순 6명 (선택)" }
+  { k: "body", label: "내용", type: "area",
+    ph: "외출/모임 내용을 자유롭게 적어주세요.\n예) 8/10(일) 저녁 7시 홍대입구역 2번 출구 — 저녁+보드게임! 선착순 6명" }
 ];
 
 /* 관리자 도구 */
@@ -69,22 +66,11 @@ if (admin) {
   }
 }
 
-/* 보기 좋은 날짜 */
-function pretty(d) {
-  const m = (d || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? `${m[1]}. ${+m[2]}. ${+m[3]}` : d;
-}
-
 function card(o, i) {
   return `
     <article class="card member">
-      <div class="member__top">
-        <span class="member__nick">${App.esc(pretty(o.date) || "날짜 미정")}</span>
-        <span class="member__meta">${[o.time, o.place].filter(Boolean).map(App.esc).join(" · ")}</span>
-      </div>
       <div class="rows">
-        ${o.body ? `<div class="row"><span class="row__k">내용</span><span class="row__v">${App.esc(o.body)}</span></div>` : ""}
-        ${o.note ? `<div class="row"><span class="row__k">비고</span><span class="row__v">${App.esc(o.note)}</span></div>` : ""}
+        <div class="row"><span class="row__v" style="white-space:pre-wrap">${App.esc(o.body)}</span></div>
       </div>
       ${canWrite ? `<div class="member__tools">
         <button class="btn btn--sm btn--ghost" data-edit="${i}">수정</button>
@@ -97,8 +83,8 @@ function render() {
   const q = (document.querySelector("[data-search]").value || "").toLowerCase().trim();
   const list = Store.get().outings
     .map((o, i) => ({ o, i }))
-    .filter(({ o }) => !q || Object.values(o).join(" ").toLowerCase().includes(q))
-    .sort((a, b) => String(b.o.date || "").localeCompare(String(a.o.date || "")));  // 최근/가까운 날짜 위로
+    .filter(({ o }) => !q || String(o.body || "").toLowerCase().includes(q))
+    .sort((a, b) => b.i - a.i);  // 최근에 올린 게 위로
 
   if (!list.length) {
     listEl.innerHTML = `<div class="empty" style="grid-column:1/-1">
@@ -135,7 +121,7 @@ modal.onclick = e => { if (e.target === modal) close(); };
 document.querySelector("[data-save]").onclick = () => {
   const item = {};
   modal.querySelectorAll("[data-k]").forEach(el => item[el.dataset.k] = el.value.trim());
-  if (!item.date && !item.place && !item.body) return App.toast("날짜·장소·내용 중 하나는 적어주세요.", true);
+  if (!item.body) return App.toast("내용을 적어주세요.", true);
   const data = Store.get();
   if (editIndex < 0) data.outings.push(item); else data.outings[editIndex] = item;
   Store.set(data);
@@ -145,7 +131,7 @@ document.querySelector("[data-save]").onclick = () => {
 
 function remove(i) {
   const data = Store.get();
-  if (!confirm(`${pretty(data.outings[i].date) || "이"} 외출 일정을 삭제할까요?`)) return;
+  if (!confirm("이 외출 일정을 삭제할까요?")) return;
   data.outings.splice(i, 1);
   Store.set(data);
   render();
