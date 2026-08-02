@@ -160,7 +160,7 @@ document.querySelector("[data-save]").onclick = () => {
 
   const data = Store.get();
   if (editIndex < 0) data.patchnotes.push(item); else data.patchnotes[editIndex] = item;
-  Store.set(data);
+  if (!Store.set(data)) return;   // 저장 차단(로드 전)이면 성공처리·화면갱신 안 함
   close(); render();
   App.toast(editIndex < 0 ? "패치노트를 남겼습니다." : "수정했습니다.");
 };
@@ -169,7 +169,7 @@ function remove(i) {
   const data = Store.get();
   if (!confirm(`${pretty(data.patchnotes[i].date)} 패치노트를 삭제할까요?`)) return;
   data.patchnotes.splice(i, 1);
-  Store.set(data);
+  if (!Store.set(data)) return;   // 저장 차단(로드 전)이면 성공처리·화면갱신 안 함
   render();
   App.toast("삭제했습니다.");
 }

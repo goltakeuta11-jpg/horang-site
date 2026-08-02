@@ -11,6 +11,7 @@
   const KEY = "horang.data.v1";
   let memory = null;
   let cache = null;
+  let loaded = false;   // ★ 시트에서 데이터를 실제로 불러왔는지 (안전장치: 로드 전 저장 금지 → 빈값으로 덮어쓰기 방지)
 
   const SHEET_ID   = (window.CONFIG && CONFIG.SHEET_ID   || "").trim();
   const SCRIPT_URL = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
@@ -204,7 +205,7 @@
 
   /* ---------- 불러오기 ---------- */
   async function load() {
-    if (MODE === "local") return read();
+    if (MODE === "local") { loaded = true; return read(); }
 
     if (MODE === "script") {
       let res, j;
@@ -216,6 +217,7 @@
       }
       if (!j || !j.ok) throw new Error((j && j.error) || "시트를 불러오지 못했습니다.");
       cache = rowsToData(j.data || {});
+      loaded = true;   // 로드 성공 → 이제 저장 허용
       return cache;
     }
 
@@ -224,12 +226,19 @@
     const raw = {};
     KINDS.forEach((k, i) => raw[k] = got[i]);
     cache = rowsToData(raw);
+    loaded = true;
     return cache;
   }
 
   /* ---------- 저장 ---------- */
   function write(data) {
     if (!canWrite) return false;
+    // ★ 안전장치: 시트 데이터를 아직 못 불러온 상태(로드 실패/미완료)에서는 저장 금지.
+    //   안 막으면 "빈 데이터"로 시트 전체를 덮어써서 명령어·자소서·패치노트가 다 날아감.
+    if (MODE !== "local" && !loaded) {
+      if (window.App) App.toast("데이터를 아직 못 불러왔어요. 새로고침(Ctrl+Shift+R) 후 다시 시도해주세요.", true);
+      return false;
+    }
     cache = data;
     memory = data;
 

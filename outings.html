@@ -148,7 +148,7 @@ document.querySelector("[data-save]").onclick = () => {
   if (!item.body) return App.toast("닉네임을 적어주세요.", true);
   const data = Store.get();
   if (editIndex < 0) data.outings.push(item); else data.outings[editIndex] = item;
-  Store.set(data);
+  if (!Store.set(data)) return;   // 저장 차단(로드 전)이면 성공처리·화면갱신 안 함
   close(); render();
   App.toast(editIndex < 0 ? "등록했습니다." : "수정했습니다.");
 };
@@ -157,7 +157,7 @@ function remove(i) {
   const data = Store.get();
   if (!confirm("이 사람을 목록에서 삭제할까요?")) return;
   data.outings.splice(i, 1);
-  Store.set(data);
+  if (!Store.set(data)) return;   // 저장 차단(로드 전)이면 성공처리·화면갱신 안 함
   render();
   App.toast("삭제했습니다.");
 }

@@ -144,7 +144,7 @@ document.querySelector("[data-save]").onclick = () => {
   item.gender = GENDER;   // 이 탭의 성별로 저장
   const data = Store.get();
   if (editIndex < 0) data.members.push(item); else data.members[editIndex] = item;
-  Store.set(data);
+  if (!Store.set(data)) return;   // 저장 차단(로드 전)이면 성공처리·화면갱신 안 함
   close(); render();
   App.toast(editIndex < 0 ? item.nick + "님을 등록했습니다." : "수정했습니다.");
 };
@@ -153,7 +153,7 @@ function remove(i) {
   const data = Store.get();
   if (!confirm(`${data.members[i].nick}님의 소개를 삭제할까요?`)) return;
   data.members.splice(i, 1);
-  Store.set(data);
+  if (!Store.set(data)) return;   // 저장 차단(로드 전)이면 성공처리·화면갱신 안 함
   render();
   App.toast("삭제했습니다.");
 }
