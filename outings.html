@@ -12,9 +12,10 @@
 
 <main class="wrap page">
   <h1 class="page__title">외출 목록</h1>
+  <p class="page__desc">방에서 외출한 사람 목록</p>
 
   <div class="toolbar">
-    <input class="input" style="max-width:260px" placeholder="장소 · 내용 검색" data-search>
+    <input class="input" style="max-width:260px" placeholder="닉네임 검색" data-search>
     <span class="toolbar__spacer"></span>
     <span data-admin-tools></span>
   </div>
@@ -47,10 +48,10 @@ const listEl = document.querySelector("[data-list]");
 const modal = document.querySelector("[data-modal]");
 let editIndex = -1;
 
-/* 외출 양식 — 칸 구분 없이 내용 하나만 */
+/* 외출 양식 — 칸 구분 없이 닉네임(내용) 하나만 */
 const FORM = [
-  { k: "body", label: "내용", type: "area",
-    ph: "외출/모임 내용을 자유롭게 적어주세요.\n예) 8/10(일) 저녁 7시 홍대입구역 2번 출구 — 저녁+보드게임! 선착순 6명" }
+  { k: "body", label: "닉네임", type: "text",
+    ph: "외출한 사람 닉네임 (예: 호랑)" }
 ];
 
 /* 관리자 도구 */
@@ -86,7 +87,7 @@ function render() {
 
   if (!list.length) {
     listEl.innerHTML = `<div class="empty" style="grid-column:1/-1">
-      <strong>예정된 외출이 없습니다</strong>${canWrite ? "‘외출 추가’로 첫 일정을 올려보세요." : "운영자가 등록하면 여기에 나타납니다."}</div>`;
+      <strong>외출한 사람이 없습니다</strong>${canWrite ? "‘외출 추가’로 닉네임을 올려보세요." : "운영자가 등록하면 여기에 나타납니다."}</div>`;
     return;
   }
 
@@ -119,17 +120,17 @@ modal.onclick = e => { if (e.target === modal) close(); };
 document.querySelector("[data-save]").onclick = () => {
   const item = {};
   modal.querySelectorAll("[data-k]").forEach(el => item[el.dataset.k] = el.value.trim());
-  if (!item.body) return App.toast("내용을 적어주세요.", true);
+  if (!item.body) return App.toast("닉네임을 적어주세요.", true);
   const data = Store.get();
   if (editIndex < 0) data.outings.push(item); else data.outings[editIndex] = item;
   Store.set(data);
   close(); render();
-  App.toast(editIndex < 0 ? "외출 일정을 등록했습니다." : "수정했습니다.");
+  App.toast(editIndex < 0 ? "등록했습니다." : "수정했습니다.");
 };
 
 function remove(i) {
   const data = Store.get();
-  if (!confirm("이 외출 일정을 삭제할까요?")) return;
+  if (!confirm("이 사람을 목록에서 삭제할까요?")) return;
   data.outings.splice(i, 1);
   Store.set(data);
   render();
