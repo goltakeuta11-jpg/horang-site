@@ -189,11 +189,25 @@
     return rows.filter(r => r.some(v => v.trim() !== ""));
   }
 
+  /* 카카오톡 인앱 브라우저는 첫 요청을 놓치는 일이 잦아 → 최대 3번 재시도 (점점 간격↑) */
+  async function tryFetch(url, opts) {
+    let last;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const res = await fetch(url, opts);
+        if (res.ok) return res;
+        last = new Error("응답 오류 " + res.status);
+      } catch (e) { last = e; }
+      await new Promise(r => setTimeout(r, 400 * (i + 1)));
+    }
+    throw last || new Error("불러오지 못했습니다.");
+  }
+
   async function fetchTab(tab) {
     const url = "https://docs.google.com/spreadsheets/d/" + SHEET_ID
       + "/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(tab) + "&_=" + Date.now();
     let res;
-    try { res = await fetch(url, { cache: "no-store" }); }
+    try { res = await tryFetch(url, { cache: "no-store" }); }
     catch (e) { throw new Error("시트에 연결하지 못했습니다. 공유 설정을 확인해 주세요."); }
     if (!res.ok) {
       throw new Error(res.status === 404
@@ -210,7 +224,7 @@
     if (MODE === "script") {
       let res, j;
       try {
-        res = await fetch(SCRIPT_URL + "?action=read&_=" + Date.now(), { redirect: "follow" });
+        res = await tryFetch(SCRIPT_URL + "?action=read&_=" + Date.now(), { redirect: "follow" });
         j = await res.json();
       } catch (e) {
         throw new Error("시트를 불러오지 못했습니다. Apps Script 주소와 배포 권한을 확인해 주세요.");

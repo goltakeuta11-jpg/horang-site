@@ -35,6 +35,7 @@
 
     function showUpdateBanner() {
       if (document.querySelector("[data-update-banner]")) return;
+      if (document.querySelector("[data-inapp-banner]")) return;  // 카톡 탈출 배너가 떠 있으면 양보(중복 방지)
       var run = function () {
         var b = document.createElement("div");
         b.setAttribute("data-update-banner", "");
