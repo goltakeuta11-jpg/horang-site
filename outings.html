@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>외출 · 호랑봇 안내소</title>
 <link rel="stylesheet" href="assets/style.css">
+<style>
+  /* 외출 카드: 신청서 내용이 넓게 보이도록 1열 (좁은 화면에서 짓눌리던 문제 해결) */
+  .outings-list { display: grid; grid-template-columns: 1fr; gap: 14px; max-width: 640px; }
+  .outing__title { font-weight: 800; font-size: 15px; letter-spacing: -0.01em; margin-bottom: 10px; }
+  .outing__title + .rows { margin-top: 2px; }
+</style>
 </head>
 <body>
 
@@ -20,7 +26,7 @@
     <span data-admin-tools></span>
   </div>
 
-  <div class="grid grid--2" data-list></div>
+  <div class="outings-list" data-list></div>
 </main>
 
 <!-- 외출 입력 창 -->
@@ -48,10 +54,10 @@ const listEl = document.querySelector("[data-list]");
 const modal = document.querySelector("[data-modal]");
 let editIndex = -1;
 
-/* 외출 양식 — 칸 구분 없이 닉네임(내용) 하나만 */
+/* 외출 양식 — 칸 하나에 여러 줄. "이름 : / 사유 : / 기한 :" 형식으로 쓰면 자동으로 예쁘게 정리됨 */
 const FORM = [
-  { k: "body", label: "닉네임", type: "text",
-    ph: "외출한 사람 닉네임 (예: 호랑)" }
+  { k: "body", label: "내용", type: "area",
+    ph: "이름 : \n사유 : \n기한 : " }
 ];
 
 /* 관리자 도구 */
@@ -65,12 +71,27 @@ if (admin) {
   }
 }
 
+/* 내용을 "라벨 : 값" 줄로 예쁘게 정리.
+   - 줄바꿈이 없으면 "이름 :", "사유 :" 같은 라벨 앞에 줄바꿈을 넣어 자동 정렬
+   - 각 줄은 라벨/값 2열(row)로, 콜론 없는 첫 줄은 제목으로 */
+function fmtOuting(text) {
+  let t = String(text == null ? "" : text).trim();
+  if (!t) return "";
+  if (t.indexOf("\n") < 0) t = t.replace(/\s*([가-힣A-Za-z][가-힣A-Za-z0-9]{0,9})\s*:\s*/g, "\n$1: ");
+  const lines = t.split("\n").map(s => s.trim()).filter(Boolean);
+  const body = lines.map((line, idx) => {
+    const m = line.match(/^([가-힣A-Za-z][가-힣A-Za-z0-9]{0,9}?)\s*:\s*(.*)$/);
+    if (m && m[2]) return `<div class="row"><span class="row__k">${App.esc(m[1])}</span><span class="row__v">${App.esc(m[2])}</span></div>`;
+    if (idx === 0 && lines.length > 1) return `<div class="outing__title">${App.esc(line)}</div>`;
+    return `<div class="row"><span class="row__v">${App.esc(line)}</span></div>`;
+  }).join("");
+  return `<div class="rows">${body}</div>`;
+}
+
 function card(o, i) {
   return `
     <article class="card member">
-      <div class="rows">
-        <div class="row"><span class="row__v" style="white-space:pre-wrap">${App.esc(o.body)}</span></div>
-      </div>
+      ${fmtOuting(o.body)}
       ${canWrite ? `<div class="member__tools">
         <button class="btn btn--sm btn--ghost" data-edit="${i}">수정</button>
         <button class="btn btn--sm btn--danger" data-del="${i}">삭제</button>
