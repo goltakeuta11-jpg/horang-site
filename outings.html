@@ -78,14 +78,14 @@ function fmtOuting(text) {
   let t = String(text == null ? "" : text).trim();
   if (!t) return "";
   if (t.indexOf("\n") < 0) t = t.replace(/\s*([가-힣A-Za-z][가-힣A-Za-z0-9]{0,9})\s*:\s*/g, "\n$1: ");
-  // "공지방(도) 외출하는지?" 같은 질문형은 "공지방 외출 :" 라벨로 통일
-  t = t.replace(/공지방\S*\s*외출(?:하는지|여부)?\s*\??\s*/g, "\n공지방 외출: ");
+  // "공지방(도) 외출하는지?" 질문형만 "공지방 외출 :" 라벨로 (하는지/여부 필수 → 다른 공지방 문장은 안 건드림)
+  t = t.replace(/공지방\S*\s*외출\s*(?:하는지|여부)\s*\??\s*/g, "\n공지방 외출: ");
   const lines = t.split("\n").map(s => s.trim()).filter(Boolean);
   const body = lines.map((line, idx) => {
     const m = line.match(/^([가-힣A-Za-z][가-힣A-Za-z0-9 ]{0,9}?)\s*:\s*(.*)$/);
     if (m && m[2]) return `<div class="row"><span class="row__k">${App.esc(m[1])}</span><span class="row__v">${App.esc(m[2])}</span></div>`;
     if (idx === 0 && lines.length > 1) return `<div class="outing__title">${App.esc(line)}</div>`;
-    return `<div class="row"><span class="row__v">${App.esc(line)}</span></div>`;
+    return `<div class="row"><span class="row__v" style="grid-column:1/-1">${App.esc(line)}</span></div>`;
   }).join("");
   return `<div class="rows">${body}</div>`;
 }
