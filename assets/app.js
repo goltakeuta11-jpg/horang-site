@@ -5,6 +5,57 @@
 (function () {
   const SESSION = "horang.admin";
 
+  /* ============================================================
+     자동 업데이트 감지 — 캐시된 옛 버전이면 "새로고침" 배너를 띄웁니다.
+       · 이 스크립트가 로드된 ?v= 값(=이 페이지 버전)을
+         항상 최신인 version.txt(캐시 무시 fetch)와 비교.
+       · 다르면 = 새 버전 배포됨 → 배너. (사용자가 눌러 강제 새로고침)
+     ============================================================ */
+  (function autoUpdate() {
+    // 새로고침 후 URL에 남은 캐시버스터(_r) 정리
+    try {
+      var u0 = new URL(location.href);
+      if (u0.searchParams.has("_r")) { u0.searchParams.delete("_r"); history.replaceState(null, "", u0.toString()); }
+    } catch (e) {}
+
+    // 이 app.js 를 불러온 ?v= (= 이 페이지가 로드한 버전)
+    var src = (document.currentScript && document.currentScript.src) || "";
+    var mv = src.match(/[?&]v=([^&]+)/);
+    var pageV = mv ? decodeURIComponent(mv[1]) : "";
+    if (!pageV) return;   // 버전 쿼리 없으면 감지 안 함
+
+    fetch("version.txt?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (txt) {
+        if (!txt) return;
+        var latest = txt.trim();
+        if (latest && latest !== pageV) showUpdateBanner();
+      })
+      .catch(function () {});
+
+    function showUpdateBanner() {
+      if (document.querySelector("[data-update-banner]")) return;
+      var run = function () {
+        var b = document.createElement("div");
+        b.setAttribute("data-update-banner", "");
+        b.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:#FF5C7A;color:#17070C;"
+          + "font:700 14px/1.5 -apple-system,sans-serif;padding:11px 16px;text-align:center;cursor:pointer;"
+          + "box-shadow:0 2px 14px rgba(0,0,0,.35)";
+        b.textContent = "🔄 새 버전이 나왔어요! 여기를 눌러 새로고침하세요";
+        b.onclick = function () {
+          try {
+            var u = new URL(location.href);
+            u.searchParams.set("_r", Date.now());   // HTML 캐시까지 강제로 새로 받게
+            location.href = u.toString();
+          } catch (e) { location.reload(); }
+        };
+        document.body.appendChild(b);
+        document.body.style.paddingTop = "44px";   // 배너에 내용 안 가리게
+      };
+      if (document.body) run(); else document.addEventListener("DOMContentLoaded", run);
+    }
+  })();
+
   /* config.js를 못 불러온 경우 — 화면이 백지로 뜨는 대신 원인을 알려줍니다. */
   if (typeof window.CONFIG === "undefined") {
     window.CONFIG = { ROOM_NAME: "설정 없음", BOT_NAME: "봇", ADMIN_KEY: "", SHEET_ID: "", SHEETS: {} };
