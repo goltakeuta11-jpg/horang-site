@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260802.2"></script>
+<script src="assets/inapp.js?v=20260802.3"></script>
 <title>외출 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260802.2">
+<link rel="stylesheet" href="assets/style.css?v=20260802.3">
 <style>
   /* 외출 카드: 신청서 내용이 넓게 보이도록 1열 (좁은 화면에서 짓눌리던 문제 해결) */
   .outings-list { display: grid; grid-template-columns: 1fr; gap: 14px; max-width: 640px; }
@@ -46,9 +46,9 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260802.2"></script>
-<script src="assets/store.js?v=20260802.2"></script>
-<script src="assets/app.js?v=20260802.2"></script>
+<script src="assets/config.js?v=20260802.3"></script>
+<script src="assets/store.js?v=20260802.3"></script>
+<script src="assets/app.js?v=20260802.3"></script>
 <script>
 App.header("outings.html");
 
@@ -84,13 +84,13 @@ function fmtOuting(text) {
   if (!t) return "";
   if (t.indexOf("\n") < 0) t = t.replace(/\s*([가-힣A-Za-z][가-힣A-Za-z0-9]{0,9})\s*:\s*/g, "\n$1: ");
   // "공지방(도) 외출하는지?" 질문형만 "공지방 외출 :" 라벨로 (하는지/여부 필수 → 다른 공지방 문장은 안 건드림)
-  t = t.replace(/공지방\S*\s*외출\s*(?:하는지|여부)\s*\??\s*/g, "\n공지방 외출: ");
+  t = t.replace(/공지방\S*\s*외출\s*(?:하는지|여부)\s*[?:]?\s*/g, "\n공지방 외출: ");
   // "공지방도 외출 해야만 하는 타당한 이유는?" → "해야만 하는 타당한 이유 :" 라벨로
-  t = t.replace(/공지방\S*\s*외출\s*(해야만[가-힣\s]*?이유)\s*(?:는|을)?\s*\??\s*/g, "\n$1: ");
+  t = t.replace(/공지방\S*\s*외출\s*(해야만[가-힣\s]*?이유)\s*(?:는|을)?\s*[?:]?\s*/g, "\n$1: ");
   const lines = t.split("\n").map(s => s.trim()).filter(Boolean);
   const body = lines.map((line, idx) => {
     const m = line.match(/^([가-힣A-Za-z][가-힣A-Za-z0-9 ]{0,15}?)\s*:\s*(.*)$/);
-    if (m && m[2]) return `<div class="row"><span class="row__k">${App.esc(m[1])}</span><span class="row__v">${App.esc(m[2])}</span></div>`;
+    if (m) return `<div class="row"><span class="row__k">${App.esc(m[1])}</span><span class="row__v">${App.esc(m[2])}</span></div>`;  // 값 없어도 라벨행으로(통일)
     if (idx === 0 && lines.length > 1) return `<div class="outing__title">${App.esc(line)}</div>`;
     return `<div class="row"><span class="row__v" style="grid-column:1/-1">${App.esc(line)}</span></div>`;
   }).join("");
