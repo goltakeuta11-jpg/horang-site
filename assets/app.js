@@ -108,6 +108,17 @@
     t._timer = setTimeout(() => t.classList.remove("is-on"), 2600);
   }
 
+  /* 페이지 조회 1건 기록 — 세션당 1회, 보내고 신경 끔(실패해도 화면 무관). */
+  function trackHit(page) {
+    const url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
+    if (!url || !page) return;
+    try {
+      if (sessionStorage.getItem("hit." + page)) return;   // 이 방문에서 이미 셌으면 스킵
+      sessionStorage.setItem("hit." + page, "1");
+    } catch (e) {}
+    try { fetch(url + "?action=hit&page=" + encodeURIComponent(page) + "&_=" + Date.now(), { cache: "no-store", mode: "no-cors" }).catch(function () {}); } catch (e) {}
+  }
+
   function header(active) {
     const nav = [
       ["index.html", "홈"],
@@ -117,6 +128,8 @@
       ["outings.html", "외출"],
       ["patchnotes.html", "패치노트"]
     ];
+    const hit = nav.find(([h]) => h === active);   // 조회통계: 이 페이지 이름으로 1건 기록
+    trackHit(hit ? hit[1] : active);
     const el = document.querySelector("[data-header]");
     if (!el) return;
     const sub = CONFIG.ROOM_NAME === CONFIG.BOT_NAME ? "안내소" : CONFIG.BOT_NAME + " 안내소";

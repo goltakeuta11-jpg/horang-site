@@ -130,6 +130,10 @@ function writeTab(name, header, rows) {
 
 function doGet(e) {
   try {
+    var p = (e && e.parameter) || {};
+    if (p.action === "hit") return recordHit(p.page);          // 페이지 조회 1건 기록(+1)
+    if (p.action === "viewstats") return json({ ok: true, views: readViews() }); // 조회통계 반환
+
     const data = {};
     Object.keys(TABS).forEach(function (k) {
       data[k] = readTab(TABS[k], HEADERS[k]);
@@ -149,6 +153,55 @@ function doGet(e) {
   } catch (err) {
     return json({ ok: false, error: String(err) });
   }
+}
+
+/* ============================================================
+   조회통계 — "조회통계" 탭 (날짜 · 페이지 · 횟수).
+   페이지 열릴 때 (날짜,페이지) 카운트를 +1. 명령어·자소서와 완전 분리 + Lock 이라 충돌 없음.
+   ============================================================ */
+function viewSheet() {
+  const ss = book();
+  let sh = ss.getSheetByName("조회통계");
+  if (!sh) { sh = ss.insertSheet("조회통계"); sh.appendRow(["날짜", "페이지", "횟수"]); sh.setFrozenRows(1); }
+  if (sh.getLastRow() === 0) sh.appendRow(["날짜", "페이지", "횟수"]);
+  return sh;
+}
+function kstToday() {
+  return Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd");
+}
+function recordHit(page) {
+  page = String(page == null ? "" : page).trim();
+  if (!page) return json({ ok: false, error: "no page" });
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);                       // 동시 조회여도 카운트 안 섞이게
+    const sh = viewSheet();
+    const today = kstToday();
+    const rows = sh.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]).trim() === today && String(rows[i][1]).trim() === page) {
+        sh.getRange(i + 1, 3).setValue((Number(rows[i][2]) || 0) + 1);
+        return json({ ok: true });
+      }
+    }
+    sh.appendRow([today, page, 1]);             // 그 날 첫 조회 → 새 줄
+    return json({ ok: true });
+  } catch (e) {
+    return json({ ok: false, error: String(e) });
+  } finally {
+    try { lock.releaseLock(); } catch (ig) {}
+  }
+}
+function readViews() {
+  const sh = viewSheet();
+  const rows = sh.getDataRange().getValues();
+  const out = [];
+  for (var i = 1; i < rows.length; i++) {
+    const d = String(rows[i][0]).trim(), pg = String(rows[i][1]).trim();
+    if (!d || !pg) continue;
+    out.push({ date: d, page: pg, count: Number(rows[i][2]) || 0 });
+  }
+  return out;
 }
 
 /* ============================================================
