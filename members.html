@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260805.1"></script>
+<script src="assets/inapp.js?v=20260805.2"></script>
 <title>자소서 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260805.1">
+<link rel="stylesheet" href="assets/style.css?v=20260805.2">
 </head>
 <body>
 
@@ -26,6 +26,8 @@
     <span data-admin-tools></span>
   </div>
 
+  <div class="toolbar" data-typebar style="gap:6px;flex-wrap:wrap;margin-top:-4px"></div>
+
   <div class="grid grid--2" data-list></div>
 </main>
 
@@ -41,9 +43,9 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260805.1"></script>
-<script src="assets/store.js?v=20260805.1"></script>
-<script src="assets/app.js?v=20260805.1"></script>
+<script src="assets/config.js?v=20260805.2"></script>
+<script src="assets/store.js?v=20260805.2"></script>
+<script src="assets/app.js?v=20260805.2"></script>
 <script>
 // 이 탭이 담당하는 성별 (?g=남자 / ?g=여자, 기본 남자)
 const GENDER = new URLSearchParams(location.search).get("g") === "여자" ? "여자" : "남자";
@@ -61,6 +63,9 @@ const listEl = document.querySelector("[data-list]");
 const modal = document.querySelector("[data-modal]");
 let editIndex = -1;
 
+/* 연애유형 (심리테스트 결과) — 6종. 아직 안 한 사람은 "미분류" */
+const TYPES = ["심약핑", "도망핑", "노잼핑", "모험핑", "집착핑", "미분류"];
+
 /* 자소서 양식 — 성별은 탭이 정하므로 폼에는 없음 */
 const FORM = [
   { k: "nick",   label: "닉네임",          type: "text" },
@@ -74,7 +79,8 @@ const FORM = [
   { k: "charm",  label: "본인의 매력",      type: "area" },
   { k: "ideal",  label: "이상형",          type: "area" },
   { k: "smoke",  label: "흡연유무 & 주량",  type: "text" },
-  { k: "say",    label: "하고싶은 말",      type: "area" }
+  { k: "say",    label: "하고싶은 말",      type: "area" },
+  { k: "type",   label: "연애유형",         type: "select", options: TYPES }
 ];
 
 const tools = document.querySelector("[data-admin-tools]");
@@ -92,9 +98,10 @@ function card(m, i) {
         <span class="member__nick">${App.esc(m.nick)}</span>
         <span class="member__meta">${[m.age && m.age + "세", m.height && m.height + "cm", m.region].filter(Boolean).map(App.esc).join(" · ")}</span>
         ${m.mbti ? `<span class="member__mbti">${App.esc(m.mbti)}</span>` : ""}
+        ${m.type && m.type !== "미분류" ? `<span class="member__mbti">💘 ${App.esc(m.type)}</span>` : ""}
       </div>
       <div class="rows">
-        ${FORM.filter(f => !["nick", "age", "height", "region", "mbti"].includes(f.k) && m[f.k])
+        ${FORM.filter(f => !["nick", "age", "height", "region", "mbti", "type"].includes(f.k) && m[f.k])
           .map(f => `<div class="row"><span class="row__k">${f.label}</span><span class="row__v">${App.esc(m[f.k])}</span></div>`)
           .join("")}
       </div>
@@ -105,16 +112,26 @@ function card(m, i) {
     </article>`;
 }
 
+/* 연애유형 필터 탭 (전체 + 6종) */
+let typeFilter = "전체";
+function renderTypeBar() {
+  const bar = document.querySelector("[data-typebar]");
+  bar.innerHTML = ["전체"].concat(TYPES).map(t =>
+    `<button class="btn btn--sm ${t === typeFilter ? "btn--primary" : "btn--ghost"}" data-type="${t}">${t}</button>`).join("");
+  bar.querySelectorAll("[data-type]").forEach(b => b.onclick = () => { typeFilter = b.dataset.type; renderTypeBar(); render(); });
+}
+
 function render() {
   const q = (document.querySelector("[data-search]").value || "").toLowerCase().trim();
   const all = Store.get().members;
   const list = all.map((m, i) => ({ m, i }))
     .filter(({ m }) => m.gender === GENDER &&
+      (typeFilter === "전체" || (m.type || "미분류") === typeFilter) &&
       (!q || Object.values(m).join(" ").toLowerCase().includes(q)));
 
   if (!list.length) {
     listEl.innerHTML = `<div class="empty" style="grid-column:1/-1">
-      <strong>보여줄 ${GENDER} 멤버가 없습니다</strong>${canWrite ? "‘" + GENDER + " 등록’으로 첫 소개를 남겨보세요." : "운영자가 등록하면 여기에 나타납니다."}</div>`;
+      <strong>보여줄 ${GENDER} 멤버가 없습니다${typeFilter !== "전체" ? " (" + typeFilter + ")" : ""}</strong>${canWrite ? "‘" + GENDER + " 등록’으로 첫 소개를 남겨보세요." : "운영자가 등록하면 여기에 나타납니다."}</div>`;
     return;
   }
 
@@ -130,10 +147,13 @@ function open(i) {
   document.querySelector("[data-modal-title]").textContent = i < 0 ? GENDER + " 등록" : App.esc(m.nick) + " 수정";
   document.querySelector("[data-form]").innerHTML = FORM.map(f => `
     <label class="field"><span class="field__label">${f.label}</span>
-      ${f.type === "area"
+      ${f.type === "select"
+        ? `<select class="select" data-k="${f.k}">${f.options.map(o => `<option${(m[f.k] || "미분류") === o ? " selected" : ""}>${o}</option>`).join("")}</select>`
+        : f.type === "area"
         ? `<textarea class="textarea" data-k="${f.k}">${App.esc(m[f.k] || "")}</textarea>`
         : `<input class="input" data-k="${f.k}" value="${App.esc(m[f.k] || "")}">`}
-    </label>`).join("");
+    </label>`).join("")
+    + `<p style="color:var(--text-dim);font-size:13px;line-height:1.6;margin:10px 0 0;padding:12px;background:rgba(255,255,255,.04);border-radius:10px">💡 <b>심리테스트는 지금 바로 진행하지 않아도 됩니다!</b><br>아직 안 하신 분은 연애유형을 <b>"미분류"</b>로 두세요. 추후 <b>심리테스트</b> 탭에서 진행 후, 본인 자소서 수정 시에 유형을 골라주셔도 됩니다!</p>`;
   modal.classList.add("is-on");
   modal.querySelector("[data-k]").focus();
 }
@@ -164,6 +184,7 @@ function remove(i) {
 }
 
 document.querySelector("[data-search]").oninput = render;
+renderTypeBar();   // 연애유형 필터 탭
 
 /* 서버 모드면 데이터를 받아온 뒤 그립니다. 아니면 즉시 그립니다. */
 Store.load()

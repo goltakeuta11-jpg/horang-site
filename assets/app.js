@@ -125,6 +125,7 @@
       ["commands.html", "명령어"],
       ["members.html?g=남자", "남자 자소서"],
       ["members.html?g=여자", "여자 자소서"],
+      ["psychtest.html", "심리테스트"],
       ["outings.html", "외출"],
       ["patchnotes.html", "패치노트"]
     ];
