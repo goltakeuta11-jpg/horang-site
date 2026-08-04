@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260805.3"></script>
+<script src="assets/inapp.js?v=20260805.4"></script>
 <title>자소서 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260805.3">
+<link rel="stylesheet" href="assets/style.css?v=20260805.4">
 </head>
 <body>
 
@@ -27,6 +27,7 @@
   </div>
 
   <div class="toolbar" data-typebar style="gap:6px;flex-wrap:wrap;margin-top:-4px"></div>
+  <p style="font-style:italic;color:var(--text-dim);font-size:13px;margin:-2px 0 6px">심리테스트를 아직 기입하지 않은 사람은 미분류에서 찾을 수 있습니다!</p>
 
   <div class="grid grid--2" data-list></div>
 </main>
@@ -43,9 +44,9 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260805.3"></script>
-<script src="assets/store.js?v=20260805.3"></script>
-<script src="assets/app.js?v=20260805.3"></script>
+<script src="assets/config.js?v=20260805.4"></script>
+<script src="assets/store.js?v=20260805.4"></script>
+<script src="assets/app.js?v=20260805.4"></script>
 <script>
 // 이 탭이 담당하는 성별 (?g=남자 / ?g=여자, 기본 남자)
 const GENDER = new URLSearchParams(location.search).get("g") === "여자" ? "여자" : "남자";
