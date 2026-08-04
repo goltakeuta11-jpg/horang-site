@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260805.2"></script>
+<script src="assets/inapp.js?v=20260805.3"></script>
 <title>자소서 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260805.2">
+<link rel="stylesheet" href="assets/style.css?v=20260805.3">
 </head>
 <body>
 
@@ -43,9 +43,9 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260805.2"></script>
-<script src="assets/store.js?v=20260805.2"></script>
-<script src="assets/app.js?v=20260805.2"></script>
+<script src="assets/config.js?v=20260805.3"></script>
+<script src="assets/store.js?v=20260805.3"></script>
+<script src="assets/app.js?v=20260805.3"></script>
 <script>
 // 이 탭이 담당하는 성별 (?g=남자 / ?g=여자, 기본 남자)
 const GENDER = new URLSearchParams(location.search).get("g") === "여자" ? "여자" : "남자";
@@ -98,7 +98,7 @@ function card(m, i) {
         <span class="member__nick">${App.esc(m.nick)}</span>
         <span class="member__meta">${[m.age && m.age + "세", m.height && m.height + "cm", m.region].filter(Boolean).map(App.esc).join(" · ")}</span>
         ${m.mbti ? `<span class="member__mbti">${App.esc(m.mbti)}</span>` : ""}
-        ${m.type && m.type !== "미분류" ? `<span class="member__mbti">💘 ${App.esc(m.type)}</span>` : ""}
+        ${m.type && m.type !== "미분류" ? `<span class="member__mbti" style="white-space:nowrap;font-size:11px;padding:2px 6px">💘 ${App.esc(m.type)}</span>` : ""}
       </div>
       <div class="rows">
         ${FORM.filter(f => !["nick", "age", "height", "region", "mbti", "type"].includes(f.k) && m[f.k])
