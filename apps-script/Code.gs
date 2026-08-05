@@ -201,6 +201,27 @@ function keepWarm() {
   } catch (e) { /* 실패해도 무시 (다음 타이머에 재시도) */ }
 }
 
+/* ★ 트리거 자동 등록 — 편집기에서 이 함수(setupWarmTrigger)를 한 번만 ▶ 실행하면
+   5분마다 keepWarm 이 돌도록 트리거가 자동 생성됩니다. (수동 클릭 불필요) */
+function setupWarmTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();          // 기존 keepWarm 트리거 제거(중복 방지)
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === "keepWarm") ScriptApp.deleteTrigger(triggers[i]);
+  }
+  ScriptApp.newTrigger("keepWarm").timeBased().everyMinutes(5).create();  // 5분마다
+  keepWarm();                                             // 지금 한 번 예열
+  return "✅ keepWarm 트리거 등록 완료 (5분마다)";
+}
+
+/* 트리거를 없애고 싶을 때 실행 */
+function removeWarmTrigger() {
+  var triggers = ScriptApp.getProjectTriggers(), n = 0;
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === "keepWarm") { ScriptApp.deleteTrigger(triggers[i]); n++; }
+  }
+  return "🗑️ keepWarm 트리거 " + n + "개 삭제";
+}
+
 /* ============================================================
    조회통계 — "조회통계" 탭 (날짜 · 페이지 · 횟수).
    페이지 열릴 때 (날짜,페이지) 카운트를 +1. 명령어·자소서와 완전 분리 + Lock 이라 충돌 없음.
