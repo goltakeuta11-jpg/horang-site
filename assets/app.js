@@ -98,6 +98,18 @@
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
+  /* 자소서 간이 잠금용 해시. 시트엔 원문 대신 이 해시만 저장됨(훔쳐보기 방지). */
+  async function sha256(str) {
+    str = String(str == null ? "" : str);
+    if (window.crypto && crypto.subtle && location.protocol === "https:") {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+    // 폴백(보안 약함): https·subtle 못 쓰는 옛 환경용
+    let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+    return "x" + (h >>> 0).toString(16);
+  }
+
   function toast(msg, bad) {
     let t = document.querySelector(".toast");
     if (!t) { t = document.createElement("div"); t.className = "toast"; document.body.appendChild(t); }
@@ -182,5 +194,5 @@
     return 0;
   }
 
-  window.App = { isAdmin, link, esc, toast, header, signIn, verCmp };
+  window.App = { isAdmin, link, esc, toast, header, signIn, verCmp, sha256 };
 })();

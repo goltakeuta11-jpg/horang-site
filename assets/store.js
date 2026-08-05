@@ -118,12 +118,13 @@
     },
     members: {
       head: ["닉네임", "성별", "나이", "사는 곳", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
-             "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "연애유형"],
+             "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "연애유형", "비번"],
       toObj: r => ({ nick: r[0] || "", gender: (r[1] || "").indexOf("여") >= 0 ? "여자" : "남자",
                      age: r[2] || "", region: r[3] || "", height: r[4] || "", job: r[5] || "",
                      off: r[6] || "", hobby: r[7] || "", mbti: r[8] || "", charm: r[9] || "",
-                     ideal: r[10] || "", smoke: r[11] || "", say: r[12] || "", type: r[13] || "미분류" }),
-      toRow: m => [m.nick, m.gender, m.age, m.region, m.height, m.job, m.off, m.hobby, m.mbti, m.charm, m.ideal, m.smoke, m.say, m.type || "미분류"],
+                     ideal: r[10] || "", smoke: r[11] || "", say: r[12] || "", type: r[13] || "미분류",
+                     pw: r[14] || "" }),   // 비번 SHA-256 해시(간이 잠금). 빈값=잠금 없음
+      toRow: m => [m.nick, m.gender, m.age, m.region, m.height, m.job, m.off, m.hobby, m.mbti, m.charm, m.ideal, m.smoke, m.say, m.type || "미분류", m.pw || ""],
       keep: x => !!x.nick
     },
     patchnotes: {

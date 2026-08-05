@@ -33,7 +33,27 @@ const HEADERS = {
 
 /* 자소서 탭 헤더 — 성별 열은 없습니다(탭 이름이 성별) */
 const MEMBER_HEADER = ["닉네임", "나이", "사는 곳", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
-                       "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "연애유형"];
+                       "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "연애유형", "비번"];
+
+/* 자소서 비번용 SHA-256 hex — 브라우저 App.sha256(crypto.subtle)과 동일 결과(UTF-8, 소문자) */
+function sha256hex(str) {
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(str == null ? "" : str), Utilities.Charset.UTF_8);
+  var hex = "";
+  for (var i = 0; i < bytes.length; i++) {
+    var b = (bytes[i] + 256) % 256;            // 자바 byte는 부호형 → 0~255로 보정
+    hex += (b < 16 ? "0" : "") + b.toString(16);
+  }
+  return hex;
+}
+
+/* 저장 시 비번 결정: 빈값이거나 기존 원문의 해시면 기존 원문 유지, 그 외(새 원문)는 그대로 저장 */
+function resolvePw(incoming, existingPlain) {
+  incoming = String(incoming == null ? "" : incoming);
+  existingPlain = String(existingPlain == null ? "" : existingPlain);
+  if (!incoming) return existingPlain;                                   // 안 바꿈(빈값)
+  if (existingPlain && incoming === sha256hex(existingPlain)) return existingPlain; // 브라우저가 해시를 되돌려보냄=변경없음
+  return incoming;                                                        // 새로 설정한 원문
+}
 
 /* ============================================================
    설치 확인 — 편집기에서 이 함수를 실행하세요.
@@ -95,6 +115,11 @@ function getSheet(name, header) {
     sh.appendRow(header);
     sh.getRange(1, 1, 1, header.length).setFontWeight("bold");
     sh.setFrozenRows(1);
+  } else {
+    // 헤더가 바뀌었으면(열 추가 등) 1행 헤더를 맞춰줌 — 기존 데이터 행은 건드리지 않음
+    var cur = sh.getRange(1, 1, 1, header.length).getValues()[0], need = false;
+    for (var i = 0; i < header.length; i++) if (("" + cur[i]).trim() !== header[i]) { need = true; break; }
+    if (need) { sh.getRange(1, 1, 1, header.length).setValues([header]).setFontWeight("bold"); }
   }
   return sh;
 }
@@ -142,9 +167,13 @@ function doGet(e) {
     // 자소서: 성별별 탭을 읽어 성별을 index 1에 주입해 하나의 members 로 합침
     //   탭행 [닉, 나이, 키, ...] (11) → [닉, 성별, 나이, 키, ...] (12)
     const members = [];
+    const PWCOL = MEMBER_HEADER.length;   // 합쳐진 행에서 비번 위치 (성별 주입으로 +1 밀림)
     Object.keys(MEMBER_TABS).forEach(function (g) {
       readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
-        members.push([row[0], g].concat(row.slice(1)));
+        var mem = [row[0], g].concat(row.slice(1));
+        // 비번 원문은 브라우저로 내보내지 않음 → 해시로 변환해 전송 (원문은 시트에만)
+        mem[PWCOL] = mem[PWCOL] ? sha256hex(mem[PWCOL]) : "";
+        members.push(mem);
       });
     });
     data.members = members;
@@ -234,10 +263,20 @@ function doPost(e) {
     // 자소서: 들어온 행 [닉, 성별, 나이, ...] (12) → 성별별 탭행 [닉, 나이, ...] (11)
     if (incoming.members) {
       const incByG = { "남자": [], "여자": [] };
+      // 기존 비번 원문 (성별→닉→원문) — 보존 판별용
+      const existPw = { "남자": {}, "여자": {} };
+      Object.keys(MEMBER_TABS).forEach(function (g) {
+        readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
+          existPw[g][row[0]] = row[MEMBER_HEADER.length - 1] || "";   // 마지막 열 = 비번 원문
+        });
+      });
       incoming.members.forEach(function (r) {
         const g = (String(r[1] || "").indexOf("여") >= 0) ? "여자" : "남자";
         const row = [r[0] == null ? "" : r[0]];
         for (var i = 2; i < MEMBER_HEADER.length + 1; i++) row.push(r[i] == null ? "" : r[i]);
+        // 비번(마지막 열): 빈값이거나 기존 원문의 해시면 → 원문 유지, 새 원문이 오면 → 교체
+        var pwi = row.length - 1;
+        row[pwi] = resolvePw(row[pwi], existPw[g][row[0]]);
         incByG[g].push(row);
       });
 

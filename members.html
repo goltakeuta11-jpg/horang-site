@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260805.4"></script>
+<script src="assets/inapp.js?v=20260805.5"></script>
 <title>자소서 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260805.4">
+<link rel="stylesheet" href="assets/style.css?v=20260805.5">
 </head>
 <body>
 
@@ -44,9 +44,9 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260805.4"></script>
-<script src="assets/store.js?v=20260805.4"></script>
-<script src="assets/app.js?v=20260805.4"></script>
+<script src="assets/config.js?v=20260805.5"></script>
+<script src="assets/store.js?v=20260805.5"></script>
+<script src="assets/app.js?v=20260805.5"></script>
 <script>
 // 이 탭이 담당하는 성별 (?g=남자 / ?g=여자, 기본 남자)
 const GENDER = new URLSearchParams(location.search).get("g") === "여자" ? "여자" : "남자";
@@ -96,7 +96,7 @@ function card(m, i) {
   return `
     <article class="card member">
       <div class="member__top">
-        <span class="member__nick">${App.esc(m.nick)}</span>
+        <span class="member__nick">${App.esc(m.nick)}${m.pw ? ` <span title="비밀번호로 보호됨" style="font-size:12px;opacity:.7">🔒</span>` : ""}</span>
         <span class="member__meta">${[m.age && m.age + "세", m.height && m.height + "cm", m.region].filter(Boolean).map(App.esc).join(" · ")}</span>
         ${m.mbti ? `<span class="member__mbti">${App.esc(m.mbti)}</span>` : ""}
         ${m.type && m.type !== "미분류" ? `<span class="member__mbti" style="white-space:nowrap;font-size:11px;padding:2px 6px">💘 ${App.esc(m.type)}</span>` : ""}
@@ -138,8 +138,20 @@ function render() {
 
   listEl.innerHTML = list.map(({ m, i }) => card(m, i)).join("");
 
-  if (canWrite) listEl.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => open(+b.dataset.edit));
+  if (canWrite) listEl.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => gateThenOpen(+b.dataset.edit));
   if (canDelete) listEl.querySelectorAll("[data-del]").forEach(b => b.onclick = () => remove(+b.dataset.del));
+}
+
+/* 비번 게이트 — 잠긴 자소서는 비번 맞아야 수정창이 열림 (관리자는 프리패스) */
+async function gateThenOpen(i) {
+  const m = Store.get().members[i];
+  if (m && m.pw && !admin) {
+    const input = prompt(`🔒 "${m.nick}"님 자소서를 수정하려면\n비밀번호를 입력하세요:`);
+    if (input == null) return;                       // 취소
+    const h = await App.sha256(input.trim());
+    if (h !== m.pw) return App.toast("비밀번호가 틀렸어요.", true);
+  }
+  open(i);
 }
 
 function open(i) {
@@ -154,7 +166,10 @@ function open(i) {
         ? `<textarea class="textarea" data-k="${f.k}">${App.esc(m[f.k] || "")}</textarea>`
         : `<input class="input" data-k="${f.k}" value="${App.esc(m[f.k] || "")}">`}
     </label>`).join("")
-    + `<p style="color:var(--text-dim);font-size:13px;line-height:1.6;margin:10px 0 0;padding:12px;background:rgba(255,255,255,.04);border-radius:10px">💡 <b>심리테스트는 지금 바로 진행하지 않아도 됩니다!</b><br>아직 안 하신 분은 연애유형을 <b>"미분류"</b>로 두세요. 추후 <b>심리테스트</b> 탭에서 진행 후, 본인 자소서 수정 시에 유형을 골라주셔도 됩니다!</p>`;
+    + `<label class="field"><span class="field__label">🔒 ${i < 0 ? "비밀번호 설정 (선택)" : "새 비밀번호 (안 바꾸려면 비워두세요)"}</span>
+        <input class="input" type="password" data-pw value="" autocomplete="new-password" placeholder="${i < 0 || !m.pw ? "설정하면 본인만 수정할 수 있어요" : "비우면 기존 비번 그대로 유지"}"></label>`
+    + `<p style="color:var(--text-dim);font-size:13px;line-height:1.6;margin:8px 0 0;padding:12px;background:rgba(255,255,255,.04);border-radius:10px">🔒 <b>비밀번호를 설정하면 본인만 수정</b>할 수 있어요. 분실 시 관리자에게 문의하세요. (완벽 보안이 아닌 간이 잠금이에요)</p>`
+    + `<p style="color:var(--text-dim);font-size:13px;line-height:1.6;margin:8px 0 0;padding:12px;background:rgba(255,255,255,.04);border-radius:10px">💡 <b>심리테스트는 지금 바로 진행하지 않아도 됩니다!</b><br>아직 안 하신 분은 연애유형을 <b>"미분류"</b>로 두세요. 추후 <b>심리테스트</b> 탭에서 진행 후, 본인 자소서 수정 시에 유형을 골라주셔도 됩니다!</p>`;
   modal.classList.add("is-on");
   modal.querySelector("[data-k]").focus();
 }
@@ -163,11 +178,16 @@ function close() { modal.classList.remove("is-on"); }
 document.querySelector("[data-cancel]").onclick = close;
 modal.onclick = e => { if (e.target === modal) close(); };
 
-document.querySelector("[data-save]").onclick = () => {
+document.querySelector("[data-save]").onclick = async () => {
   const item = {};
   modal.querySelectorAll("[data-k]").forEach(el => item[el.dataset.k] = el.value.trim());
   if (!item.nick) return App.toast("닉네임은 반드시 적어주세요.", true);
   item.gender = GENDER;   // 이 탭의 성별로 저장
+  /* 비밀번호: 입력하면 원문 전송(서버가 시트엔 원문 저장) · 비우면 기존값(해시) 그대로 → 서버가 원문 유지 */
+  const pwEl = modal.querySelector("[data-pw]");
+  const pwVal = pwEl ? pwEl.value.trim() : "";
+  const prev = editIndex < 0 ? null : Store.get().members[editIndex];
+  item.pw = pwVal ? pwVal : (prev ? (prev.pw || "") : "");
   const data = Store.get();
   if (editIndex < 0) data.members.push(item); else data.members[editIndex] = item;
   if (!Store.set(data)) return;   // 저장 차단(로드 전)이면 성공처리·화면갱신 안 함
