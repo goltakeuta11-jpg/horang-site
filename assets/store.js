@@ -19,6 +19,35 @@
   const MODE = SCRIPT_URL ? "script" : (SHEET_ID ? "sheet" : "local");
   const canWrite = MODE !== "sheet";   // 읽기 전용 시트일 때만 수정 불가
 
+  /* ---------- PATCH_01 · TTL 캐시 (속도 개선) ----------
+     Apps Script 를 매 페이지마다 부르지 않고, 최근에 받은 결과를 localStorage 에 저장해
+     일정 시간(TTL) 안에는 그걸 그대로 씀 → 탭 이동·재방문이 즉시.
+       · TTL 은 CONFIG.CACHE_TTL_MS 로 조절 (기본 5분)
+       · 편집(write) 하면 캐시도 바로 갱신 → 최신 유지
+       · 주소에 ?fresh=1 붙이면 캐시 무시하고 새로 읽음
+       · 캐시 구조 버전(CACHE_KEY 의 v#)을 올리면 옛 캐시 자동 무효화 */
+  const CACHE_KEY = "horang.cache.v1";
+  const CACHE_TTL_MS = (window.CONFIG && CONFIG.CACHE_TTL_MS) || 5 * 60 * 1000;
+
+  function cacheAllowed() {
+    try { return location.search.indexOf("fresh=1") < 0; } catch (e) { return true; }
+  }
+  function readCache() {
+    if (!cacheAllowed()) return null;
+    try {
+      const o = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
+      if (!o || !o.ts || !o.data) return null;
+      if (Date.now() - o.ts > CACHE_TTL_MS) return null;   // 만료
+      return normalize(o.data);
+    } catch (e) { return null; }
+  }
+  function saveCache(data) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data })); } catch (e) { /* 저장소 불가 */ }
+  }
+  function clearCache() {
+    try { localStorage.removeItem(CACHE_KEY); } catch (e) { /* 무시 */ }
+  }
+
   function adminKey() {
     try { return sessionStorage.getItem("horang.key") || ""; } catch (e) { return ""; }
   }
@@ -222,6 +251,10 @@
   async function load() {
     if (MODE === "local") { loaded = true; return read(); }
 
+    // ★ TTL 캐시가 살아있으면 네트워크 호출 없이 즉시 반환 (속도 개선)
+    const hit = readCache();
+    if (hit) { cache = hit; loaded = true; return cache; }
+
     if (MODE === "script") {
       let res, j;
       try {
@@ -233,6 +266,7 @@
       if (!j || !j.ok) throw new Error((j && j.error) || "시트를 불러오지 못했습니다.");
       cache = rowsToData(j.data || {});
       loaded = true;   // 로드 성공 → 이제 저장 허용
+      saveCache(cache);   // 다음 로딩용 캐시 저장
       return cache;
     }
 
@@ -242,6 +276,7 @@
     KINDS.forEach((k, i) => raw[k] = got[i]);
     cache = rowsToData(raw);
     loaded = true;
+    saveCache(cache);
     return cache;
   }
 
@@ -258,6 +293,7 @@
     memory = data;
 
     if (MODE === "script") {
+      saveCache(data);   // ★ 편집 즉시 캐시에 반영 → 다른 페이지로 이동/새로고침해도 최신값
       /* 화면은 이미 바뀌었고, 시트 저장은 뒤이어 진행합니다.
          Content-Type 을 text/plain 으로 보내야 브라우저가 사전 확인 요청을
          보내지 않아 Apps Script 가 그대로 받습니다. */
@@ -270,6 +306,7 @@
         .then(r => r.json())
         .then(j => { if (!j || !j.ok) throw new Error((j && j.error) || "시트에 저장하지 못했습니다."); })
         .catch(e => {
+          clearCache();   // 저장 실패 → 캐시 무효화 (다음 로딩 때 시트에서 진짜 값 다시 읽음)
           if (window.App) App.toast(e.message + " 새로고침하면 되돌아갑니다.", true);
         });
       return true;
@@ -294,6 +331,9 @@
     CATS: CATS,
     normCat: normCat,
     normDate: normDate,
+
+    clearCache: clearCache,                       // TTL 캐시 비우기
+    refresh() { clearCache(); cache = null; return load(); }, // 캐시 무시하고 시트에서 새로 읽기
 
     sheetEditUrl() {
       return SHEET_ID ? "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit" : "";

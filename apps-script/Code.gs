@@ -140,6 +140,9 @@ function readTab(name, header) {
 /* 탭 하나 다시쓰기 (헤더 유지, 2행부터 값 교체) */
 function writeTab(name, header, rows) {
   const sh = getSheet(name, header);
+  // "비번" 열은 텍스트 형식 고정 → 0407 이 407 로 바뀌는 것 방지 (값 넣기 전에 적용해야 함)
+  var pwIdx = header.indexOf("비번");
+  if (pwIdx >= 0) sh.getRange(1, pwIdx + 1, sh.getMaxRows(), 1).setNumberFormat("@");
   if (sh.getLastRow() > 1) {
     sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
   }
@@ -156,6 +159,7 @@ function writeTab(name, header, rows) {
 function doGet(e) {
   try {
     var p = (e && e.parameter) || {};
+    if (p.action === "ping") return json({ ok: true, pong: true }); // 예열용: 시트 안 읽고 런타임만 깨움
     if (p.action === "hit") return recordHit(p.page);          // 페이지 조회 1건 기록(+1)
     if (p.action === "viewstats") return json({ ok: true, views: readViews() }); // 조회통계 반환
 
@@ -182,6 +186,19 @@ function doGet(e) {
   } catch (err) {
     return json({ ok: false, error: String(err) });
   }
+}
+
+/* ============================================================
+   PATCH_02 예열(Warm-up) — 콜드스타트 방지.
+   Apps Script 편집기 → ⏰트리거 → 트리거 추가 → 함수: keepWarm /
+   이벤트: 시간 기반 → 분 단위 타이머 → 5분(또는 10분)마다 → 저장.
+   그러면 웹앱이 5분마다 스스로를 가볍게(ping) 호출해 안 잠들게 함.
+   ============================================================ */
+function keepWarm() {
+  try {
+    var url = ScriptApp.getService().getUrl();      // 이 웹앱의 /exec 주소
+    if (url) UrlFetchApp.fetch(url + "?action=ping", { muteHttpExceptions: true, followRedirects: true });
+  } catch (e) { /* 실패해도 무시 (다음 타이머에 재시도) */ }
 }
 
 /* ============================================================
