@@ -258,7 +258,8 @@
     if (MODE === "script") {
       let res, j;
       try {
-        res = await tryFetch(SCRIPT_URL + "?action=read&_=" + Date.now(), { redirect: "follow" });
+        // ?fresh=1 이면 서버 캐시(PATCH_03)까지 건너뛰도록 &fresh=1 전달
+        res = await tryFetch(SCRIPT_URL + "?action=read&_=" + Date.now() + (cacheAllowed() ? "" : "&fresh=1"), { redirect: "follow" });
         j = await res.json();
       } catch (e) {
         throw new Error("시트를 불러오지 못했습니다. Apps Script 주소와 배포 권한을 확인해 주세요.");

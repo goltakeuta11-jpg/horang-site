@@ -106,6 +106,14 @@ function json(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/* PATCH_03 · 서버 캐시 — doGet 결과 JSON을 통째로 구워둠(기본 5분).
+   대부분의 요청이 탭 5개 읽기 + 비번 해시 없이 즉시 응답. 편집(doPost) 시 무효화. */
+var READ_CACHE_KEY = "sitedata_v1";
+var READ_CACHE_SEC = 360;   // 6분 (keepWarm 5분 간격보다 길게 → 항상 데워진 캐시 유지)
+function jsonRaw(str) {      // 이미 JSON 문자열인 걸 그대로 반환 (캐시된 응답용)
+  return ContentService.createTextOutput(str).setMimeType(ContentService.MimeType.JSON);
+}
+
 /* 이름+헤더로 탭 확보 (없으면 헤더 넣어 새로 만듦) */
 function getSheet(name, header) {
   const ss = book();
@@ -163,6 +171,13 @@ function doGet(e) {
     if (p.action === "hit") return recordHit(p.page);          // 페이지 조회 1건 기록(+1)
     if (p.action === "viewstats") return json({ ok: true, views: readViews() }); // 조회통계 반환
 
+    // ★ PATCH_03: 서버 캐시 히트면 탭 안 읽고 즉시 반환 (?fresh=1 이면 무시하고 새로 빌드)
+    var scache = CacheService.getScriptCache();
+    if (p.fresh !== "1") {
+      var cached = scache.get(READ_CACHE_KEY);
+      if (cached) return jsonRaw(cached);
+    }
+
     const data = {};
     Object.keys(TABS).forEach(function (k) {
       data[k] = readTab(TABS[k], HEADERS[k]);
@@ -182,7 +197,9 @@ function doGet(e) {
     });
     data.members = members;
 
-    return json({ ok: true, data: data });
+    var out = JSON.stringify({ ok: true, data: data });
+    try { scache.put(READ_CACHE_KEY, out, READ_CACHE_SEC); } catch (eC) { /* 100KB 초과 등 → 캐시 스킵 */ }
+    return jsonRaw(out);
   } catch (err) {
     return json({ ok: false, error: String(err) });
   }
@@ -197,7 +214,8 @@ function doGet(e) {
 function keepWarm() {
   try {
     var url = ScriptApp.getService().getUrl();      // 이 웹앱의 /exec 주소
-    if (url) UrlFetchApp.fetch(url + "?action=ping", { muteHttpExceptions: true, followRedirects: true });
+    // read&fresh=1 로 서버 캐시(PATCH_03)를 5분마다 새로 구움 → 유저는 항상 데워진 캐시를 받음.
+    if (url) UrlFetchApp.fetch(url + "?action=read&fresh=1", { muteHttpExceptions: true, followRedirects: true });
   } catch (e) { /* 실패해도 무시 (다음 타이머에 재시도) */ }
 }
 
@@ -336,6 +354,7 @@ function doPost(e) {
       });
     }
 
+    try { CacheService.getScriptCache().remove(READ_CACHE_KEY); } catch (eC) {} // ★ PATCH_03: 편집됐으니 서버 캐시 무효화
     return json({ ok: true, admin: isAdmin });
   } catch (err) {
     return json({ ok: false, error: String(err) });
