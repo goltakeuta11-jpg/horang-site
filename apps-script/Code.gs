@@ -247,8 +247,9 @@ function removeWarmTrigger() {
 function viewSheet() {
   const ss = book();
   let sh = ss.getSheetByName("조회통계");
-  if (!sh) { sh = ss.insertSheet("조회통계"); sh.appendRow(["날짜", "페이지", "횟수"]); sh.setFrozenRows(1); }
-  if (sh.getLastRow() === 0) sh.appendRow(["날짜", "페이지", "횟수"]);
+  if (!sh) { sh = ss.insertSheet("조회통계"); sh.appendRow(["날짜", "페이지", "횟수", "일수"]); sh.setFrozenRows(1); }
+  if (sh.getLastRow() === 0) sh.appendRow(["날짜", "페이지", "횟수", "일수"]);
+  else if (String(sh.getRange(1, 4).getValue()).trim() !== "일수") sh.getRange(1, 4).setValue("일수"); // 일수 열 마이그레이션(기존 3열→4열)
   return sh;
 }
 function kstToday() {
@@ -269,7 +270,7 @@ function recordHit(page) {
         return json({ ok: true });
       }
     }
-    sh.appendRow([today, page, 1]);             // 그 날 첫 조회 → 새 줄
+    sh.appendRow([today, page, 1, 1]);          // 그 날 첫 조회 → 새 줄 (일수=1)
     return json({ ok: true });
   } catch (e) {
     return json({ ok: false, error: String(e) });
@@ -284,9 +285,57 @@ function readViews() {
   for (var i = 1; i < rows.length; i++) {
     const d = String(rows[i][0]).trim(), pg = String(rows[i][1]).trim();
     if (!d || !pg) continue;
-    out.push({ date: d, page: pg, count: Number(rows[i][2]) || 0 });
+    out.push({ date: d, page: pg, count: Number(rows[i][2]) || 0, days: Number(rows[i][3]) || 1 });
   }
   return out;
+}
+
+/* ⭐ 월별 요약 — 지난 달들의 "일별 행"을 (달,페이지)당 1줄로 접음. 이번 달은 일별 유지.
+   일수 열에 며칠치인지 저장 → 사이트의 "하루 평균"이 정확히 유지됨. 여러 번 실행해도 안전(멱등).
+   편집기에서 이 함수를 ▶ 실행하거나, setupSummaryTrigger()로 매월 자동. */
+function summarizeViews() {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const sh = viewSheet();
+    const rows = sh.getDataRange().getValues();
+    const curMonth = kstToday().slice(0, 7);   // "yyyy-MM"
+    const monthly = {};                         // "yyyy-MM|page" → count 합
+    const monthDates = {};                      // "yyyy-MM" → {날짜:1} (그 달 전체 활동일, 페이지 무관)
+    const keep = [];                            // 그대로 둘 행(이번 달 일별 + 이미 월요약된 행)
+    for (var i = 1; i < rows.length; i++) {
+      var d = String(rows[i][0]).trim(), pg = String(rows[i][1]).trim();
+      if (!d || !pg) continue;
+      var c = Number(rows[i][2]) || 0, dy = Number(rows[i][3]) || 1;
+      var isDaily = (d.length === 10);          // yyyy-MM-DD = 일별
+      if (isDaily && d.slice(0, 7) < curMonth) {// 지난 달의 일별 → 접기
+        var mon = d.slice(0, 7), k = mon + "|" + pg;
+        monthly[k] = (monthly[k] || 0) + c;
+        if (!monthDates[mon]) monthDates[mon] = {};
+        monthDates[mon][d] = 1;                  // 그 달 활동일 집계(페이지 상관없이 union)
+      } else {
+        keep.push([d, pg, c, dy]);              // 이번 달 일별 · 이미 월요약(yyyy-MM) 행은 유지
+      }
+    }
+    var summ = [];
+    for (var key in monthly) {
+      var pr = key.split("|"), mon2 = pr[0];
+      summ.push([mon2, pr[1], monthly[key], Object.keys(monthDates[mon2]).length]); // 일수=그 달 전체 활동일(모든 페이지 동일)
+    }
+    if (!summ.length) return "접을 지난 달 일별 기록이 없어요 (이미 요약됨).";
+    var out = [["날짜", "페이지", "횟수", "일수"]].concat(summ).concat(keep);
+    sh.clearContents();
+    sh.getRange(1, 1, out.length, 4).setValues(out);
+    return "✅ 요약 완료: 월별 " + summ.length + "행 + 최근(이번 달) " + keep.length + "행";
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+
+/* 매월 1일 새벽 자동 요약 트리거 등록 (편집기에서 한 번만 ▶ 실행) */
+function setupSummaryTrigger() {
+  var trs = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < trs.length; i++) if (trs[i].getHandlerFunction() === "summarizeViews") ScriptApp.deleteTrigger(trs[i]);
+  ScriptApp.newTrigger("summarizeViews").timeBased().onMonthDay(1).atHour(4).create();
+  return "✅ 매월 1일 04시 자동 요약 트리거 등록 완료";
 }
 
 /* ============================================================

@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260806.2"></script>
+<script src="assets/inapp.js?v=20260808.1"></script>
 <title>호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260806.2">
+<link rel="stylesheet" href="assets/style.css?v=20260808.1">
 </head>
 <body>
 
@@ -62,9 +62,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260806.2"></script>
-<script src="assets/store.js?v=20260806.2"></script>
-<script src="assets/app.js?v=20260806.2"></script>
+<script src="assets/config.js?v=20260808.1"></script>
+<script src="assets/store.js?v=20260808.1"></script>
+<script src="assets/app.js?v=20260808.1"></script>
 <script>
   document.title = CONFIG.ROOM_NAME + " 안내소";
   App.header("index.html");
@@ -169,9 +169,13 @@
         views = j.views || [];
       } catch (e) { el.textContent = "조회통계를 불러오지 못했습니다. (재배포 필요할 수 있어요)"; return; }
       if (!views.length) { el.innerHTML = "<div class='empty' style='padding:20px'><strong>아직 조회 기록이 없습니다</strong>사람들이 페이지를 열면 여기에 쌓입니다.</div>"; return; }
-      const byPage = {}, dates = {};
-      views.forEach(v => { byPage[v.page] = (byPage[v.page] || 0) + v.count; dates[v.date] = 1; });
-      const days = Object.keys(dates).length || 1;
+      const byPage = {}, dayset = {}, monthDays = {};
+      views.forEach(v => {
+        byPage[v.page] = (byPage[v.page] || 0) + v.count;
+        if (String(v.date).length === 7) monthDays[v.date] = Math.max(monthDays[v.date] || 0, v.days || 0); // 월요약(YYYY-MM): 달당 1번 일수
+        else dayset[v.date] = 1;                                                                            // 일별(YYYY-MM-DD): 날짜 1개
+      });
+      const days = (Object.keys(dayset).length + Object.values(monthDays).reduce((s, d) => s + d, 0)) || 1;
       const rows = Object.keys(byPage).map(p => ({ p, total: byPage[p], avg: byPage[p] / days }))
         .sort((a, b) => b.avg - a.avg);
       el.innerHTML =
