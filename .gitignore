@@ -1,13 +1,15 @@
-# OS / 편집기 부산물
-Thumbs.db
-Desktop.ini
-.DS_Store
-*~
-.vscode/
-.idea/
 
+# OS / 편집기 부산물
+# 내부 문서/PDF는 사이트에 올리지 않음
 # 스크린샷 (사이트 자산 아님, 저장소에 안 올림)
-스크린샷*.png
-Screenshot*.png
-*.jpg
 *.jpeg
+*.jpg
+*.pdf
+*~
+.DS_Store
+.idea/
+.vscode/
+Desktop.ini
+Screenshot*.png
+Thumbs.db
+스크린샷*.png
