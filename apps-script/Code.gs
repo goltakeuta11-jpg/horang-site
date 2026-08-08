@@ -250,10 +250,20 @@ function viewSheet() {
   if (!sh) { sh = ss.insertSheet("조회통계"); sh.appendRow(["날짜", "페이지", "횟수", "일수"]); sh.setFrozenRows(1); }
   if (sh.getLastRow() === 0) sh.appendRow(["날짜", "페이지", "횟수", "일수"]);
   else if (String(sh.getRange(1, 4).getValue()).trim() !== "일수") sh.getRange(1, 4).setValue("일수"); // 일수 열 마이그레이션(기존 3열→4열)
+  sh.getRange("A:A").setNumberFormat("@"); // ★ 날짜 열 텍스트 고정 → "2026-08-05"가 Date로 자동변환되는 것 방지
   return sh;
 }
 function kstToday() {
   return Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd");
+}
+// 셀 값이 Date(자동변환됨)여도 "yyyy-MM-dd" 문자열로 정규화 (요약된 "yyyy-MM"·일반문자열은 그대로)
+function vdate(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, "Asia/Seoul", "yyyy-MM-dd");
+  var s = String(v == null ? "" : v).trim();
+  if (/^[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/.test(s)) {   // "Wed Aug 05 2026 ..." 형태면 파싱
+    try { return Utilities.formatDate(new Date(s), "Asia/Seoul", "yyyy-MM-dd"); } catch (e) {}
+  }
+  return s;
 }
 function recordHit(page) {
   page = String(page == null ? "" : page).trim();
@@ -265,7 +275,7 @@ function recordHit(page) {
     const today = kstToday();
     const rows = sh.getDataRange().getValues();
     for (var i = 1; i < rows.length; i++) {
-      if (String(rows[i][0]).trim() === today && String(rows[i][1]).trim() === page) {
+      if (vdate(rows[i][0]) === today && String(rows[i][1]).trim() === page) {
         sh.getRange(i + 1, 3).setValue((Number(rows[i][2]) || 0) + 1);
         return json({ ok: true });
       }
@@ -283,7 +293,7 @@ function readViews() {
   const rows = sh.getDataRange().getValues();
   const out = [];
   for (var i = 1; i < rows.length; i++) {
-    const d = String(rows[i][0]).trim(), pg = String(rows[i][1]).trim();
+    const d = vdate(rows[i][0]), pg = String(rows[i][1]).trim();
     if (!d || !pg) continue;
     out.push({ date: d, page: pg, count: Number(rows[i][2]) || 0, days: Number(rows[i][3]) || 1 });
   }
@@ -304,7 +314,7 @@ function summarizeViews() {
     const monthDates = {};                      // "yyyy-MM" → {날짜:1} (그 달 전체 활동일, 페이지 무관)
     const keep = [];                            // 그대로 둘 행(이번 달 일별 + 이미 월요약된 행)
     for (var i = 1; i < rows.length; i++) {
-      var d = String(rows[i][0]).trim(), pg = String(rows[i][1]).trim();
+      var d = vdate(rows[i][0]), pg = String(rows[i][1]).trim();
       if (!d || !pg) continue;
       var c = Number(rows[i][2]) || 0, dy = Number(rows[i][3]) || 1;
       var isDaily = (d.length === 10);          // yyyy-MM-DD = 일별
@@ -325,9 +335,71 @@ function summarizeViews() {
     if (!summ.length) return "접을 지난 달 일별 기록이 없어요 (이미 요약됨).";
     var out = [["날짜", "페이지", "횟수", "일수"]].concat(summ).concat(keep);
     sh.clearContents();
+    sh.getRange("A:A").setNumberFormat("@");
     sh.getRange(1, 1, out.length, 4).setValues(out);
     return "✅ 요약 완료: 월별 " + summ.length + "행 + 최근(이번 달) " + keep.length + "행";
   } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+
+/* ⭐ 복구 — 날짜가 Date로 자동변환돼 (같은 날·페이지)가 중복 폭증한 걸 병합 + 날짜 텍스트 정규화.
+   한 번만 ▶ repairViews 실행. 권장 순서: 재배포 → repairViews → (원하면) summarizeViews. */
+function repairViews() {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const sh = viewSheet();
+    const rows = sh.getDataRange().getValues();
+    const agg = {}, order = [];
+    for (var i = 1; i < rows.length; i++) {
+      var d = vdate(rows[i][0]), pg = String(rows[i][1]).trim();
+      if (!d || !pg) continue;
+      var c = Number(rows[i][2]) || 0, dy = Number(rows[i][3]) || 1;
+      var k = d + "|" + pg;
+      if (!agg[k]) { agg[k] = { count: 0, days: dy }; order.push(k); }
+      agg[k].count += c;
+      if (dy > agg[k].days) agg[k].days = dy;
+    }
+    var out = [["날짜", "페이지", "횟수", "일수"]];
+    for (var j = 0; j < order.length; j++) { var p = order[j].split("|"); out.push([p[0], p[1], agg[order[j]].count, agg[order[j]].days]); }
+    sh.clearContents();
+    sh.getRange("A:A").setNumberFormat("@");
+    sh.getRange(1, 1, out.length, 4).setValues(out);
+    return "✅ 복구 완료: " + (rows.length - 1) + "행 → " + (out.length - 1) + "행 (중복 병합·날짜 정규화)";
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+}
+
+/* ⭐ 가시성 — "조회통계"를 날짜별로 확실히 구분: 날짜 정렬 + 하루마다 배경색 번갈이 + 날짜 바뀔 때 구분선.
+   (저번에 만든 헷갈리던 "조회요약" 탭·색농도는 자동 제거). ▶ styleViewsByDay 실행(새 기록 쌓이면 다시 실행해 갱신). */
+function styleViewsByDay() {
+  const ss = book();
+  const s2 = ss.getSheetByName("조회요약"); if (s2) ss.deleteSheet(s2);   // 이전 요약 탭 정리
+  const sh = viewSheet();
+  sh.setConditionalFormatRules([]);                                       // 이전 색농도 규칙 제거
+  const last = sh.getLastRow();
+  if (last < 2) return "데이터가 없어요.";
+  const nCol = 4, n = last - 1;
+  // 날짜 오름차순 → 같은 페이지 순으로 정렬 (같은 날끼리 뭉침)
+  sh.getRange(2, 1, n, sh.getLastColumn()).sort([{ column: 1, ascending: true }, { column: 2, ascending: true }]);
+  // 정렬된 값 다시 읽어 날짜 그룹 계산
+  const vals = sh.getRange(2, 1, n, nCol).getValues();
+  const bg = [];
+  const groupStarts = [];
+  var curDate = null, tone = false;
+  for (var i = 0; i < n; i++) {
+    var d = vdate(vals[i][0]);
+    if (d !== curDate) { tone = !tone; curDate = d; groupStarts.push(i); }  // 날짜 바뀜 → 색 토글 + 그룹 시작
+    var color = tone ? "#eaf1fb" : "#ffffff";
+    bg.push([color, color, color, color]);
+  }
+  const body = sh.getRange(2, 1, n, nCol);
+  body.setBackgrounds(bg);
+  body.setBorder(false, false, false, false, false, false);               // 안쪽 테두리 초기화
+  for (var g = 0; g < groupStarts.length; g++) {                           // 날짜 그룹 첫 행 위에 굵은 구분선
+    sh.getRange(2 + groupStarts[g], 1, 1, nCol)
+      .setBorder(true, null, null, null, null, null, "#8fa3c0", SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+  }
+  sh.getRange(1, 1, 1, nCol).setFontWeight("bold").setBackground("#dfe7f5"); // 헤더 강조
+  return "✅ 일별 구분 적용: " + groupStarts.length + "일 · " + n + "행";
 }
 
 /* 매월 1일 새벽 자동 요약 트리거 등록 (편집기에서 한 번만 ▶ 실행) */

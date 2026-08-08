@@ -101,13 +101,39 @@
   /* 자소서 간이 잠금용 해시. 시트엔 원문 대신 이 해시만 저장됨(훔쳐보기 방지). */
   async function sha256(str) {
     str = String(str == null ? "" : str);
-    if (window.crypto && crypto.subtle && location.protocol === "https:") {
-      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    try {
+      if (window.crypto && crypto.subtle && window.TextEncoder) {
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+      }
+    } catch (e) { /* subtle 실패 → 순수 JS 폴백 */ }
+    return sha256js(str);   // ★ crypto.subtle 없거나 실패한 환경(일부 인앱·구형 웹뷰)에서도 서버와 '동일한 진짜 SHA-256'
+  }
+  /* 순수 JS SHA-256 (UTF-8) — crypto.subtle·서버 Utilities.computeDigest 와 hex 완전 일치.
+     이게 있어야 어떤 브라우저에서든 비번 검증이 동일하게 맞음(예전 약한 폴백은 절대 안 맞았음). */
+  function sha256js(str) {
+    function R(v, a) { return (v >>> a) | (v << (32 - a)); }
+    var mp = Math.pow, mw = mp(2, 32), L = "length", i, j, out = "", words = [];
+    var ascii = unescape(encodeURIComponent(String(str == null ? "" : str)));   // UTF-8 바이트열로
+    var abl = ascii[L] * 8;
+    var hash = sha256js.h = sha256js.h || [], k = sha256js.k = sha256js.k || [], pc = k[L], isC = {};
+    for (var c = 2; pc < 64; c++) { if (!isC[c]) { for (i = 0; i < 313; i += c) isC[i] = c; hash[pc] = (mp(c, .5) * mw) | 0; k[pc++] = (mp(c, 1 / 3) * mw) | 0; } }
+    ascii += "\x80"; while (ascii[L] % 64 - 56) ascii += "\x00";
+    for (i = 0; i < ascii[L]; i++) { j = ascii.charCodeAt(i); if (j >> 8) return ""; words[i >> 2] |= j << ((3 - i) % 4) * 8; }
+    words[words[L]] = (abl / mw) | 0; words[words[L]] = abl;
+    for (j = 0; j < words[L];) {
+      var w = words.slice(j, j += 16), oldHash = hash; hash = hash.slice(0, 8);
+      for (i = 0; i < 64; i++) {
+        var w15 = w[i - 15], w2 = w[i - 2], a = hash[0], e = hash[4];
+        var t1 = hash[7] + (R(e, 6) ^ R(e, 11) ^ R(e, 25)) + ((e & hash[5]) ^ ((~e) & hash[6])) + k[i]
+          + (w[i] = (i < 16) ? w[i] : (w[i - 16] + (R(w15, 7) ^ R(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (R(w2, 17) ^ R(w2, 19) ^ (w2 >>> 10))) | 0);
+        var t2 = (R(a, 2) ^ R(a, 13) ^ R(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+        hash = [(t1 + t2) | 0].concat(hash); hash[4] = (hash[4] + t1) | 0;
+      }
+      for (i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
     }
-    // 폴백(보안 약함): https·subtle 못 쓰는 옛 환경용
-    let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
-    return "x" + (h >>> 0).toString(16);
+    for (i = 0; i < 8; i++) for (j = 3; j + 1; j--) { var b = (hash[i] >> (j * 8)) & 255; out += ((b < 16) ? 0 : "") + b.toString(16); }
+    return out;
   }
 
   function toast(msg, bad) {
