@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260808.2"></script>
+<script src="assets/inapp.js?v=20260809.1"></script>
 <title>자소서 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260808.2">
+<link rel="stylesheet" href="assets/style.css?v=20260809.1">
 </head>
 <body>
 
@@ -44,9 +44,9 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260808.2"></script>
-<script src="assets/store.js?v=20260808.2"></script>
-<script src="assets/app.js?v=20260808.2"></script>
+<script src="assets/config.js?v=20260809.1"></script>
+<script src="assets/store.js?v=20260809.1"></script>
+<script src="assets/app.js?v=20260809.1"></script>
 <script>
 // 이 탭이 담당하는 성별 (?g=남자 / ?g=여자, 기본 남자)
 const GENDER = new URLSearchParams(location.search).get("g") === "여자" ? "여자" : "남자";
@@ -81,7 +81,7 @@ const FORM = [
   { k: "ideal",  label: "이상형",          type: "area" },
   { k: "smoke",  label: "흡연유무 & 주량",  type: "text" },
   { k: "say",    label: "하고싶은 말",      type: "area" },
-  { k: "type",   label: "연애유형",         type: "select", options: TYPES }
+  { k: "type",   label: "심리테스트유형 (심리테스트 진행후에 입력해주세요)", type: "select", options: TYPES }
 ];
 
 const tools = document.querySelector("[data-admin-tools]");
