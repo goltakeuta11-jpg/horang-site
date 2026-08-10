@@ -246,6 +246,7 @@ h1, h2, h3 { margin: 0; line-height: 1.25; letter-spacing: -0.02em; }
 }
 .cat--new { color: var(--accent-2); border-color: rgba(95, 225, 192, .4); background: rgba(95, 225, 192, .08); }
 .cat--fix { color: var(--warn); border-color: rgba(255, 194, 75, .4); background: rgba(255, 194, 75, .08); }
+.cat--mod { color: #7cc4ff; border-color: rgba(124, 196, 255, .4); background: rgba(124, 196, 255, .08); }
 .cat--del { color: var(--text-dim); }
 
 .patch__body { font-size: 14.5px; white-space: pre-wrap; word-break: break-word; }

@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260809.2"></script>
+<script src="assets/inapp.js?v=20260810.1"></script>
 <title>호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260809.2">
+<link rel="stylesheet" href="assets/style.css?v=20260810.1">
 </head>
 <body>
 
@@ -62,9 +62,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260809.2"></script>
-<script src="assets/store.js?v=20260809.2"></script>
-<script src="assets/app.js?v=20260809.2"></script>
+<script src="assets/config.js?v=20260810.1"></script>
+<script src="assets/store.js?v=20260810.1"></script>
+<script src="assets/app.js?v=20260810.1"></script>
 <script>
   document.title = CONFIG.ROOM_NAME + " 안내소";
   App.header("index.html");
@@ -79,7 +79,7 @@
     const m = (d || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
     return m ? `${m[1]}. ${+m[2]}. ${+m[3]}` : d;
   }
-  const CAT_CLASS = { "신규 기능 추가": "cat--new", "오류 수정": "cat--fix", "기존 기능 삭제": "cat--del" };
+  const CAT_CLASS = { "신규 기능 추가": "cat--new", "오류 수정": "cat--fix", "기존 기능 수정": "cat--mod", "기존 기능 삭제": "cat--del" };
 
   function renderPatchHome() {
     const box = document.querySelector("[data-patch-home]");

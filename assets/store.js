@@ -118,13 +118,14 @@
   }
 
   /* ---------- 분류 · 날짜 정리 ---------- */
-  const CATS = ["오류 수정", "신규 기능 추가", "기존 기능 삭제"];
+  const CATS = ["오류 수정", "신규 기능 추가", "기존 기능 수정", "기존 기능 삭제"];
 
   function normCat(v) {
     v = (v || "").trim();
     if (CATS.indexOf(v) >= 0) return v;
-    if (/오류|버그|수정|fix/i.test(v)) return "오류 수정";
+    if (/오류|버그|fix/i.test(v)) return "오류 수정";                 // 오류·버그 먼저 (수정 앞에서 걸러야)
     if (/삭제|제거|중단|remove/i.test(v)) return "기존 기능 삭제";
+    if (/수정|변경|개선|update/i.test(v)) return "기존 기능 수정";
     return "신규 기능 추가";
   }
 

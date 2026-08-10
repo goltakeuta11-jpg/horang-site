@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260809.2"></script>
+<script src="assets/inapp.js?v=20260810.1"></script>
 <title>패치노트 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260809.2">
+<link rel="stylesheet" href="assets/style.css?v=20260810.1">
 </head>
 <body>
 
@@ -25,6 +25,7 @@
       <option value="">전체 분류</option>
       <option>신규 기능 추가</option>
       <option>오류 수정</option>
+      <option>기존 기능 수정</option>
       <option>기존 기능 삭제</option>
     </select>
     <input class="input" style="max-width:220px" placeholder="내용 검색" data-search>
@@ -49,6 +50,7 @@
       <select class="select" data-f-cat>
         <option>신규 기능 추가</option>
         <option>오류 수정</option>
+        <option>기존 기능 수정</option>
         <option>기존 기능 삭제</option>
       </select></label>
 
@@ -66,9 +68,9 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260809.2"></script>
-<script src="assets/store.js?v=20260809.2"></script>
-<script src="assets/app.js?v=20260809.2"></script>
+<script src="assets/config.js?v=20260810.1"></script>
+<script src="assets/store.js?v=20260810.1"></script>
+<script src="assets/app.js?v=20260810.1"></script>
 <script>
 App.header("patchnotes.html");
 const admin = App.isAdmin();
@@ -78,7 +80,7 @@ const listEl = document.querySelector("[data-list]");
 const modal = document.querySelector("[data-modal]");
 let editIndex = -1;
 
-const CAT_CLASS = { "신규 기능 추가": "cat--new", "오류 수정": "cat--fix", "기존 기능 삭제": "cat--del" };
+const CAT_CLASS = { "신규 기능 추가": "cat--new", "오류 수정": "cat--fix", "기존 기능 수정": "cat--mod", "기존 기능 삭제": "cat--del" };
 
 if (admin) {
   const tools = document.querySelector("[data-admin-tools]");
