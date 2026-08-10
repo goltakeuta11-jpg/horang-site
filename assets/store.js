@@ -27,7 +27,7 @@
        · 주소에 ?fresh=1 붙이면 캐시 무시하고 새로 읽음
        · 캐시 구조 버전(CACHE_KEY 의 v#)을 올리면 옛 캐시 자동 무효화 */
   const CACHE_KEY = "horang.cache.v1";
-  const CACHE_TTL_MS = (window.CONFIG && CONFIG.CACHE_TTL_MS) || 5 * 60 * 1000;
+  const CACHE_TTL_MS = (window.CONFIG && CONFIG.CACHE_TTL_MS) || 2 * 60 * 1000;
 
   function cacheAllowed() {
     try { return location.search.indexOf("fresh=1") < 0; } catch (e) { return true; }
