@@ -31,9 +31,38 @@ const HEADERS = {
   outings: ["내용"]
 };
 
-/* 자소서 탭 헤더 — 성별 열은 없습니다(탭 이름이 성별) */
+/* 자소서 탭 헤더 — 성별 열은 없습니다(탭 이름이 성별)
+   ★ "등록일"은 반드시 맨 끝에 둘 것. readTab 이 헤더 이름이 아니라 "위치"로 읽기 때문에,
+     중간에 열을 끼워넣으면 기존 시트의 비번이 한 칸씩 밀려 통째로 어긋납니다. */
 const MEMBER_HEADER = ["닉네임", "나이", "사는 곳", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
-                       "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "연애유형", "비번"];
+                       "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "연애유형", "비번", "등록일"];
+
+/* 탭 행에서의 열 위치 (하드코딩 금지 — 헤더가 바뀌면 여기서 자동으로 따라감) */
+const PW_IDX = MEMBER_HEADER.indexOf("비번");     // 13
+const AT_IDX = MEMBER_HEADER.indexOf("등록일");   // 14
+
+/* 등록 시각 도장 — 브라우저 시계는 못 믿으므로 서버가 찍습니다(KST 고정).
+   날짜만 쓰고 싶으면 "yyyy-MM-dd" 로 바꾸세요. 단, 같은 날 등록된 사람끼리는 순서가 흐려집니다. */
+function stampNow() {
+  return Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm");
+}
+
+/* 자소서 행을 "등록순 오름차순"으로 정렬 — 시트에 쓸 때 씁니다.
+     · 등록일 빈칸(= 이 기능 이전부터 있던 사람)은 맨 위에, 자기들끼리는 기존 순서 그대로
+     · 등록일이 있으면 오래된 것 → 최신 순
+   웹 화면은 이 순서를 뒤집어 최신이 위로 오게 그립니다(members.html). */
+function sortMembersAsc(rows) {
+  return rows
+    .map(function (r, i) { return { r: r, i: i }; })
+    .sort(function (a, b) {
+      var A = String(a.r[AT_IDX] || ""), B = String(b.r[AT_IDX] || "");
+      if (A === B) return a.i - b.i;   // 같으면 원래 순서 유지(안정 정렬)
+      if (!A) return -1;               // 빈칸 = 옛날 사람 → 위
+      if (!B) return 1;
+      return A < B ? -1 : 1;           // "yyyy-MM-dd HH:mm" 은 문자열 비교 = 시간순
+    })
+    .map(function (x) { return x.r; });
+}
 
 /* 자소서 비번용 SHA-256 hex — 브라우저 App.sha256(crypto.subtle)과 동일 결과(UTF-8, 소문자) */
 function sha256hex(str) {
@@ -124,6 +153,8 @@ function getSheet(name, header) {
     sh.getRange(1, 1, 1, header.length).setFontWeight("bold");
     sh.setFrozenRows(1);
   } else {
+    // 헤더가 늘어났는데 시트 열이 모자라면 먼저 늘려줌 (안 하면 getRange 가 범위 초과로 죽음)
+    if (sh.getMaxColumns() < header.length) sh.insertColumnsAfter(sh.getMaxColumns(), header.length - sh.getMaxColumns());
     // 헤더가 바뀌었으면(열 추가 등) 1행 헤더를 맞춰줌 — 기존 데이터 행은 건드리지 않음
     var cur = sh.getRange(1, 1, 1, header.length).getValues()[0], need = false;
     for (var i = 0; i < header.length; i++) if (("" + cur[i]).trim() !== header[i]) { need = true; break; }
@@ -186,7 +217,7 @@ function doGet(e) {
     // 자소서: 성별별 탭을 읽어 성별을 index 1에 주입해 하나의 members 로 합침
     //   탭행 [닉, 나이, 키, ...] (11) → [닉, 성별, 나이, 키, ...] (12)
     const members = [];
-    const PWCOL = MEMBER_HEADER.length;   // 합쳐진 행에서 비번 위치 (성별 주입으로 +1 밀림)
+    const PWCOL = PW_IDX + 1;   // 합쳐진 행에서 비번 위치 (성별을 index 1 에 끼워서 +1 밀림)
     Object.keys(MEMBER_TABS).forEach(function (g) {
       readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
         var mem = [row[0], g].concat(row.slice(1));
@@ -440,27 +471,30 @@ function doPost(e) {
     // 자소서: 들어온 행 [닉, 성별, 나이, ...] (12) → 성별별 탭행 [닉, 나이, ...] (11)
     if (incoming.members) {
       const incByG = { "남자": [], "여자": [] };
-      // 기존 비번 원문 (성별→닉→원문) — 보존 판별용
-      const existPw = { "남자": {}, "여자": {} };
+      // 기존 행 (성별→닉→행) — 비번 원문 보존 + 등록일 보존 + "이미 있던 사람인지" 판별용
+      const existRow = { "남자": {}, "여자": {} };
       Object.keys(MEMBER_TABS).forEach(function (g) {
         readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
-          existPw[g][row[0]] = row[MEMBER_HEADER.length - 1] || "";   // 마지막 열 = 비번 원문
+          existRow[g][row[0]] = row;
         });
       });
       incoming.members.forEach(function (r) {
         const g = (String(r[1] || "").indexOf("여") >= 0) ? "여자" : "남자";
         const row = [r[0] == null ? "" : r[0]];
         for (var i = 2; i < MEMBER_HEADER.length + 1; i++) row.push(r[i] == null ? "" : r[i]);
-        // 비번(마지막 열): 빈값이거나 기존 원문의 해시면 → 원문 유지, 새 원문이 오면 → 교체
-        var pwi = row.length - 1;
-        row[pwi] = resolvePw(row[pwi], existPw[g][row[0]]);
+        var prev = existRow[g][row[0]];
+        // 비번: 빈값이거나 기존 원문의 해시면 → 원문 유지, 새 원문이 오면 → 교체
+        row[PW_IDX] = resolvePw(row[PW_IDX], prev ? (prev[PW_IDX] || "") : "");
+        // 등록일: 이미 있던 닉이면 시트 값 그대로(빈칸이면 빈칸 유지), 처음 보는 닉이면 지금 도장.
+        //   브라우저가 보낸 값은 신뢰하지 않습니다(시계 조작·기기 편차).
+        row[AT_IDX] = prev ? String(prev[AT_IDX] || "") : stampNow();
         incByG[g].push(row);
       });
 
       Object.keys(MEMBER_TABS).forEach(function (g) {
         if (isAdmin) {
           // 관리자: 전체 다시쓰기 (삭제 가능)
-          writeTab(MEMBER_TABS[g], MEMBER_HEADER, incByG[g]);
+          writeTab(MEMBER_TABS[g], MEMBER_HEADER, sortMembersAsc(incByG[g]));
         } else {
           // 비관리자: 병합 — 기존 유지 + 닉 같으면 수정 + 새 닉이면 등록. 삭제 불가.
           var byNick = {}, order = [];
@@ -470,7 +504,7 @@ function doPost(e) {
           incByG[g].forEach(function (row) {
             var n = row[0]; if (!n) return; if (!(n in byNick)) order.push(n); byNick[n] = row;
           });
-          writeTab(MEMBER_TABS[g], MEMBER_HEADER, order.map(function (n) { return byNick[n]; }));
+          writeTab(MEMBER_TABS[g], MEMBER_HEADER, sortMembersAsc(order.map(function (n) { return byNick[n]; })));
         }
       });
     }

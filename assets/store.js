@@ -147,14 +147,18 @@
       keep: x => !!x.cmd
     },
     members: {
+      /* ★ "등록일"은 맨 끝 고정 — 서버(Code.gs)의 MEMBER_HEADER 와 순서가 정확히 같아야 합니다.
+           at 은 시트에만 보이는 값이라 화면에는 안 그립니다(members.html 의 FORM 에 없음).
+           웹은 이 값으로 최신순 정렬만 하고, 실제 도장은 서버가 찍습니다. */
       head: ["닉네임", "성별", "나이", "사는 곳", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
-             "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "연애유형", "비번"],
+             "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "연애유형", "비번", "등록일"],
       toObj: r => ({ nick: r[0] || "", gender: (r[1] || "").indexOf("여") >= 0 ? "여자" : "남자",
                      age: r[2] || "", region: r[3] || "", height: r[4] || "", job: r[5] || "",
                      off: r[6] || "", hobby: r[7] || "", mbti: r[8] || "", charm: r[9] || "",
                      ideal: r[10] || "", smoke: r[11] || "", say: r[12] || "", type: r[13] || "미분류",
-                     pw: r[14] || "" }),   // 비번 SHA-256 해시(간이 잠금). 빈값=잠금 없음
-      toRow: m => [m.nick, m.gender, m.age, m.region, m.height, m.job, m.off, m.hobby, m.mbti, m.charm, m.ideal, m.smoke, m.say, m.type || "미분류", m.pw || ""],
+                     pw: r[14] || "",    // 비번 SHA-256 해시(간이 잠금). 빈값=잠금 없음
+                     at: r[15] || "" }), // 등록일 "yyyy-MM-dd HH:mm". 빈값=이 기능 이전부터 있던 사람
+      toRow: m => [m.nick, m.gender, m.age, m.region, m.height, m.job, m.off, m.hobby, m.mbti, m.charm, m.ideal, m.smoke, m.say, m.type || "미분류", m.pw || "", m.at || ""],
       keep: x => !!x.nick
     },
     patchnotes: {
