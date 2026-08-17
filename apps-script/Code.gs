@@ -286,7 +286,9 @@ function doGet(e) {
       readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
         var mem = [row[0], g].concat(row.slice(1));
         // 비번 원문은 브라우저로 내보내지 않음 → 해시로 변환해 전송 (원문은 시트에만)
-        mem[PWCOL] = mem[PWCOL] ? sha256hex(mem[PWCOL]) : "";
+        // ★ 이미 64자 hex 면 = 예전 버그로 '해시가 원문 열에 저장된' 값(그 값 자체가 sha256(진짜비번)).
+        //   다시 해시하면 이중해시라 영영 안 맞음 → 그대로 통과시켜 자가복구.
+        mem[PWCOL] = mem[PWCOL] ? (/^[0-9a-f]{64}$/.test(mem[PWCOL]) ? mem[PWCOL] : sha256hex(mem[PWCOL])) : "";
         members.push(mem);
       });
     });
