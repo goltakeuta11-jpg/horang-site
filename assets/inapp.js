@@ -5,6 +5,21 @@
    다른 스크립트보다 먼저 실행되도록 <head> 에서 부릅니다.
    ============================================================ */
 
+/* ── 테마(웜차콜/라이트) 즉시 적용 ─────────────────────────────
+   렌더 전에 <html data-theme> 를 미리 박아 깜빡임을 막습니다.
+   저장값 우선 → 없으면 기기(OS) 설정 → 기본은 웜차콜(다크). */
+(function () {
+  try {
+    var saved = localStorage.getItem("horang.theme");
+    var theme = saved;
+    if (theme !== "light" && theme !== "dark") {
+      var m = window.matchMedia && matchMedia("(prefers-color-scheme: light)");
+      theme = (m && m.matches) ? "light" : "dark";
+    }
+    document.documentElement.setAttribute("data-theme", theme);
+  } catch (e) {}
+})();
+
 (function () {
   var ua = navigator.userAgent || "";
 

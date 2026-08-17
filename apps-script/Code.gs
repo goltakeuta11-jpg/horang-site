@@ -42,9 +42,14 @@ const PW_IDX = MEMBER_HEADER.indexOf("비번");     // 13
 const AT_IDX = MEMBER_HEADER.indexOf("등록일");   // 14
 
 /* 등록 시각 도장 — 브라우저 시계는 못 믿으므로 서버가 찍습니다(KST 고정).
-   날짜만 쓰고 싶으면 "yyyy-MM-dd" 로 바꾸세요. 단, 같은 날 등록된 사람끼리는 순서가 흐려집니다. */
+   ★ 형식을 바꾸려면 members.html 의 nowStamp() 도 같이 바꿔야 합니다(둘이 같은 꼴이어야 정렬이 맞음).
+   ★ 자리수가 고정된 꼴이어야 문자열 비교 = 시간순이 성립합니다. 초(ss)를 빼면 같은 분에 등록한
+     사람끼리 순서가 흐려지고, 초가 있는 값과 섞이면 비교가 어긋납니다. */
 function stampNow() {
-  return Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm");
+  return stampAt(new Date());
+}
+function stampAt(d) {
+  return Utilities.formatDate(d, "Asia/Seoul", "yyyy-MM-dd HH:mm:ss");
 }
 
 /* 자소서 행을 "등록순 오름차순"으로 정렬 — 시트에 쓸 때 씁니다.
@@ -109,6 +114,59 @@ function setup() {
   Logger.log("--- 여기까지 보이면 성공입니다. 시트를 새로고침하세요. ---");
 
   return "완료 — 위 로그를 확인하세요.";
+}
+
+/* ============================================================
+   등록일 일괄 채우기 — 편집기에서 ▶ 한 번만 실행하세요.
+
+   등록일이 비어 있는 기존 멤버에게 "지금 시각부터 1초씩" 순서대로 도장을 찍습니다.
+   시트에 적힌 순서(= 등록순)를 그대로 시간 순서로 옮기는 것이라 정렬이 바뀌지 않습니다.
+     · 이미 값이 있는 행은 절대 건드리지 않습니다 → 여러 번 실행해도 안전(두 번째부터는 0행 처리)
+     · 남자 탭 먼저, 그다음 여자 탭 순으로 1초씩 증가
+   ============================================================ */
+function backfillDates() {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    var base = new Date().getTime();
+    var n = 0, log = [];
+
+    Object.keys(MEMBER_TABS).forEach(function (g) {
+      var sh = getSheet(MEMBER_TABS[g], MEMBER_HEADER);
+      var last = sh.getLastRow();
+      if (last < 2) { log.push(MEMBER_TABS[g] + ": 데이터 없음"); return; }
+
+      var rows = last - 1;
+      var nicks = sh.getRange(2, 1, rows, 1).getDisplayValues();
+      var atRng = sh.getRange(2, AT_IDX + 1, rows, 1);
+      var at = atRng.getDisplayValues();
+
+      var filled = 0, kept = 0;
+      for (var i = 0; i < rows; i++) {
+        if (!String(nicks[i][0] || "").trim()) { at[i][0] = ""; continue; }  // 빈 행
+        if (String(at[i][0] || "").trim()) { kept++; continue; }             // 이미 있음 → 유지
+        at[i][0] = stampAt(new Date(base + n * 1000));
+        n++; filled++;
+      }
+
+      atRng.setNumberFormat("@");   // 날짜형 자동변환 방지 (값 넣기 전에 적용)
+      atRng.setValues(at);
+      log.push(MEMBER_TABS[g] + ": " + filled + "행 채움" + (kept ? " / " + kept + "행은 기존값 유지" : ""));
+    });
+
+    // 시트가 바뀌었으니 서버 캐시 비우기 (안 하면 최대 2분간 옛 값이 나감)
+    try { CacheService.getScriptCache().remove(READ_CACHE_KEY); } catch (eC) {}
+
+    var msg = "✅ 등록일 채우기 완료 — 총 " + n + "행\n" + log.join("\n");
+    Logger.log(msg);
+    return msg;
+  } catch (err) {
+    var e = "❌ 실패: " + err;
+    Logger.log(e);
+    return e;
+  } finally {
+    try { lock.releaseLock(); } catch (ignore) {}
+  }
 }
 
 /* ============================================================
@@ -179,9 +237,15 @@ function readTab(name, header) {
 /* 탭 하나 다시쓰기 (헤더 유지, 2행부터 값 교체) */
 function writeTab(name, header, rows) {
   const sh = getSheet(name, header);
-  // "비번" 열은 텍스트 형식 고정 → 0407 이 407 로 바뀌는 것 방지 (값 넣기 전에 적용해야 함)
-  var pwIdx = header.indexOf("비번");
-  if (pwIdx >= 0) sh.getRange(1, pwIdx + 1, sh.getMaxRows(), 1).setNumberFormat("@");
+  // 텍스트 형식 고정 (값 넣기 전에 적용해야 함)
+  //   "비번"   → 0407 이 407 로 바뀌는 것 방지
+  //   "등록일" → 구글시트가 날짜형으로 자동 변환해 "2026. 8. 17 오후 3:00" 처럼 보이는 것 방지.
+  //             readTab 이 getDisplayValues() 로 읽기 때문에, 변환되면 저장된 문자열 자체가 바뀌어
+  //             문자열 비교 정렬이 통째로 깨집니다.
+  ["비번", "등록일"].forEach(function (h) {
+    var idx = header.indexOf(h);
+    if (idx >= 0) sh.getRange(1, idx + 1, sh.getMaxRows(), 1).setNumberFormat("@");
+  });
   if (sh.getLastRow() > 1) {
     sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
   }

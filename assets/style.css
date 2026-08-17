@@ -6,16 +6,20 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
 
 :root {
-  /* --- 색 --------------------------------------------------- */
-  --bg:        #12141B;   /* 배경 (밤 채팅방) */
-  --panel:     #1B1F29;   /* 카드 배경 */
-  --panel-2:   #232836;   /* 카드 안쪽, 입력창 */
-  --line:      #2E3444;   /* 경계선 */
-  --text:      #E8EBF3;   /* 본문 글자 */
-  --text-dim:  #8B93A7;   /* 흐린 글자 */
+  /* --- 색 : 웜 차콜 (기본, 다크) ---------------------------- */
+  --bg:        #16130F;   /* 배경 (따뜻한 숯색) */
+  --panel:     #201B15;   /* 카드 배경 */
+  --panel-2:   #2A241C;   /* 카드 안쪽, 입력창 */
+  --line:      #362E24;   /* 경계선 */
+  --text:      #EDE7DC;   /* 본문 글자 (웜 화이트) */
+  --text-dim:  #9C9284;   /* 흐린 글자 */
   --accent:    #FF5C7A;   /* 강조 (핑크) */
   --accent-2:  #5FE1C0;   /* 보조 (민트) — 매칭 상태 */
   --warn:      #FFC24B;   /* 외출 상태 */
+  --header-bg: rgba(22, 19, 15, .82);  /* 상단바 반투명 */
+  --btn-hover: #332B22;   /* 버튼 hover */
+  --overlay:   rgba(10, 8, 5, .7);     /* 모달 뒤 어둠막 */
+  --catmod:    #7cc4ff;   /* 카테고리 칩(모드) */
 
   /* --- 글꼴 ------------------------------------------------- */
   --font: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
@@ -26,6 +30,24 @@
   --radius-sm: 9px;
   --shadow: 0 10px 30px rgba(0, 0, 0, .35);
   --max: 980px;
+}
+
+/* --- 라이트 모드 : data-theme="light" 일 때 색만 덮어씀 ----- */
+:root[data-theme="light"] {
+  --bg:        #F7F5F0;   /* 웜 오프화이트 (차콜과 짝) */
+  --panel:     #FFFFFF;   /* 카드 배경 */
+  --panel-2:   #F0ECE4;   /* 카드 안쪽, 입력창 */
+  --line:      #E2DCD1;   /* 경계선 */
+  --text:      #241F18;   /* 본문 글자 (짙은 갈색먹) */
+  --text-dim:  #726A5E;   /* 흐린 글자 */
+  --accent:    #E5486A;   /* 강조 (흰 배경용 살짝 진한 핑크) */
+  --accent-2:  #16A184;   /* 보조 (진한 민트) */
+  --warn:      #C07A00;   /* 외출 상태 */
+  --header-bg: rgba(247, 245, 240, .82);
+  --btn-hover: #ECE7DE;
+  --overlay:   rgba(60, 52, 42, .38);
+  --catmod:    #1E6FB8;
+  --shadow: 0 10px 30px rgba(70, 55, 35, .12);
 }
 
 /* ============================================================
@@ -62,7 +84,7 @@ h1, h2, h3 { margin: 0; line-height: 1.25; letter-spacing: -0.02em; }
    ============================================================ */
 .header {
   position: sticky; top: 0; z-index: 30;
-  background: rgba(18, 20, 27, .82);
+  background: var(--header-bg);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
@@ -115,7 +137,7 @@ h1, h2, h3 { margin: 0; line-height: 1.25; letter-spacing: -0.02em; }
   border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
   cursor: pointer; transition: transform .12s ease, background .12s ease;
 }
-.btn:hover { background: #2B3142; }
+.btn:hover { background: var(--btn-hover); }
 .btn:active { transform: translateY(1px); }
 .btn--primary { background: var(--accent); border-color: var(--accent); color: #17070C; }
 .btn--primary:hover { background: #FF7590; }
@@ -246,7 +268,7 @@ h1, h2, h3 { margin: 0; line-height: 1.25; letter-spacing: -0.02em; }
 }
 .cat--new { color: var(--accent-2); border-color: rgba(95, 225, 192, .4); background: rgba(95, 225, 192, .08); }
 .cat--fix { color: var(--warn); border-color: rgba(255, 194, 75, .4); background: rgba(255, 194, 75, .08); }
-.cat--mod { color: #7cc4ff; border-color: rgba(124, 196, 255, .4); background: rgba(124, 196, 255, .08); }
+.cat--mod { color: var(--catmod); border-color: rgba(124, 196, 255, .4); background: rgba(124, 196, 255, .08); }
 .cat--del { color: var(--text-dim); }
 
 .patch__body { font-size: 14.5px; white-space: pre-wrap; word-break: break-word; }
@@ -300,7 +322,7 @@ h1, h2, h3 { margin: 0; line-height: 1.25; letter-spacing: -0.02em; }
    ============================================================ */
 .modal {
   position: fixed; inset: 0; z-index: 50;
-  background: rgba(8, 9, 13, .7); backdrop-filter: blur(4px);
+  background: var(--overlay); backdrop-filter: blur(4px);
   display: none; align-items: flex-start; justify-content: center;
   padding: 40px 16px; overflow-y: auto;
 }

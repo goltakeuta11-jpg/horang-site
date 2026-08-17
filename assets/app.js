@@ -182,11 +182,21 @@
         ${nav.map(([h, t]) =>
           `<a href="${link(h)}" class="nav__item${h === active ? " is-on" : ""}">${t}</a>`).join("")}
       </nav>
+      <button class="btn btn--ghost btn--sm" data-theme-toggle title="화면 밝기 전환" aria-label="테마 전환">${
+        (document.documentElement.getAttribute("data-theme") === "light") ? "☀️" : "🌙"
+      }</button>
       <span class="badge ${isAdmin() ? "badge--admin" : "badge--guest"}">
         ${isAdmin() ? "관리자" : "보기 전용"}
       </span>
       ${isAdmin() ? '<button class="btn btn--ghost btn--sm" data-logout>나가기</button>' : ""}
     `;
+    const tt = el.querySelector("[data-theme-toggle]");
+    if (tt) tt.onclick = () => {
+      const now = (document.documentElement.getAttribute("data-theme") === "light") ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", now);
+      try { localStorage.setItem("horang.theme", now); } catch (e) {}
+      tt.textContent = (now === "light") ? "☀️" : "🌙";
+    };
     const out = el.querySelector("[data-logout]");
     if (out) out.onclick = () => {
       try { sessionStorage.removeItem(SESSION); sessionStorage.removeItem("horang.key"); } catch (e) {}
