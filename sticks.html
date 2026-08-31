@@ -7,10 +7,15 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.3"></script>
+<script src="assets/inapp.js?v=20260831.4"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.3">
+<link rel="stylesheet" href="assets/style.css?v=20260831.4">
 <style>
+  .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
+                padding: 14px 16px; margin: 0 0 20px; }
+  .stk-notice p { font-size: 13.5px; line-height: 1.65; color: var(--text-dim); margin: 0 0 8px; }
+  .stk-notice p:last-child { margin-bottom: 0; }
+  .stk-notice b { color: var(--text); font-weight: 700; }
   .stk-hint { color: var(--text-dim); font-size: 13px; line-height: 1.6; margin: 6px 0 14px; }
   .stk-err  { color: var(--accent); font-size: 13px; font-weight: 700; margin-top: 10px; }
   .me__top  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -54,6 +59,13 @@
   <h1 class="page__title">작대기 💘</h1>
   <p class="page__desc">마음에 드는 상대를 작대기로 지정해보세요! 한 번에 한 명만 유효하고, 매칭 성사는 관리자가 확인해요.</p>
 
+  <div class="stk-notice">
+    <p>🔒 작대기를 등록하면 <b>즉시 암호화</b>되어 그 누구도 알지 못하게 됩니다.</p>
+    <p>💬 <b>대화권 신청 / 캡슐신청</b>은 작대기로 등록한 사람에게만 가능합니다.</p>
+    <p>💘 작대기가 서로 통할 경우, <b>서로 통했다고 공주가 전해주고</b> 최근 한 달간 작대기 변경 날짜가 상대방에게 전달됩니다.</p>
+    <p>🙈 작대기 내용은 <b>관리자도 알 수 없습니다.</b> (작대기가 쌍방일 경우에만 관리자가 알 수 있습니다)</p>
+  </div>
+
   <!-- 등록 영역 (모두에게) -->
   <section data-me></section>
 
@@ -61,9 +73,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.3"></script>
-<script src="assets/store.js?v=20260831.3"></script>
-<script src="assets/app.js?v=20260831.3"></script>
+<script src="assets/config.js?v=20260831.4"></script>
+<script src="assets/store.js?v=20260831.4"></script>
+<script src="assets/app.js?v=20260831.4"></script>
 <script>
 App.header("sticks.html");
 
