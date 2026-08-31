@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.4"></script>
+<script src="assets/inapp.js?v=20260831.5"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.4">
+<link rel="stylesheet" href="assets/style.css?v=20260831.5">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -57,7 +57,7 @@
 
 <main class="wrap page">
   <h1 class="page__title">작대기 💘</h1>
-  <p class="page__desc">마음에 드는 상대를 작대기로 지정해보세요! 한 번에 한 명만 유효하고, 매칭 성사는 관리자가 확인해요.</p>
+  <p class="page__desc">마음에 드는 상대를 작대기로 지정해보세요! 한 번에 한 명만 유효하고, 작대기 성사는 관리자가 확인해요.</p>
 
   <div class="stk-notice">
     <p>🔒 작대기를 등록하면 <b>즉시 암호화</b>되어 그 누구도 알지 못하게 됩니다.</p>
@@ -73,9 +73,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.4"></script>
-<script src="assets/store.js?v=20260831.4"></script>
-<script src="assets/app.js?v=20260831.4"></script>
+<script src="assets/config.js?v=20260831.5"></script>
+<script src="assets/store.js?v=20260831.5"></script>
+<script src="assets/app.js?v=20260831.5"></script>
 <script>
 App.header("sticks.html");
 
@@ -257,8 +257,8 @@ function renderAdmin(sticks) {
   }).join("");
 
   const summary = pairs.length
-    ? `<div class="match-summary">💘 매칭 성사 ${pairs.length}쌍: ${pairs.map(p => App.esc(p[0]) + " ↔ " + App.esc(p[1])).join(", ")}</div>`
-    : `<div class="match-summary muted">아직 매칭된 쌍이 없어요.</div>`;
+    ? `<div class="match-summary">💘 작대기 성사 ${pairs.length}쌍: ${pairs.map(p => App.esc(p[0]) + " ↔ " + App.esc(p[1])).join(", ")}</div>`
+    : `<div class="match-summary muted">아직 작대기 성사된 쌍이 없어요.</div>`;
 
   advEl.innerHTML = `
     <h2 class="adv__title">전체 작대기 현황 <span class="badge badge--admin">관리자</span></h2>
