@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.5"></script>
+<script src="assets/inapp.js?v=20260831.6"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.5">
+<link rel="stylesheet" href="assets/style.css?v=20260831.6">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -26,8 +26,11 @@
   /* 이력 */
   .hist { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
   .hist__title { font-size: 12.5px; font-weight: 700; color: var(--text-dim); margin-bottom: 8px; }
-  .hist__row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 3px 0; }
-  .hist__row.is-cancel { color: var(--text-dim); }
+  .hist__row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 3px 8px;
+               border-left: 3px solid transparent; border-radius: 4px; }
+  .hist__row.is-register { border-left-color: #3FBF6F; }
+  .hist__row.is-change   { border-left-color: var(--warn); }
+  .hist__row.is-cancel   { border-left-color: var(--text-dim); color: var(--text-dim); }
   .hist__date { color: var(--text-dim); font-variant-numeric: tabular-nums; }
   /* 관리자 전체 뷰 */
   .adv__title { margin: 32px 0 12px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
@@ -42,9 +45,15 @@
                margin-bottom: 8px; border-bottom: 1px solid var(--line); }
   .col__item { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px;
                padding: 4px 6px; border-radius: 6px; }
+  .col__item.is-register { border-left: 3px solid #3FBF6F; }   /* 등록 = 초록 */
+  .col__item.is-change   { border-left: 3px solid var(--warn); } /* 변경 = 노랑 */
   .col__item.is-active { background: rgba(255,92,122,.14); color: var(--text); font-weight: 700; }
-  .col__item.is-cancel { color: var(--text-dim); }
+  .col__item.is-cancel { border-left: 3px solid var(--text-dim); color: var(--text-dim); } /* 취소 = 회색 */
   .col__item > span:last-child { font-weight: 700; }   /* 상대 닉(오른쪽) 강조 */
+  /* 범례 */
+  .stk-legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-dim); margin: 0 0 12px; flex-wrap: wrap; }
+  .stk-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .stk-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
   .col__date { color: var(--text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .col__now { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
               font-size: 12px; text-align: center; color: var(--text-dim); }
@@ -73,9 +82,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.5"></script>
-<script src="assets/store.js?v=20260831.5"></script>
-<script src="assets/app.js?v=20260831.5"></script>
+<script src="assets/config.js?v=20260831.6"></script>
+<script src="assets/store.js?v=20260831.6"></script>
+<script src="assets/app.js?v=20260831.6"></script>
 <script>
 App.header("sticks.html");
 
@@ -156,10 +165,11 @@ function form(act, label) {
 
 function histHtml(hist) {
   if (!hist || !hist.length) return "";
-  const rows = hist.map(h => {
+  const rows = hist.map((h, idx) => {
     const to = h[1], date = String(h[2] || "").slice(0, 10);
     const cancel = (to === STICK_CANCEL);
-    return `<div class="hist__row ${cancel ? "is-cancel" : ""}">
+    const kind = cancel ? "is-cancel" : (idx === 0 ? "is-register" : "is-change"); // 첫 항목=등록, 이후=변경
+    return `<div class="hist__row ${kind}">
       <span>${cancel ? "취소" : App.esc(to)}</span>
       <span class="hist__date">${App.esc(date)}</span></div>`;
   }).join("");
@@ -245,7 +255,8 @@ function renderAdmin(sticks) {
     const items = by[f].map((x, idx) => {
       const cancel = (x.to === STICK_CANCEL);
       const isActive = !cancel && (idx === by[f].length - 1) && activeOf[f] === x.to;
-      return `<div class="col__item ${cancel ? "is-cancel" : ""} ${isActive ? "is-active" : ""}">
+      const kind = cancel ? "is-cancel" : (idx === 0 ? "is-register" : "is-change"); // 첫 항목=등록, 이후=변경
+      return `<div class="col__item ${kind} ${isActive ? "is-active" : ""}">
         <span class="col__date">${App.esc(x.date.slice(0, 10))}</span>
         <span>${cancel ? "취소" : App.esc(x.to)}</span></div>`;
     }).join("");
@@ -263,6 +274,11 @@ function renderAdmin(sticks) {
   advEl.innerHTML = `
     <h2 class="adv__title">전체 작대기 현황 <span class="badge badge--admin">관리자</span></h2>
     ${summary}
+    <div class="stk-legend">
+      <span><i style="background:#3FBF6F"></i>등록</span>
+      <span><i style="background:var(--warn)"></i>변경</span>
+      <span><i style="background:var(--text-dim)"></i>취소</span>
+    </div>
     <div class="cols">${cols || '<p class="muted">아직 등록된 작대기가 없어요.</p>'}</div>`;
 }
 
