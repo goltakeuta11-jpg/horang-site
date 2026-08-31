@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:type" content="website">
+<meta property="og:title" content="호랑봇 안내소">
+<meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.1"></script>
+<title>작대기 · 호랑봇 안내소</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.1">
+<style>
+  .stk-hint { color: var(--text-dim); font-size: 13px; line-height: 1.6; margin: 6px 0 14px; }
+  .stk-err  { color: var(--accent); font-size: 13px; font-weight: 700; margin-top: 10px; }
+  .me__top  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .me__top strong { font-size: 15px; }
+  .me__status { font-size: 15px; line-height: 1.6; margin: 4px 0 14px; }
+  .stick-form { display: flex; gap: 8px; flex-wrap: wrap; }
+  .stick-form .input { flex: 1; min-width: 160px; }
+  /* 이력 */
+  .hist { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .hist__title { font-size: 12.5px; font-weight: 700; color: var(--text-dim); margin-bottom: 8px; }
+  .hist__row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 3px 0; }
+  .hist__row.is-cancel { color: var(--text-dim); }
+  .hist__date { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  /* 관리자 전체 뷰 */
+  .adv__title { margin: 32px 0 12px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+  .match-summary { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
+                   padding: 12px 14px; font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+  .match-summary.muted { color: var(--text-dim); font-weight: 500; }
+  .cols { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+  .col { flex: 0 0 auto; width: 150px; background: var(--panel); border: 1px solid var(--line);
+         border-radius: var(--radius-sm); padding: 10px; }
+  .col.is-match { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .col__head { font-weight: 800; font-size: 14px; text-align: center; padding-bottom: 8px;
+               margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .col__item { display: flex; justify-content: space-between; gap: 6px; font-size: 12.5px;
+               padding: 4px 6px; border-radius: 6px; }
+  .col__item.is-active { background: rgba(255,92,122,.14); color: var(--text); font-weight: 700; }
+  .col__item.is-cancel { color: var(--text-dim); }
+  .col__date { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .col__now { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
+              font-size: 12px; text-align: center; color: var(--text-dim); }
+  .muted { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page">
+  <h1 class="page__title">작대기 💘</h1>
+  <p class="page__desc">마음에 드는 상대를 작대기로 지정해보세요! 한 번에 한 명만 유효하고, 매칭 성사는 관리자가 확인해요.</p>
+
+  <!-- 등록 영역 (모두에게) -->
+  <section data-me></section>
+
+  <!-- 관리자 전체 뷰 -->
+  <section data-adminview hidden></section>
+</main>
+
+<script src="assets/config.js?v=20260831.1"></script>
+<script src="assets/store.js?v=20260831.1"></script>
+<script src="assets/app.js?v=20260831.1"></script>
+<script>
+App.header("sticks.html");
+
+const STICK_CANCEL = "작대기 취소";
+const admin  = App.isAdmin();
+const meEl   = document.querySelector("[data-me]");
+const advEl  = document.querySelector("[data-adminview]");
+let session  = null;   // 로그인 성공 시 { from, pwHash }
+
+/* ---------- 로그인(본인 확인) ---------- */
+function renderLogin(msg) {
+  meEl.innerHTML = `
+    <div class="card">
+      <h2 style="margin:0 0 4px;font-size:16px">작대기 등록 / 변경</h2>
+      <p class="stk-hint">자소서에 등록한 <b>닉네임 · 비밀번호</b>로 본인 확인해요. (자소서가 있어야 작대기 가능)</p>
+      <label class="field"><span class="field__label">닉네임 (두 글자)</span>
+        <input class="input" data-nick placeholder="예: 호랑" autocomplete="off"></label>
+      <label class="field"><span class="field__label">비밀번호</span>
+        <input class="input" type="password" data-pw placeholder="자소서 비밀번호" autocomplete="current-password"></label>
+      <button class="btn btn--primary" data-login style="margin-top:6px;width:100%">확인</button>
+      ${msg ? `<p class="stk-err">${App.esc(msg)}</p>` : ""}
+    </div>`;
+  meEl.querySelector("[data-login]").onclick = doLogin;
+  meEl.querySelector("[data-pw]").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+}
+
+async function doLogin() {
+  const nick = (meEl.querySelector("[data-nick]").value || "").trim();
+  const pw   = (meEl.querySelector("[data-pw]").value || "").trim();
+  if (!nick) return App.toast("닉네임을 입력해주세요.", true);
+  if (!pw)   return App.toast("비밀번호를 입력해주세요.", true);
+  const btn = meEl.querySelector("[data-login]");
+  btn.disabled = true; btn.textContent = "확인 중...";
+  try {
+    const pwHash = await App.sha256(pw);
+    const r = await Store.stick({ stickAction: "status", from: nick, pwHash: pwHash });
+    if (!r.ok) { renderLogin(r.error || "확인에 실패했어요."); return; }
+    session = { from: nick, pwHash: pwHash };
+    renderMe(r);
+  } catch (e) {
+    renderLogin("네트워크 오류예요. 잠시 후 다시 시도해주세요.");
+  }
+}
+
+/* ---------- 로그인 후: 본인 상태 + 등록/변경/취소 ---------- */
+function renderMe(st) {
+  const active = st.active;          // 현재 유효 상대(없으면 null)
+  const hasAny = st.hasAny;          // 이력 존재 여부
+  let head, actions;
+  if (!hasAny) {
+    head = "아직 작대기가 없어요. 마음에 드는 상대를 등록해보세요!";
+    actions = form("register", "작대기 등록");
+  } else if (active) {
+    head = `현재 <b>${App.esc(active)}</b> 님에게 작대기 중이에요 💘`;
+    actions = form("change", "작대기 변경")
+            + `<button class="btn btn--danger btn--sm" data-cancel style="margin-top:10px">작대기 취소</button>`;
+  } else {
+    head = "작대기를 취소한 상태예요. 다시 등록할 수 있어요.";
+    actions = form("change", "작대기 등록");   // 취소 상태에서의 재등록 = change
+  }
+  meEl.innerHTML = `
+    <div class="card">
+      <div class="me__top"><strong>${App.esc(session.from)} 님</strong>
+        <button class="btn btn--sm btn--ghost" data-logout>로그아웃</button></div>
+      <p class="me__status">${head}</p>
+      ${actions}
+      ${histHtml(st.history)}
+    </div>`;
+  bindMe();
+}
+
+function form(act, label) {
+  return `<div class="stick-form">
+    <input class="input" data-to placeholder="상대 닉네임 두 글자" autocomplete="off">
+    <button class="btn btn--primary" data-do="${act}">${label}</button>
+  </div>`;
+}
+
+function histHtml(hist) {
+  if (!hist || !hist.length) return "";
+  const rows = hist.map(h => {
+    const to = h[1], date = String(h[2] || "").slice(0, 10);
+    const cancel = (to === STICK_CANCEL);
+    return `<div class="hist__row ${cancel ? "is-cancel" : ""}">
+      <span>${cancel ? "❌ 취소" : App.esc(to)}</span>
+      <span class="hist__date">${App.esc(date)}</span></div>`;
+  }).join("");
+  return `<div class="hist"><div class="hist__title">내 작대기 이력</div>${rows}</div>`;
+}
+
+function bindMe() {
+  const lo = meEl.querySelector("[data-logout]");
+  if (lo) lo.onclick = () => { session = null; renderLogin(); };
+  meEl.querySelectorAll("[data-do]").forEach(b => b.onclick = () => submit(b.dataset.do));
+  const c = meEl.querySelector("[data-cancel]");
+  if (c) c.onclick = cancel;
+  const to = meEl.querySelector("[data-to]");
+  if (to) to.addEventListener("keydown", e => { if (e.key === "Enter") submit(meEl.querySelector("[data-do]").dataset.do); });
+}
+
+async function submit(act) {
+  const to = (meEl.querySelector("[data-to]").value || "").trim();
+  if (!to) return App.toast("상대 닉네임을 입력해주세요.", true);
+  const r = await Store.stick({ stickAction: act, from: session.from, pwHash: session.pwHash, to: to });
+  if (!r.ok) return App.toast(r.error || "실패했어요.", true);
+  App.toast(r.action === "change" ? "작대기를 변경했어요! 💘" : "작대기를 등록했어요! 💘");
+  await refreshMe();
+}
+
+async function cancel() {
+  if (!confirm("작대기를 취소할까요? (이력은 남아요)")) return;
+  const r = await Store.stick({ stickAction: "cancel", from: session.from, pwHash: session.pwHash });
+  if (!r.ok) return App.toast(r.error || "실패했어요.", true);
+  App.toast("작대기를 취소했어요.");
+  await refreshMe();
+}
+
+async function refreshMe() {
+  const r = await Store.stick({ stickAction: "status", from: session.from, pwHash: session.pwHash });
+  if (r.ok) renderMe(r);
+  if (admin) loadAdmin();   // 관리자면 아래 전체 뷰도 갱신
+}
+
+/* ---------- 관리자 전체 뷰 (사람별 컬럼 + 매칭) ---------- */
+async function loadAdmin() {
+  const r = await Store.stick({ stickAction: "list", key: CONFIG.ADMIN_KEY });
+  if (!r.ok) { advEl.hidden = false; advEl.innerHTML = `<p class="stk-err">${App.esc(r.error || "불러오지 못했어요.")}</p>`; return; }
+  renderAdmin(r.sticks || []);
+}
+
+function renderAdmin(sticks) {
+  advEl.hidden = false;
+  // 사람별 그룹 (행 순서 = 시간순 유지)
+  const by = {}, order = [];
+  sticks.forEach(row => {
+    const f = String(row[0] || "").trim(); if (!f) return;
+    if (!by[f]) { by[f] = []; order.push(f); }
+    by[f].push({ to: String(row[1] || "").trim(), date: String(row[2] || "").trim() });
+  });
+  // 각자 최신 유효 상대
+  const activeOf = {};
+  order.forEach(f => {
+    const last = by[f][by[f].length - 1];
+    activeOf[f] = (last.to === STICK_CANCEL) ? null : last.to;
+  });
+  // 매칭 쌍 (양쪽 최신이 서로)
+  const matched = new Set(), pairs = [], seen = {};
+  order.forEach(a => {
+    const b = activeOf[a];
+    if (b && activeOf[b] === a) {
+      matched.add(a);
+      const key = [a, b].sort().join("|");
+      if (!seen[key]) { seen[key] = 1; pairs.push([a, b]); }
+    }
+  });
+
+  const cols = order.map(f => {
+    const items = by[f].map((x, idx) => {
+      const cancel = (x.to === STICK_CANCEL);
+      const isActive = !cancel && (idx === by[f].length - 1) && activeOf[f] === x.to;
+      return `<div class="col__item ${cancel ? "is-cancel" : ""} ${isActive ? "is-active" : ""}">
+        <span>${cancel ? "❌ 취소" : App.esc(x.to)}</span>
+        <span class="col__date">${App.esc(x.date.slice(0, 10))}</span></div>`;
+    }).join("");
+    return `<div class="col ${matched.has(f) ? "is-match" : ""}">
+      <div class="col__head">${App.esc(f)}${matched.has(f) ? " 💘" : ""}</div>
+      ${items}
+      <div class="col__now">${activeOf[f] ? "→ " + App.esc(activeOf[f]) : "취소/없음"}</div>
+    </div>`;
+  }).join("");
+
+  const summary = pairs.length
+    ? `<div class="match-summary">💘 매칭 성사 ${pairs.length}쌍: ${pairs.map(p => App.esc(p[0]) + " ↔ " + App.esc(p[1])).join(", ")}</div>`
+    : `<div class="match-summary muted">아직 매칭된 쌍이 없어요.</div>`;
+
+  advEl.innerHTML = `
+    <h2 class="adv__title">전체 작대기 현황 <span class="badge badge--admin">관리자</span></h2>
+    ${summary}
+    <div class="cols">${cols || '<p class="muted">아직 등록된 작대기가 없어요.</p>'}</div>`;
+}
+
+/* ---------- 시작 ---------- */
+renderLogin();
+if (admin) loadAdmin();
+</script>
+</body>
+</html>

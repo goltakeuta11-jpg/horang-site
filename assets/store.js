@@ -345,6 +345,17 @@
       return SHEET_ID ? "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit" : "";
     },
 
+    /* 작대기(매칭) 전용 POST — 서버 doPost 의 stickAction 분기로 감(자소서 저장과 별개).
+       payload 를 그대로 전송하고 서버 JSON 응답을 반환. (list/status/register/change/cancel) */
+    stick(payload) {
+      if (!SCRIPT_URL) return Promise.resolve({ ok: false, error: "시트 쓰기가 설정되지 않았어요." });
+      return fetch(SCRIPT_URL, {
+        method: "POST", redirect: "follow",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload || {})
+      }).then(function (r) { return r.json(); });
+    },
+
     reset() { write(normalize(JSON.parse(JSON.stringify(SEED)))); },
 
     export() {
