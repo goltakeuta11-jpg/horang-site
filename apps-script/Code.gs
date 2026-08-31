@@ -24,6 +24,12 @@ const TABS = {
 /* 자소서는 성별별로 탭 2개. 성별은 "탭"이 정합니다(열이 아니라). */
 const MEMBER_TABS = { "남자": "남자 자소서", "여자": "여자 자소서" };
 
+/* 작대기(매칭) — 이력 append 전용 탭. 한 사람의 "유효 작대기"는 그 사람의 마지막 행.
+   받는사람 칸에 STICK_CANCEL 이 오면 = 취소(현재 유효 작대기 없음). 과거 행은 이력으로 보존. */
+const STICK_TAB = "작대기";
+const STICK_HEADER = ["보낸사람", "받는사람", "등록일"];
+const STICK_CANCEL = "작대기 취소";
+
 /* 탭을 새로 만들 때 넣을 제목 줄 */
 const HEADERS = {
   commands: ["명령어", "설명", "분류", "관리자전용"],
@@ -508,6 +514,100 @@ function setupSummaryTrigger() {
 }
 
 /* ============================================================
+   작대기(매칭) — 조회/등록/변경/취소. 전부 doPost 로 들어옴(doGet 캐시 안 탐).
+   ============================================================ */
+
+/* 자소서 명단에서 닉을 찾아 비번 해시를 검증 (doGet members 와 같은 해시 규칙).
+   반환: "ok" | "no_member"(자소서 없음) | "no_pw"(비번 미설정) | "wrong_pw" */
+function stickVerifyPw(nick, pwHash) {
+  var found = null;
+  Object.keys(MEMBER_TABS).forEach(function (g) {
+    readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
+      if (String(row[0]).trim() === nick) found = row;
+    });
+  });
+  if (!found) return "no_member";
+  var v = String(found[PW_IDX] || "");
+  if (!v) return "no_pw";
+  var expected = /^[0-9a-f]{64}$/.test(v) ? v : sha256hex(v);  // 오염(이중해시) 계정도 통과
+  return (String(pwHash) === expected) ? "ok" : "wrong_pw";
+}
+
+/* 자소서 명단에 이 닉이 존재하나 (받는사람 검증용) */
+function stickMemberExists(nick) {
+  var yes = false;
+  Object.keys(MEMBER_TABS).forEach(function (g) {
+    readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
+      if (String(row[0]).trim() === nick) yes = true;
+    });
+  });
+  return yes;
+}
+
+/* from 의 최신(마지막) 작대기 행 — 행 순서 = append 순 = 시간순. 없으면 null. */
+function stickCurrent(from) {
+  var rows = readTab(STICK_TAB, STICK_HEADER);
+  var last = null;
+  for (var i = 0; i < rows.length; i++) if (String(rows[i][0]).trim() === from) last = rows[i];
+  return last; // [보낸사람, 받는사람|취소, 등록일] or null
+}
+
+/* 작대기 요청 전체 처리 — doPost 의 lock 안에서 호출(동시성 보호). */
+function handleStick(body) {
+  var act = String(body.stickAction || "");
+
+  // --- 관리자 전체 목록 (매칭 판정은 화면에서) ---
+  if (act === "list") {
+    if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
+    return json({ ok: true, sticks: readTab(STICK_TAB, STICK_HEADER) });
+  }
+
+  // --- 이하 전부 본인 인증 필요 ---
+  var from = String(body.from || "").trim();
+  var pwHash = String(body.pwHash || "").trim();
+  if (!from) return json({ ok: false, error: "닉네임을 입력해주세요." });
+  var vr = stickVerifyPw(from, pwHash);
+  if (vr !== "ok") {
+    var m = vr === "no_member" ? "자소서를 먼저 등록해야 작대기를 할 수 있어요." :
+            vr === "no_pw"     ? "자소서에 비밀번호가 설정돼 있지 않아요. 자소서에서 비번을 먼저 설정해주세요." :
+                                 "비밀번호가 틀렸어요.";
+    return json({ ok: false, error: m, reason: vr });
+  }
+
+  var cur = stickCurrent(from);
+  var curTo = cur ? String(cur[1]).trim() : null;
+  var active = (cur && curTo !== STICK_CANCEL) ? curTo : null; // 현재 유효 상대(없으면 null)
+
+  // --- 본인 상태 조회 (버튼 분기 + 이력 표시용) ---
+  if (act === "status") {
+    var hist = readTab(STICK_TAB, STICK_HEADER).filter(function (r) { return String(r[0]).trim() === from; });
+    return json({ ok: true, active: active, hasAny: !!cur, history: hist });
+  }
+
+  // --- 취소 ---
+  if (act === "cancel") {
+    if (!active) return json({ ok: false, error: "취소할 작대기가 없어요." });
+    getSheet(STICK_TAB, STICK_HEADER).appendRow([from, STICK_CANCEL, stampNow()]);
+    return json({ ok: true, action: "cancel" });
+  }
+
+  // --- 등록 / 변경 (to 필요) ---
+  if (act === "register" || act === "change") {
+    var to = String(body.to || "").trim();
+    if (!to) return json({ ok: false, error: "상대 닉네임을 입력해주세요." });
+    if (to === from) return json({ ok: false, error: "자기 자신은 작대기 할 수 없어요." });
+    if (!stickMemberExists(to)) return json({ ok: false, error: "'" + to + "' 님을 자소서 명단에서 찾을 수 없어요. 두 글자 닉을 확인해주세요." });
+    if (act === "register" && cur)  return json({ ok: false, error: "이미 작대기 이력이 있어요. '작대기 변경'을 이용해주세요." });
+    if (act === "change"   && !cur) return json({ ok: false, error: "등록된 작대기가 없어요. '작대기 등록'을 먼저 해주세요." });
+    if (active === to) return json({ ok: false, error: "이미 '" + to + "' 님에게 작대기 중이에요." });
+    getSheet(STICK_TAB, STICK_HEADER).appendRow([from, to, stampNow()]);
+    return json({ ok: true, action: (cur ? "change" : "register") });
+  }
+
+  return json({ ok: false, error: "알 수 없는 요청이에요." });
+}
+
+/* ============================================================
    쓰기 — 관리자가 사이트에서 저장할 때
    ============================================================ */
 
@@ -517,6 +617,10 @@ function doPost(e) {
     lock.waitLock(20000);   // 두 사람이 동시에 저장해도 섞이지 않도록
 
     const body = JSON.parse(e.postData.contents);
+
+    // ★ 작대기(매칭): 별도 흐름으로 처리하고 즉시 반환 (자소서/명령어 저장과 무관)
+    if (body.stickAction) return handleStick(body);
+
     const isAdmin = (body.key === ADMIN_KEY);
     const incoming = body.data || {};
 
