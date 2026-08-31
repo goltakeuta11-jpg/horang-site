@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.2"></script>
+<script src="assets/inapp.js?v=20260831.3"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.2">
+<link rel="stylesheet" href="assets/style.css?v=20260831.3">
 <style>
   .stk-hint { color: var(--text-dim); font-size: 13px; line-height: 1.6; margin: 6px 0 14px; }
   .stk-err  { color: var(--accent); font-size: 13px; font-weight: 700; margin-top: 10px; }
@@ -61,9 +61,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.2"></script>
-<script src="assets/store.js?v=20260831.2"></script>
-<script src="assets/app.js?v=20260831.2"></script>
+<script src="assets/config.js?v=20260831.3"></script>
+<script src="assets/store.js?v=20260831.3"></script>
+<script src="assets/app.js?v=20260831.3"></script>
 <script>
 App.header("sticks.html");
 
@@ -148,7 +148,7 @@ function histHtml(hist) {
     const to = h[1], date = String(h[2] || "").slice(0, 10);
     const cancel = (to === STICK_CANCEL);
     return `<div class="hist__row ${cancel ? "is-cancel" : ""}">
-      <span>${cancel ? "❌ 취소" : App.esc(to)}</span>
+      <span>${cancel ? "취소" : App.esc(to)}</span>
       <span class="hist__date">${App.esc(date)}</span></div>`;
   }).join("");
   return `<div class="hist"><div class="hist__title">내 작대기 이력</div>${rows}</div>`;
@@ -235,7 +235,7 @@ function renderAdmin(sticks) {
       const isActive = !cancel && (idx === by[f].length - 1) && activeOf[f] === x.to;
       return `<div class="col__item ${cancel ? "is-cancel" : ""} ${isActive ? "is-active" : ""}">
         <span class="col__date">${App.esc(x.date.slice(0, 10))}</span>
-        <span>${cancel ? "❌ 취소" : App.esc(x.to)}</span></div>`;
+        <span>${cancel ? "취소" : App.esc(x.to)}</span></div>`;
     }).join("");
     return `<div class="col ${matched.has(f) ? "is-match" : ""}">
       <div class="col__head">${App.esc(f)}${matched.has(f) ? " 💘" : ""}</div>
