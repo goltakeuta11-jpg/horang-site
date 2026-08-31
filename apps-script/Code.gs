@@ -544,22 +544,101 @@ function stickMemberExists(nick) {
   return yes;
 }
 
-/* from 의 최신(마지막) 작대기 행 — 행 순서 = append 순 = 시간순. 없으면 null. */
-function stickCurrent(from) {
-  var rows = readTab(STICK_TAB, STICK_HEADER);
-  var last = null;
-  for (var i = 0; i < rows.length; i++) if (String(rows[i][0]).trim() === from) last = rows[i];
-  return last; // [보낸사람, 받는사람|취소, 등록일] or null
+/* ---- 작대기 탭: 열(세로) 구조 ----
+   A열 = 라벨(1행 "닉네임", 2행 "상대/변경일자"). B열부터 사람 1명 = 열 1개.
+   각 사람 열: 1행 = 닉네임, 2행부터 아래로 "상대/날짜" 또는 "작대기 취소/날짜"(이력).
+   그 사람의 "유효 작대기" = 그 열의 마지막(가장 아래) 항목. */
+var STICK_DATE_ROW = 2;   // 데이터가 시작되는 행(2행부터). 1행은 닉네임 헤더.
+
+function stickSheet() {
+  var ss = book();
+  var sh = ss.getSheetByName(STICK_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(STICK_TAB);
+    sh.getRange(1, 1).setValue("닉네임").setFontWeight("bold");
+    sh.getRange(2, 1).setValue("상대/변경일자");
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+/* 오늘 날짜(KST, yyyy-MM-dd) — 셀에 붙이는 날짜 */
+function stickDate() { return Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd"); }
+
+/* 셀 문자열 "상대/날짜" → { to, date }.  "작대기 취소/날짜" 도 동일 파싱(to="작대기 취소"). */
+function stickParseCell(s) {
+  s = String(s == null ? "" : s).trim();
+  var i = s.lastIndexOf("/");
+  if (i < 0) return { to: s, date: "" };
+  return { to: s.slice(0, i).trim(), date: s.slice(i + 1).trim() };
+}
+
+/* nick 의 열 번호(B열=2 부터). 없으면 0. */
+function stickColOf(sh, nick) {
+  var lastCol = sh.getLastColumn();
+  if (lastCol < 2) return 0;
+  var head = sh.getRange(1, 2, 1, lastCol - 1).getValues()[0];
+  for (var i = 0; i < head.length; i++) if (String(head[i]).trim() === nick) return i + 2;
+  return 0;
+}
+
+/* 한 사람 열의 항목들(위→아래=시간순) [{to,date}, ...] */
+function stickReadCol(sh, col) {
+  var last = sh.getLastRow();
+  if (last < STICK_DATE_ROW) return [];
+  var vals = sh.getRange(STICK_DATE_ROW, col, last - STICK_DATE_ROW + 1, 1).getDisplayValues();
+  var out = [];
+  for (var i = 0; i < vals.length; i++) {
+    var c = String(vals[i][0]).trim();
+    if (c) out.push(stickParseCell(c));
+  }
+  return out;
+}
+
+/* nick 열의 맨 아래에 셀 추가(없으면 새 열 생성). 텍스트 형식 고정(날짜 자동변환 방지). */
+function stickAppend(sh, nick, cellVal) {
+  var col = stickColOf(sh, nick);
+  if (!col) {
+    col = Math.max(2, sh.getLastColumn() + 1);
+    sh.getRange(1, col).setValue(nick).setFontWeight("bold");
+  }
+  // 그 열에서 마지막으로 채워진 행 찾기(다른 열이 더 길 수 있으므로 이 열만 확인)
+  var last = sh.getLastRow(), row = STICK_DATE_ROW;
+  if (last >= STICK_DATE_ROW) {
+    var vals = sh.getRange(STICK_DATE_ROW, col, last - STICK_DATE_ROW + 1, 1).getValues();
+    for (var i = 0; i < vals.length; i++) if (String(vals[i][0]).trim() !== "") row = STICK_DATE_ROW + i + 1;
+  }
+  sh.getRange(row, col).setNumberFormat("@").setValue(cellVal);
+}
+
+/* 모든 사람 열 → { order:[닉...], by:{닉:[{to,date}...]} } */
+function stickAll(sh) {
+  var res = { order: [], by: {} };
+  var lastCol = sh.getLastColumn();
+  if (lastCol < 2) return res;
+  var head = sh.getRange(1, 2, 1, lastCol - 1).getValues()[0];
+  for (var c = 0; c < head.length; c++) {
+    var nick = String(head[c]).trim();
+    if (!nick) continue;
+    res.order.push(nick);
+    res.by[nick] = stickReadCol(sh, c + 2);
+  }
+  return res;
 }
 
 /* 작대기 요청 전체 처리 — doPost 의 lock 안에서 호출(동시성 보호). */
 function handleStick(body) {
   var act = String(body.stickAction || "");
+  var sh = stickSheet();
 
-  // --- 관리자 전체 목록 (매칭 판정은 화면에서) ---
+  // --- 관리자 전체 목록 → 프론트 호환 위해 [보낸사람,받는사람,날짜] 행배열로 변환(시간순) ---
   if (act === "list") {
     if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
-    return json({ ok: true, sticks: readTab(STICK_TAB, STICK_HEADER) });
+    var all = stickAll(sh), out = [];
+    all.order.forEach(function (f) {
+      all.by[f].forEach(function (x) { out.push([f, x.to, x.date]); });
+    });
+    return json({ ok: true, sticks: out });
   }
 
   // --- 이하 전부 본인 인증 필요 ---
@@ -574,20 +653,22 @@ function handleStick(body) {
     return json({ ok: false, error: m, reason: vr });
   }
 
-  var cur = stickCurrent(from);
-  var curTo = cur ? String(cur[1]).trim() : null;
-  var active = (cur && curTo !== STICK_CANCEL) ? curTo : null; // 현재 유효 상대(없으면 null)
+  var col = stickColOf(sh, from);
+  var items = col ? stickReadCol(sh, col) : [];
+  var hasAny = items.length > 0;
+  var last = hasAny ? items[items.length - 1] : null;
+  var active = (last && last.to !== STICK_CANCEL) ? last.to : null; // 현재 유효 상대(없으면 null)
 
   // --- 본인 상태 조회 (버튼 분기 + 이력 표시용) ---
   if (act === "status") {
-    var hist = readTab(STICK_TAB, STICK_HEADER).filter(function (r) { return String(r[0]).trim() === from; });
-    return json({ ok: true, active: active, hasAny: !!cur, history: hist });
+    var hist = items.map(function (x) { return [from, x.to, x.date]; });
+    return json({ ok: true, active: active, hasAny: hasAny, history: hist });
   }
 
   // --- 취소 ---
   if (act === "cancel") {
     if (!active) return json({ ok: false, error: "취소할 작대기가 없어요." });
-    getSheet(STICK_TAB, STICK_HEADER).appendRow([from, STICK_CANCEL, stampNow()]);
+    stickAppend(sh, from, STICK_CANCEL + "/" + stickDate());
     return json({ ok: true, action: "cancel" });
   }
 
@@ -597,14 +678,55 @@ function handleStick(body) {
     if (!to) return json({ ok: false, error: "상대 닉네임을 입력해주세요." });
     if (to === from) return json({ ok: false, error: "자기 자신은 작대기 할 수 없어요." });
     if (!stickMemberExists(to)) return json({ ok: false, error: "'" + to + "' 님을 자소서 명단에서 찾을 수 없어요. 두 글자 닉을 확인해주세요." });
-    if (act === "register" && cur)  return json({ ok: false, error: "이미 작대기 이력이 있어요. '작대기 변경'을 이용해주세요." });
-    if (act === "change"   && !cur) return json({ ok: false, error: "등록된 작대기가 없어요. '작대기 등록'을 먼저 해주세요." });
+    if (act === "register" && hasAny)  return json({ ok: false, error: "이미 작대기 이력이 있어요. '작대기 변경'을 이용해주세요." });
+    if (act === "change"   && !hasAny) return json({ ok: false, error: "등록된 작대기가 없어요. '작대기 등록'을 먼저 해주세요." });
     if (active === to) return json({ ok: false, error: "이미 '" + to + "' 님에게 작대기 중이에요." });
-    getSheet(STICK_TAB, STICK_HEADER).appendRow([from, to, stampNow()]);
-    return json({ ok: true, action: (cur ? "change" : "register") });
+    stickAppend(sh, from, to + "/" + stickDate());
+    return json({ ok: true, action: (hasAny ? "change" : "register") });
   }
 
   return json({ ok: false, error: "알 수 없는 요청이에요." });
+}
+
+/* ============================================================
+   [일회성] 기존 행 단위 작대기 데이터 → 열 단위로 이관.
+   Apps Script 편집기에서 이 함수를 한 번 ▶ 실행하세요. (재배포 후 1회)
+   ============================================================ */
+function migrateSticksToColumns() {
+  var ss = book();
+  var sh = ss.getSheetByName(STICK_TAB);
+  if (!sh) return "작대기 탭이 없어요. 이관할 데이터가 없습니다.";
+  if (String(sh.getRange(1, 1).getValue()).trim() === "닉네임") return "이미 열 단위 구조예요. (이관 불필요)";
+
+  // 기존 행 단위 읽기: 2행부터 [보낸사람, 받는사람, 등록일]
+  var rows = [], last = sh.getLastRow();
+  if (last >= 2) {
+    var v = sh.getRange(2, 1, last - 1, 3).getDisplayValues();
+    for (var i = 0; i < v.length; i++) {
+      var f = String(v[i][0]).trim();
+      if (f) rows.push([f, String(v[i][1]).trim(), String(v[i][2] || "").trim().slice(0, 10)]);
+    }
+  }
+  // 사람별 그룹(행 순서 = 시간순 유지)
+  var by = {}, order = [];
+  rows.forEach(function (r) {
+    if (!by[r[0]]) { by[r[0]] = []; order.push(r[0]); }
+    by[r[0]].push(r[1] + "/" + r[2]);   // "상대/날짜"
+  });
+  // 탭을 열 단위로 재작성
+  sh.clear();
+  sh.getRange(1, 1).setValue("닉네임").setFontWeight("bold");
+  sh.getRange(2, 1).setValue("상대/변경일자");
+  sh.setFrozenRows(1);
+  for (var k = 0; k < order.length; k++) {
+    var col = 2 + k, f = order[k], colVals = by[f];
+    sh.getRange(1, col).setValue(f).setFontWeight("bold");
+    if (colVals.length) {
+      sh.getRange(2, col, colVals.length, 1).setNumberFormat("@");
+      sh.getRange(2, col, colVals.length, 1).setValues(colVals.map(function (x) { return [x]; }));
+    }
+  }
+  return "완료: " + order.length + "명, " + rows.length + "개 항목을 열 단위로 이관했어요.";
 }
 
 /* ============================================================
