@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.1"></script>
+<script src="assets/inapp.js?v=20260831.2"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.1">
+<link rel="stylesheet" href="assets/style.css?v=20260831.2">
 <style>
   .stk-hint { color: var(--text-dim); font-size: 13px; line-height: 1.6; margin: 6px 0 14px; }
   .stk-err  { color: var(--accent); font-size: 13px; font-weight: 700; margin-top: 10px; }
@@ -30,16 +30,17 @@
                    padding: 12px 14px; font-size: 14px; font-weight: 700; margin-bottom: 16px; }
   .match-summary.muted { color: var(--text-dim); font-weight: 500; }
   .cols { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
-  .col { flex: 0 0 auto; width: 150px; background: var(--panel); border: 1px solid var(--line);
+  .col { flex: 0 0 auto; width: 168px; background: var(--panel); border: 1px solid var(--line);
          border-radius: var(--radius-sm); padding: 10px; }
   .col.is-match { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-  .col__head { font-weight: 800; font-size: 14px; text-align: center; padding-bottom: 8px;
+  .col__head { font-weight: 800; font-size: 14px; text-align: left; padding-bottom: 8px;
                margin-bottom: 8px; border-bottom: 1px solid var(--line); }
-  .col__item { display: flex; justify-content: space-between; gap: 6px; font-size: 12.5px;
+  .col__item { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px;
                padding: 4px 6px; border-radius: 6px; }
   .col__item.is-active { background: rgba(255,92,122,.14); color: var(--text); font-weight: 700; }
   .col__item.is-cancel { color: var(--text-dim); }
-  .col__date { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .col__item > span:last-child { font-weight: 700; }   /* 상대 닉(오른쪽) 강조 */
+  .col__date { color: var(--text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .col__now { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
               font-size: 12px; text-align: center; color: var(--text-dim); }
   .muted { color: var(--text-dim); }
@@ -60,9 +61,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.1"></script>
-<script src="assets/store.js?v=20260831.1"></script>
-<script src="assets/app.js?v=20260831.1"></script>
+<script src="assets/config.js?v=20260831.2"></script>
+<script src="assets/store.js?v=20260831.2"></script>
+<script src="assets/app.js?v=20260831.2"></script>
 <script>
 App.header("sticks.html");
 
@@ -219,13 +220,22 @@ function renderAdmin(sticks) {
     }
   });
 
-  const cols = order.map(f => {
+  // 매칭된 쌍은 바로 옆 칸에 오도록 순서 재배열 (호랑↔표독이면 두 카드 나란히)
+  const ordered = [], placed = {};
+  order.forEach(f => {
+    if (placed[f]) return;
+    ordered.push(f); placed[f] = 1;
+    const b = activeOf[f];
+    if (b && activeOf[b] === f && !placed[b]) { ordered.push(b); placed[b] = 1; }
+  });
+
+  const cols = ordered.map(f => {
     const items = by[f].map((x, idx) => {
       const cancel = (x.to === STICK_CANCEL);
       const isActive = !cancel && (idx === by[f].length - 1) && activeOf[f] === x.to;
       return `<div class="col__item ${cancel ? "is-cancel" : ""} ${isActive ? "is-active" : ""}">
-        <span>${cancel ? "❌ 취소" : App.esc(x.to)}</span>
-        <span class="col__date">${App.esc(x.date.slice(0, 10))}</span></div>`;
+        <span class="col__date">${App.esc(x.date.slice(0, 10))}</span>
+        <span>${cancel ? "❌ 취소" : App.esc(x.to)}</span></div>`;
     }).join("");
     return `<div class="col ${matched.has(f) ? "is-match" : ""}">
       <div class="col__head">${App.esc(f)}${matched.has(f) ? " 💘" : ""}</div>
