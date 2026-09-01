@@ -544,11 +544,11 @@ function stickMemberExists(nick) {
   return yes;
 }
 
-/* ---- 작대기 탭: 열(세로) 구조 ----
-   A열 = 라벨(1행 "닉네임", 2행 "상대/변경일자"). B열부터 사람 1명 = 열 1개.
-   각 사람 열: 1행 = 닉네임, 2행부터 아래로 "상대/날짜" 또는 "작대기 취소/날짜"(이력).
-   그 사람의 "유효 작대기" = 그 열의 마지막(가장 아래) 항목. */
-var STICK_DATE_ROW = 2;   // 데이터가 시작되는 행(2행부터). 1행은 닉네임 헤더.
+/* ---- 작대기 탭: 행(가로) 구조 ----
+   1행 = 라벨("닉네임" | "상대/변경일자"). 2행부터 사람 1명 = 행 1개.
+   각 사람 행: A열 = 닉네임, B열부터 오른쪽으로 "상대/날짜" 또는 "작대기 취소/날짜"(이력).
+   그 사람의 "유효 작대기" = 그 행의 마지막(가장 오른쪽) 항목. */
+var STICK_DATA_COL = 2;   // 이력이 시작되는 열(B열=2 부터). A열은 닉네임.
 
 function stickSheet() {
   var ss = book();
@@ -556,8 +556,9 @@ function stickSheet() {
   if (!sh) {
     sh = ss.insertSheet(STICK_TAB);
     sh.getRange(1, 1).setValue("닉네임").setFontWeight("bold");
-    sh.getRange(2, 1).setValue("상대/변경일자");
+    sh.getRange(1, 2).setValue("상대/변경일자").setFontWeight("bold");
     sh.setFrozenRows(1);
+    sh.setFrozenColumns(1);
   }
   return sh;
 }
@@ -573,55 +574,55 @@ function stickParseCell(s) {
   return { to: s.slice(0, i).trim(), date: s.slice(i + 1).trim() };
 }
 
-/* nick 의 열 번호(B열=2 부터). 없으면 0. */
-function stickColOf(sh, nick) {
-  var lastCol = sh.getLastColumn();
-  if (lastCol < 2) return 0;
-  var head = sh.getRange(1, 2, 1, lastCol - 1).getValues()[0];
-  for (var i = 0; i < head.length; i++) if (String(head[i]).trim() === nick) return i + 2;
+/* nick 의 행 번호(2행부터). 없으면 0. */
+function stickRowOf(sh, nick) {
+  var last = sh.getLastRow();
+  if (last < 2) return 0;
+  var col = sh.getRange(2, 1, last - 1, 1).getValues();  // A2부터
+  for (var i = 0; i < col.length; i++) if (String(col[i][0]).trim() === nick) return i + 2;
   return 0;
 }
 
-/* 한 사람 열의 항목들(위→아래=시간순) [{to,date}, ...] */
-function stickReadCol(sh, col) {
-  var last = sh.getLastRow();
-  if (last < STICK_DATE_ROW) return [];
-  var vals = sh.getRange(STICK_DATE_ROW, col, last - STICK_DATE_ROW + 1, 1).getDisplayValues();
+/* 한 사람 행의 항목들(왼→오른=시간순) [{to,date}, ...] */
+function stickReadRow(sh, row) {
+  var lastCol = sh.getLastColumn();
+  if (lastCol < STICK_DATA_COL) return [];
+  var vals = sh.getRange(row, STICK_DATA_COL, 1, lastCol - STICK_DATA_COL + 1).getDisplayValues()[0];
   var out = [];
   for (var i = 0; i < vals.length; i++) {
-    var c = String(vals[i][0]).trim();
+    var c = String(vals[i]).trim();
     if (c) out.push(stickParseCell(c));
   }
   return out;
 }
 
-/* nick 열의 맨 아래에 셀 추가(없으면 새 열 생성). 텍스트 형식 고정(날짜 자동변환 방지). */
+/* nick 행의 맨 오른쪽에 셀 추가(없으면 새 행 생성). 텍스트 형식 고정(날짜 자동변환 방지). */
 function stickAppend(sh, nick, cellVal) {
-  var col = stickColOf(sh, nick);
-  if (!col) {
-    col = Math.max(2, sh.getLastColumn() + 1);
-    sh.getRange(1, col).setValue(nick).setFontWeight("bold");
+  var row = stickRowOf(sh, nick);
+  if (!row) {
+    row = Math.max(2, sh.getLastRow() + 1);
+    sh.getRange(row, 1).setValue(nick).setFontWeight("bold");
   }
-  // 그 열에서 마지막으로 채워진 행 찾기(다른 열이 더 길 수 있으므로 이 열만 확인)
-  var last = sh.getLastRow(), row = STICK_DATE_ROW;
-  if (last >= STICK_DATE_ROW) {
-    var vals = sh.getRange(STICK_DATE_ROW, col, last - STICK_DATE_ROW + 1, 1).getValues();
-    for (var i = 0; i < vals.length; i++) if (String(vals[i][0]).trim() !== "") row = STICK_DATE_ROW + i + 1;
+  // 그 행에서 마지막으로 채워진 열 찾기(다른 행이 더 길 수 있으므로 이 행만 확인)
+  var lastCol = sh.getLastColumn(), col = STICK_DATA_COL;
+  if (lastCol >= STICK_DATA_COL) {
+    var vals = sh.getRange(row, STICK_DATA_COL, 1, lastCol - STICK_DATA_COL + 1).getValues()[0];
+    for (var i = 0; i < vals.length; i++) if (String(vals[i]).trim() !== "") col = STICK_DATA_COL + i + 1;
   }
   sh.getRange(row, col).setNumberFormat("@").setValue(cellVal);
 }
 
-/* 모든 사람 열 → { order:[닉...], by:{닉:[{to,date}...]} } */
+/* 모든 사람 행 → { order:[닉...], by:{닉:[{to,date}...]} } */
 function stickAll(sh) {
   var res = { order: [], by: {} };
-  var lastCol = sh.getLastColumn();
-  if (lastCol < 2) return res;
-  var head = sh.getRange(1, 2, 1, lastCol - 1).getValues()[0];
-  for (var c = 0; c < head.length; c++) {
-    var nick = String(head[c]).trim();
+  var last = sh.getLastRow();
+  if (last < 2) return res;
+  var nicks = sh.getRange(2, 1, last - 1, 1).getValues();
+  for (var r = 0; r < nicks.length; r++) {
+    var nick = String(nicks[r][0]).trim();
     if (!nick) continue;
     res.order.push(nick);
-    res.by[nick] = stickReadCol(sh, c + 2);
+    res.by[nick] = stickReadRow(sh, r + 2);
   }
   return res;
 }
@@ -653,8 +654,8 @@ function handleStick(body) {
     return json({ ok: false, error: m, reason: vr });
   }
 
-  var col = stickColOf(sh, from);
-  var items = col ? stickReadCol(sh, col) : [];
+  var row = stickRowOf(sh, from);
+  var items = row ? stickReadRow(sh, row) : [];
   var hasAny = items.length > 0;
   var last = hasAny ? items[items.length - 1] : null;
   var active = (last && last.to !== STICK_CANCEL) ? last.to : null; // 현재 유효 상대(없으면 null)
@@ -689,44 +690,48 @@ function handleStick(body) {
 }
 
 /* ============================================================
-   [일회성] 기존 행 단위 작대기 데이터 → 열 단위로 이관.
+   [일회성] 작대기 데이터 전치 — 열 단위(사람=열) → 행 단위(사람=행).
    Apps Script 편집기에서 이 함수를 한 번 ▶ 실행하세요. (재배포 후 1회)
    ============================================================ */
-function migrateSticksToColumns() {
+function transposeSticks() {
   var ss = book();
   var sh = ss.getSheetByName(STICK_TAB);
-  if (!sh) return "작대기 탭이 없어요. 이관할 데이터가 없습니다.";
-  if (String(sh.getRange(1, 1).getValue()).trim() === "닉네임") return "이미 열 단위 구조예요. (이관 불필요)";
+  if (!sh) return "작대기 탭이 없어요. 전치할 데이터가 없습니다.";
+  if (String(sh.getRange(1, 2).getValue()).trim() === "상대/변경일자") return "이미 행 단위(전치됨) 구조예요. (전치 불필요)";
 
-  // 기존 행 단위 읽기: 2행부터 [보낸사람, 받는사람, 등록일]
-  var rows = [], last = sh.getLastRow();
-  if (last >= 2) {
-    var v = sh.getRange(2, 1, last - 1, 3).getDisplayValues();
-    for (var i = 0; i < v.length; i++) {
-      var f = String(v[i][0]).trim();
-      if (f) rows.push([f, String(v[i][1]).trim(), String(v[i][2] || "").trim().slice(0, 10)]);
+  // 현재 열 단위 읽기: 1행 B열+ = 닉, 각 열 2행+ = 이력 셀
+  var lastCol = sh.getLastColumn(), lastRow = sh.getLastRow();
+  var people = []; // { nick, items:["상대/날짜", ...] }
+  if (lastCol >= 2 && lastRow >= 1) {
+    var grid = sh.getRange(1, 1, lastRow, lastCol).getDisplayValues();
+    for (var c = 1; c < lastCol; c++) {           // B열(idx 1)부터 = 사람
+      var nick = String(grid[0][c]).trim();
+      if (!nick) continue;
+      var items = [];
+      for (var r = 1; r < lastRow; r++) {          // 2행(idx 1)부터 = 이력
+        var cell = String(grid[r][c]).trim();
+        if (cell) items.push(cell);
+      }
+      people.push({ nick: nick, items: items });
     }
   }
-  // 사람별 그룹(행 순서 = 시간순 유지)
-  var by = {}, order = [];
-  rows.forEach(function (r) {
-    if (!by[r[0]]) { by[r[0]] = []; order.push(r[0]); }
-    by[r[0]].push(r[1] + "/" + r[2]);   // "상대/날짜"
-  });
-  // 탭을 열 단위로 재작성
+  // 행 단위로 재작성: A열=닉, B열+=이력 가로
   sh.clear();
   sh.getRange(1, 1).setValue("닉네임").setFontWeight("bold");
-  sh.getRange(2, 1).setValue("상대/변경일자");
+  sh.getRange(1, 2).setValue("상대/변경일자").setFontWeight("bold");
   sh.setFrozenRows(1);
-  for (var k = 0; k < order.length; k++) {
-    var col = 2 + k, f = order[k], colVals = by[f];
-    sh.getRange(1, col).setValue(f).setFontWeight("bold");
-    if (colVals.length) {
-      sh.getRange(2, col, colVals.length, 1).setNumberFormat("@");
-      sh.getRange(2, col, colVals.length, 1).setValues(colVals.map(function (x) { return [x]; }));
+  sh.setFrozenColumns(1);
+  var cnt = 0;
+  for (var i = 0; i < people.length; i++) {
+    var rowN = 2 + i, p = people[i];
+    sh.getRange(rowN, 1).setValue(p.nick).setFontWeight("bold");
+    if (p.items.length) {
+      sh.getRange(rowN, 2, 1, p.items.length).setNumberFormat("@");
+      sh.getRange(rowN, 2, 1, p.items.length).setValues([p.items]);
+      cnt += p.items.length;
     }
   }
-  return "완료: " + order.length + "명, " + rows.length + "개 항목을 열 단위로 이관했어요.";
+  return "완료: " + people.length + "명, " + cnt + "개 항목을 행 단위로 전치했어요.";
 }
 
 /* ============================================================
