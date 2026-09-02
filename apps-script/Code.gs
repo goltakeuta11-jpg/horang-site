@@ -506,7 +506,10 @@ function styleViewsByDay() {
       .setBorder(true, null, null, null, null, null, "#8fa3c0", SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
   }
   sh.getRange(1, 1, 1, nCol).setFontWeight("bold").setBackground("#dfe7f5"); // 헤더 강조
-  return "✅ 일별 구분 적용: " + groupStarts.length + "일 · " + n + "행";
+  // ★ 데이터 아래 빈 행을 물리적으로 삭제 — 잔존 배경색·구분선을 원천 제거 (setBackground(null)로 안 지워지던 문제)
+  var mr = sh.getMaxRows();
+  if (mr > last) sh.deleteRows(last + 1, mr - last);
+  return "✅ 일별 구분 적용: " + groupStarts.length + "일 · " + n + "행 (빈 행 " + (mr - last) + "개 삭제)";
 }
 
 /* 매월 1일 새벽 자동 요약 트리거 등록 (편집기에서 한 번만 ▶ 실행) */
