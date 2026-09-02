@@ -202,7 +202,7 @@ function json(obj) {
 /* PATCH_03 · 서버 캐시 — doGet 결과 JSON을 통째로 구워둠(기본 5분).
    대부분의 요청이 탭 5개 읽기 + 비번 해시 없이 즉시 응답. 편집(doPost) 시 무효화. */
 var READ_CACHE_KEY = "sitedata_v1";
-var READ_CACHE_SEC = 120;   // 2분 (시트 직접 수정 반영 빠르게. 짧으면 keepWarm 사이에 캐시 만료 구간 생겨 첫 로딩 가끔 느려짐)
+var READ_CACHE_SEC = 360;   // 6분 (keepWarm 5분보다 길게 → 예열 캐시가 끊기지 않고 항상 살아있음. 편집 시엔 doPost가 즉시 무효화하므로 반영 지연 없음)
 function jsonRaw(str) {      // 이미 JSON 문자열인 걸 그대로 반환 (캐시된 응답용)
   return ContentService.createTextOutput(str).setMimeType(ContentService.MimeType.JSON);
 }
