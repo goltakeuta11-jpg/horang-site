@@ -437,10 +437,10 @@ function summarizeViews() {
     }
     if (!summ.length) return "접을 지난 달 일별 기록이 없어요 (이미 요약됨).";
     var out = [["날짜", "페이지", "횟수", "일수"]].concat(summ).concat(keep);
-    sh.clearContents();
+    sh.clear();   // ★ 값+서식 함께 초기화 (clearContents 면 옛 배경색이 남아 색이 엉킴)
     sh.getRange("A:A").setNumberFormat("@");
     sh.getRange(1, 1, out.length, 4).setValues(out);
-    return "✅ 요약 완료: 월별 " + summ.length + "행 + 최근(이번 달) " + keep.length + "행";
+    return "✅ 요약 완료: 월별 " + summ.length + "행 + 최근(이번 달) " + keep.length + "행 (색은 styleViewsByDay 로 다시 입히세요)";
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
 
@@ -478,9 +478,13 @@ function styleViewsByDay() {
   const s2 = ss.getSheetByName("조회요약"); if (s2) ss.deleteSheet(s2);   // 이전 요약 탭 정리
   const sh = viewSheet();
   sh.setConditionalFormatRules([]);                                       // 이전 색농도 규칙 제거
+  const nCol = 4;
+  // ★ 이전에 칠한 배경·구분선을 시트 전체(빈 행 포함) 초기화 — 요약 등으로 행수가 줄면 옛 색이 잔존하므로
+  var maxR = sh.getMaxRows();
+  if (maxR >= 2) sh.getRange(2, 1, maxR - 1, nCol).setBackground(null).setBorder(false, false, false, false, false, false);
   const last = sh.getLastRow();
   if (last < 2) return "데이터가 없어요.";
-  const nCol = 4, n = last - 1;
+  const n = last - 1;
   // 날짜 오름차순 → 같은 페이지 순으로 정렬 (같은 날끼리 뭉침)
   sh.getRange(2, 1, n, sh.getLastColumn()).sort([{ column: 1, ascending: true }, { column: 2, ascending: true }]);
   // 정렬된 값 다시 읽어 날짜 그룹 계산
