@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.9"></script>
+<script src="assets/inapp.js?v=20260831.10"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.9">
+<link rel="stylesheet" href="assets/style.css?v=20260831.10">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -101,9 +101,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.9"></script>
-<script src="assets/store.js?v=20260831.9"></script>
-<script src="assets/app.js?v=20260831.9"></script>
+<script src="assets/config.js?v=20260831.10"></script>
+<script src="assets/store.js?v=20260831.10"></script>
+<script src="assets/app.js?v=20260831.10"></script>
 <script>
 App.header("sticks.html");
 
@@ -286,10 +286,12 @@ function renderAdmin(sticks) {
     </div>`;
   }
 
-  // 성별로 줄 나누기 (남자 줄 / 여자 줄, 성별 모르면 기타)
-  const male   = order.filter(f => GENDERS[f] === "남");
-  const female = order.filter(f => GENDERS[f] === "여");
-  const etc    = order.filter(f => !GENDERS[f]);
+  // 성별로 줄 나누기 (남자 줄 / 여자 줄, 성별 모르면 기타) — 각 줄은 최근 활동순(마지막 이력 날짜)
+  const lastDateOf = f => (by[f][by[f].length - 1] || {}).date || "";
+  const byRecent = (a, b) => { const da = lastDateOf(a), db = lastDateOf(b); return da < db ? 1 : da > db ? -1 : 0; };
+  const male   = order.filter(f => GENDERS[f] === "남").sort(byRecent);
+  const female = order.filter(f => GENDERS[f] === "여").sort(byRecent);
+  const etc    = order.filter(f => !GENDERS[f]).sort(byRecent);
   function groupHtml(label, cls, list) {
     if (!list.length) return "";
     return `<div class="gender-group">
