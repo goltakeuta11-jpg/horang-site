@@ -479,9 +479,9 @@ function styleViewsByDay() {
   const sh = viewSheet();
   sh.setConditionalFormatRules([]);                                       // 이전 색농도 규칙 제거
   const nCol = 4;
-  // ★ 이전에 칠한 배경·구분선을 시트 전체(빈 행 포함) 초기화 — 요약 등으로 행수가 줄면 옛 색이 잔존하므로
+  // ★ 이전에 칠한 배경·구분선을 시트 전체(빈 행 포함) 흰색으로 초기화 — 요약 등으로 행수가 줄면 옛 색이 잔존하므로
   var maxR = sh.getMaxRows();
-  if (maxR >= 2) sh.getRange(2, 1, maxR - 1, nCol).setBackground(null).setBorder(false, false, false, false, false, false);
+  if (maxR >= 2) sh.getRange(2, 1, maxR - 1, nCol).setBackground("#ffffff").setBorder(false, false, false, false, false, false);
   const last = sh.getLastRow();
   if (last < 2) return "데이터가 없어요.";
   const n = last - 1;
@@ -506,10 +506,12 @@ function styleViewsByDay() {
       .setBorder(true, null, null, null, null, null, "#8fa3c0", SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
   }
   sh.getRange(1, 1, 1, nCol).setFontWeight("bold").setBackground("#dfe7f5"); // 헤더 강조
-  // ★ 데이터 아래 빈 행을 물리적으로 삭제 — 잔존 배경색·구분선을 원천 제거 (setBackground(null)로 안 지워지던 문제)
+  // ★ 데이터 아래 남은 행을 전부 흰색으로 명시 — 행을 '삭제'하면 '1000행 추가' 버튼이 뜨고
+  //   새로 생기는 행이 바로 위(파란) 행 서식을 상속해 또 파래짐. 그래서 삭제 대신 흰색으로 덮는다.
   var mr = sh.getMaxRows();
-  if (mr > last) sh.deleteRows(last + 1, mr - last);
-  return "✅ 일별 구분 적용: " + groupStarts.length + "일 · " + n + "행 (빈 행 " + (mr - last) + "개 삭제)";
+  if (mr > last) sh.getRange(last + 1, 1, mr - last, nCol)
+                   .setBackground("#ffffff").setBorder(false, false, false, false, false, false);
+  return "✅ 일별 구분 적용: " + groupStarts.length + "일 · " + n + "행";
 }
 
 /* 매월 1일 새벽 자동 요약 트리거 등록 (편집기에서 한 번만 ▶ 실행) */
