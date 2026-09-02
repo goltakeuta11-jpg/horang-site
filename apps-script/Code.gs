@@ -544,6 +544,19 @@ function stickMemberExists(nick) {
   return yes;
 }
 
+/* 닉 → 성별 맵 { 닉: "남"|"여" } — 자소서가 남/여 탭으로 나뉘어 있으니 "어느 탭에 있나"로 판별. */
+function stickGenders() {
+  var map = {};
+  Object.keys(MEMBER_TABS).forEach(function (g) {
+    var short = (g === "남자") ? "남" : "여";
+    readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
+      var n = String(row[0]).trim();
+      if (n) map[n] = short;
+    });
+  });
+  return map;
+}
+
 /* ---- 작대기 탭: 행(가로) 구조 ----
    1행 = 라벨("닉네임" | "상대/변경일자"). 2행부터 사람 1명 = 행 1개.
    각 사람 행: A열 = 닉네임, B열부터 오른쪽으로 "상대/날짜" 또는 "작대기 취소/날짜"(이력).
@@ -639,7 +652,7 @@ function handleStick(body) {
     all.order.forEach(function (f) {
       all.by[f].forEach(function (x) { out.push([f, x.to, x.date]); });
     });
-    return json({ ok: true, sticks: out });
+    return json({ ok: true, sticks: out, genders: stickGenders() });
   }
 
   // --- 이하 전부 본인 인증 필요 ---
@@ -663,7 +676,7 @@ function handleStick(body) {
   // --- 본인 상태 조회 (버튼 분기 + 이력 표시용) ---
   if (act === "status") {
     var hist = items.map(function (x) { return [from, x.to, x.date]; });
-    return json({ ok: true, active: active, hasAny: hasAny, history: hist });
+    return json({ ok: true, active: active, hasAny: hasAny, history: hist, genders: stickGenders() });
   }
 
   // --- 취소 ---
