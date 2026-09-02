@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.8"></script>
+<script src="assets/inapp.js?v=20260831.9"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.8">
+<link rel="stylesheet" href="assets/style.css?v=20260831.9">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -37,6 +37,17 @@
   .match-summary { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                    padding: 12px 14px; font-size: 14px; font-weight: 700; margin-bottom: 16px; }
   .match-summary.muted { color: var(--text-dim); font-weight: 500; }
+  /* 작대기 성사 격자표 */
+  .match-title { font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+  .match-sub { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+  .match-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+                gap: 8px; margin-bottom: 18px; }
+  .match-cell { background: var(--panel); border: 1px solid var(--accent); border-radius: var(--radius-sm);
+                padding: 9px 12px; display: flex; align-items: center; gap: 7px; }
+  .match-cell span { font-weight: 700; white-space: nowrap; }
+  .match-cell b { color: var(--accent); }
+  .match-cell em { margin-left: auto; font-size: 11px; color: var(--text-dim); font-style: normal;
+                   font-variant-numeric: tabular-nums; white-space: nowrap; }
   .cols { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
   .col { flex: 0 0 auto; width: 168px; background: var(--panel); border: 1px solid var(--line);
          border-radius: var(--radius-sm); padding: 10px; }
@@ -90,9 +101,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.8"></script>
-<script src="assets/store.js?v=20260831.8"></script>
-<script src="assets/app.js?v=20260831.8"></script>
+<script src="assets/config.js?v=20260831.9"></script>
+<script src="assets/store.js?v=20260831.9"></script>
+<script src="assets/app.js?v=20260831.9"></script>
 <script>
 App.header("sticks.html");
 
@@ -249,9 +260,14 @@ function renderAdmin(sticks) {
     if (b && activeOf[b] === a) {
       matched.add(a);
       const key = [a, b].sort().join("|");
-      if (!seen[key]) { seen[key] = 1; pairs.push([a, b]); }
+      if (!seen[key]) {
+        seen[key] = 1;
+        const da = by[a][by[a].length - 1].date, db = by[b][by[b].length - 1].date;
+        pairs.push({ a: a, b: b, when: (da > db ? da : db) });  // 성사일 = 둘 중 나중에 찍은 날
+      }
     }
   });
+  pairs.sort((x, y) => (x.when < y.when ? 1 : x.when > y.when ? -1 : 0));  // 최근 성사가 위로
 
   // 컬럼 하나 렌더 (사람 1명)
   function colOf(f) {
@@ -282,7 +298,10 @@ function renderAdmin(sticks) {
   }
 
   const summary = pairs.length
-    ? `<div class="match-summary">💘 작대기 성사 ${pairs.length}쌍: ${pairs.map(p => App.esc(p[0]) + " ↔ " + App.esc(p[1])).join(", ")}</div>`
+    ? `<div class="match-title">💘 작대기 성사 ${pairs.length}쌍 <span class="match-sub">· 최근 성사순</span></div>
+       <div class="match-grid">${pairs.map(p =>
+         `<div class="match-cell"><span>${App.esc(p.a)}</span><b>↔</b><span>${App.esc(p.b)}</span><em>${App.esc(p.when)}</em></div>`
+       ).join("")}</div>`
     : `<div class="match-summary muted">아직 작대기 성사된 쌍이 없어요.</div>`;
 
   advEl.innerHTML = `
