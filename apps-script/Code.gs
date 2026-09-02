@@ -489,13 +489,25 @@ function styleViewsByDay() {
   sh.getRange(2, 1, n, sh.getLastColumn()).sort([{ column: 1, ascending: true }, { column: 2, ascending: true }]);
   // 정렬된 값 다시 읽어 날짜 그룹 계산
   const vals = sh.getRange(2, 1, n, nCol).getValues();
+  // 월별 요약행(yyyy-MM)용 색 — 월마다 다른 파스텔(일별의 흰/연파랑과 확실히 구분)
+  var MONTH_COLORS = {
+    "01": "#ffd6d6", "02": "#ffe3c2", "03": "#fff4b3", "04": "#dcf5c0", "05": "#c2f2e0", "06": "#c2e6f5",
+    "07": "#c9d4f7", "08": "#e2c9f5", "09": "#f7c9e6", "10": "#f7cccc", "11": "#e6dcc9", "12": "#cfe8dd"
+  };
   const bg = [];
   const groupStarts = [];
   var curDate = null, tone = false;
   for (var i = 0; i < n; i++) {
     var d = vdate(vals[i][0]);
-    if (d !== curDate) { tone = !tone; curDate = d; groupStarts.push(i); }  // 날짜 바뀜 → 색 토글 + 그룹 시작
-    var color = tone ? "#eaf1fb" : "#ffffff";
+    var newDate = (d !== curDate);
+    if (newDate) { curDate = d; groupStarts.push(i); }   // 날짜(또는 월) 바뀜 → 그룹 구분선
+    var color;
+    if (String(d).length === 7) {                        // 월별 요약행(yyyy-MM) → 월마다 다른 색
+      color = MONTH_COLORS[d.slice(5, 7)] || "#eeeeee";
+    } else {                                             // 일별행(yyyy-MM-DD) → 날짜별 흰/연파랑 토글
+      if (newDate) tone = !tone;
+      color = tone ? "#eaf1fb" : "#ffffff";
+    }
     bg.push([color, color, color, color]);
   }
   const body = sh.getRange(2, 1, n, nCol);
