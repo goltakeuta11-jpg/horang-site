@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.7"></script>
+<script src="assets/inapp.js?v=20260831.8"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.7">
+<link rel="stylesheet" href="assets/style.css?v=20260831.8">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -58,11 +58,14 @@
   .col__now { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
               font-size: 12px; text-align: center; color: var(--text-dim); }
   .muted { color: var(--text-dim); }
-  /* 성별 뱃지 (남=파랑 / 여=핑크) */
-  .g { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 4px;
-       font-weight: 700; vertical-align: middle; line-height: 1.5; }
-  .g--m { background: rgba(91,155,213,.22); color: #5B9BD5; }
-  .g--f { background: rgba(255,92,122,.22); color: var(--accent); }
+  /* 성별 줄 분리 (남=파랑 / 여=핑크) */
+  .gender-group { margin-bottom: 22px; }
+  .gender-group:last-child { margin-bottom: 0; }
+  .gender-label { display: inline-block; font-size: 13px; font-weight: 800; margin-bottom: 10px;
+                  padding: 3px 12px; border-radius: 6px; }
+  .gender-label--m { background: rgba(91,155,213,.18); color: #5B9BD5; }
+  .gender-label--f { background: rgba(255,92,122,.18); color: var(--accent); }
+  .gender-label--x { background: var(--panel-2); color: var(--text-dim); }
 </style>
 </head>
 <body>
@@ -87,9 +90,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.7"></script>
-<script src="assets/store.js?v=20260831.7"></script>
-<script src="assets/app.js?v=20260831.7"></script>
+<script src="assets/config.js?v=20260831.8"></script>
+<script src="assets/store.js?v=20260831.8"></script>
+<script src="assets/app.js?v=20260831.8"></script>
 <script>
 App.header("sticks.html");
 
@@ -98,15 +101,7 @@ const admin  = App.isAdmin();
 const meEl   = document.querySelector("[data-me]");
 const advEl  = document.querySelector("[data-adminview]");
 let session  = null;   // 로그인 성공 시 { from, pwHash }
-let GENDERS  = {};     // { 닉: "남"|"여" } — 서버가 자소서 탭으로 판별해 내려줌
-
-/* 닉 옆에 붙일 성별 뱃지 (남=파랑 / 여=핑크). 자소서에 없으면 빈 문자열. */
-function gtag(nick) {
-  const g = GENDERS[nick];
-  if (g === "남") return ' <span class="g g--m">남</span>';
-  if (g === "여") return ' <span class="g g--f">여</span>';
-  return "";
-}
+let GENDERS  = {};     // { 닉: "남"|"여" } — 서버가 자소서 탭으로 판별. 관리자 뷰 남/여 줄 분리에 사용.
 
 /* ---------- 로그인(본인 확인) ---------- */
 function renderLogin(msg) {
@@ -153,7 +148,7 @@ function renderMe(st) {
     head = "아직 작대기가 없어요. 마음에 드는 상대를 등록해보세요!";
     actions = form("register", "작대기 등록");
   } else if (active) {
-    head = `현재 <b>${App.esc(active)}${gtag(active)}</b> 님에게 작대기 중이에요 💘`;
+    head = `현재 <b>${App.esc(active)}</b> 님에게 작대기 중이에요 💘`;
     actions = form("change", "작대기 변경")
             + `<button class="btn btn--danger btn--sm" data-cancel style="margin-top:10px">작대기 취소</button>`;
   } else {
@@ -162,7 +157,7 @@ function renderMe(st) {
   }
   meEl.innerHTML = `
     <div class="card">
-      <div class="me__top"><strong>${App.esc(session.from)}${gtag(session.from)} 님</strong>
+      <div class="me__top"><strong>${App.esc(session.from)} 님</strong>
         <button class="btn btn--sm btn--ghost" data-logout>로그아웃</button></div>
       <p class="me__status">${head}</p>
       ${actions}
@@ -185,7 +180,7 @@ function histHtml(hist) {
     const cancel = (to === STICK_CANCEL);
     const kind = cancel ? "is-cancel" : (idx === 0 ? "is-register" : "is-change"); // 첫 항목=등록, 이후=변경
     return `<div class="hist__row ${kind}">
-      <span>${cancel ? "취소" : App.esc(to) + gtag(to)}</span>
+      <span>${cancel ? "취소" : App.esc(to)}</span>
       <span class="hist__date">${App.esc(date)}</span></div>`;
   }).join("");
   return `<div class="hist"><div class="hist__title">내 작대기 이력</div>${rows}</div>`;
@@ -258,30 +253,33 @@ function renderAdmin(sticks) {
     }
   });
 
-  // 매칭된 쌍은 바로 옆 칸에 오도록 순서 재배열 (호랑↔표독이면 두 카드 나란히)
-  const ordered = [], placed = {};
-  order.forEach(f => {
-    if (placed[f]) return;
-    ordered.push(f); placed[f] = 1;
-    const b = activeOf[f];
-    if (b && activeOf[b] === f && !placed[b]) { ordered.push(b); placed[b] = 1; }
-  });
-
-  const cols = ordered.map(f => {
+  // 컬럼 하나 렌더 (사람 1명)
+  function colOf(f) {
     const items = by[f].map((x, idx) => {
       const cancel = (x.to === STICK_CANCEL);
       const isActive = !cancel && (idx === by[f].length - 1) && activeOf[f] === x.to;
       const kind = cancel ? "is-cancel" : (idx === 0 ? "is-register" : "is-change"); // 첫 항목=등록, 이후=변경
       return `<div class="col__item ${kind} ${isActive ? "is-active" : ""}">
         <span class="col__date">${App.esc(x.date.slice(0, 10))}</span>
-        <span>${cancel ? "취소" : App.esc(x.to) + gtag(x.to)}</span></div>`;
+        <span>${cancel ? "취소" : App.esc(x.to)}</span></div>`;
     }).join("");
     return `<div class="col ${matched.has(f) ? "is-match" : ""}">
-      <div class="col__head">${App.esc(f)}${gtag(f)}${matched.has(f) ? " 💘" : ""}</div>
+      <div class="col__head">${App.esc(f)}${matched.has(f) ? " 💘" : ""}</div>
       ${items}
-      <div class="col__now">${activeOf[f] ? "→ " + App.esc(activeOf[f]) + gtag(activeOf[f]) : "취소/없음"}</div>
+      <div class="col__now">${activeOf[f] ? "→ " + App.esc(activeOf[f]) : "취소/없음"}</div>
     </div>`;
-  }).join("");
+  }
+
+  // 성별로 줄 나누기 (남자 줄 / 여자 줄, 성별 모르면 기타)
+  const male   = order.filter(f => GENDERS[f] === "남");
+  const female = order.filter(f => GENDERS[f] === "여");
+  const etc    = order.filter(f => !GENDERS[f]);
+  function groupHtml(label, cls, list) {
+    if (!list.length) return "";
+    return `<div class="gender-group">
+      <div class="gender-label ${cls}">${label} · ${list.length}명</div>
+      <div class="cols">${list.map(colOf).join("")}</div></div>`;
+  }
 
   const summary = pairs.length
     ? `<div class="match-summary">💘 작대기 성사 ${pairs.length}쌍: ${pairs.map(p => App.esc(p[0]) + " ↔ " + App.esc(p[1])).join(", ")}</div>`
@@ -295,7 +293,9 @@ function renderAdmin(sticks) {
       <span><i style="background:var(--warn)"></i>변경</span>
       <span><i style="background:var(--text-dim)"></i>취소</span>
     </div>
-    <div class="cols">${cols || '<p class="muted">아직 등록된 작대기가 없어요.</p>'}</div>`;
+    ${order.length
+      ? groupHtml("남자", "gender-label--m", male) + groupHtml("여자", "gender-label--f", female) + groupHtml("기타", "gender-label--x", etc)
+      : '<p class="muted">아직 등록된 작대기가 없어요.</p>'}`;
 }
 
 /* ---------- 시작 ---------- */
