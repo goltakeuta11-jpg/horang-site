@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.10"></script>
+<script src="assets/inapp.js?v=20260831.11"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.10">
+<link rel="stylesheet" href="assets/style.css?v=20260831.11">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -84,13 +84,13 @@
 <header class="header"><div class="header__inner" data-header></div></header>
 
 <main class="wrap page">
-  <h1 class="page__title">작대기 💘</h1>
+  <h1 class="page__title">작대기 💞</h1>
   <p class="page__desc">마음에 드는 상대를 작대기로 지정해보세요! 한 번에 한 명만 유효하고, 작대기 성사는 관리자가 확인해요.</p>
 
   <div class="stk-notice">
     <p>🔒 작대기를 등록하면 <b>즉시 암호화</b>되어 그 누구도 알지 못하게 됩니다.</p>
     <p>💬 <b>대화권 신청 / 캡슐신청</b>은 작대기로 등록한 사람에게만 가능합니다.</p>
-    <p>💘 작대기가 서로 통할 경우, <b>서로 통했다고 공주가 전해주고</b> 최근 한 달간 작대기 변경 날짜가 상대방에게 전달됩니다.</p>
+    <p>💞 작대기가 서로 통할 경우, <b>서로 통했다고 공주가 전해주고</b> 최근 한 달간 작대기 변경 날짜가 상대방에게 전달됩니다.</p>
     <p>🙈 작대기 내용은 <b>관리자도 알 수 없습니다.</b> (작대기가 쌍방일 경우에만 관리자가 알 수 있습니다)</p>
   </div>
 
@@ -101,9 +101,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.10"></script>
-<script src="assets/store.js?v=20260831.10"></script>
-<script src="assets/app.js?v=20260831.10"></script>
+<script src="assets/config.js?v=20260831.11"></script>
+<script src="assets/store.js?v=20260831.11"></script>
+<script src="assets/app.js?v=20260831.11"></script>
 <script>
 App.header("sticks.html");
 
@@ -159,7 +159,7 @@ function renderMe(st) {
     head = "아직 작대기가 없어요. 마음에 드는 상대를 등록해보세요!";
     actions = form("register", "작대기 등록");
   } else if (active) {
-    head = `현재 <b>${App.esc(active)}</b> 님에게 작대기 중이에요 💘`;
+    head = `현재 <b>${App.esc(active)}</b> 님에게 작대기 중이에요 💞`;
     actions = form("change", "작대기 변경")
             + `<button class="btn btn--danger btn--sm" data-cancel style="margin-top:10px">작대기 취소</button>`;
   } else {
@@ -212,7 +212,7 @@ async function submit(act) {
   if (!to) return App.toast("상대 닉네임을 입력해주세요.", true);
   const r = await Store.stick({ stickAction: act, from: session.from, pwHash: session.pwHash, to: to });
   if (!r.ok) return App.toast(r.error || "실패했어요.", true);
-  App.toast(r.action === "change" ? "작대기를 변경했어요! 💘" : "작대기를 등록했어요! 💘");
+  App.toast(r.action === "change" ? "작대기를 변경했어요! 💞" : "작대기를 등록했어요! 💞");
   await refreshMe();
 }
 
@@ -280,7 +280,7 @@ function renderAdmin(sticks) {
         <span>${cancel ? "취소" : App.esc(x.to)}</span></div>`;
     }).join("");
     return `<div class="col ${matched.has(f) ? "is-match" : ""}">
-      <div class="col__head">${App.esc(f)}${matched.has(f) ? " 💘" : ""}</div>
+      <div class="col__head">${App.esc(f)}${matched.has(f) ? " 💞" : ""}</div>
       ${items}
       <div class="col__now">${activeOf[f] ? "→ " + App.esc(activeOf[f]) : "취소/없음"}</div>
     </div>`;
@@ -300,7 +300,7 @@ function renderAdmin(sticks) {
   }
 
   const summary = pairs.length
-    ? `<div class="match-title">💘 작대기 성사 ${pairs.length}쌍 <span class="match-sub">· 최근 성사순</span></div>
+    ? `<div class="match-title">💞 작대기 성사 ${pairs.length}쌍 <span class="match-sub">· 최근 성사순</span></div>
        <div class="match-grid">${pairs.map(p =>
          `<div class="match-cell"><span>${App.esc(p.a)}</span><b>↔</b><span>${App.esc(p.b)}</span><em>${App.esc(p.when)}</em></div>`
        ).join("")}</div>`
