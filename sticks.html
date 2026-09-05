@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.12"></script>
+<script src="assets/inapp.js?v=20260831.13"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.12">
+<link rel="stylesheet" href="assets/style.css?v=20260831.13">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -101,9 +101,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.12"></script>
-<script src="assets/store.js?v=20260831.12"></script>
-<script src="assets/app.js?v=20260831.12"></script>
+<script src="assets/config.js?v=20260831.13"></script>
+<script src="assets/store.js?v=20260831.13"></script>
+<script src="assets/app.js?v=20260831.13"></script>
 <script>
 App.header("sticks.html");
 
@@ -124,7 +124,10 @@ function stickKind(items, idx) {
   if (prev.to === STICK_CANCEL) {                       // 직전이 취소 → 재등록 사이클
     const a = new Date(prev.date + "T00:00:00"), b = new Date(cur.date + "T00:00:00");
     const days = Math.round((b - a) / 86400000);
-    return (isFinite(days) && days >= 7) ? "is-register" : "is-change"; // 7일 이후=등록 / 이내=변경
+    if (isFinite(days) && days >= 7) return "is-register";      // 7일 이후 = 등록
+    const before = items[idx - 2];                             // 취소 직전(취소 전 상대)
+    if (before && before.to === cur.to) return "is-register";  // 7일 이내라도 같은 사람 재등록 = 등록
+    return "is-change";                                        // 7일 이내 + 다른 사람 = 변경
   }
   return "is-change";                                   // 연속(직전이 등록/변경) = 변경
 }
