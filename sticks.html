@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.11"></script>
+<script src="assets/inapp.js?v=20260831.12"></script>
 <title>작대기 · 호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.11">
+<link rel="stylesheet" href="assets/style.css?v=20260831.12">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -101,9 +101,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.11"></script>
-<script src="assets/store.js?v=20260831.11"></script>
-<script src="assets/app.js?v=20260831.11"></script>
+<script src="assets/config.js?v=20260831.12"></script>
+<script src="assets/store.js?v=20260831.12"></script>
+<script src="assets/app.js?v=20260831.12"></script>
 <script>
 App.header("sticks.html");
 
@@ -113,6 +113,21 @@ const meEl   = document.querySelector("[data-me]");
 const advEl  = document.querySelector("[data-adminview]");
 let session  = null;   // 로그인 성공 시 { from, pwHash }
 let GENDERS  = {};     // { 닉: "남"|"여" } — 서버가 자소서 탭으로 판별. 관리자 뷰 남/여 줄 분리에 사용.
+
+/* 이력 항목 종류 판정: 취소(회색) / 등록(초록) / 변경(노랑).
+   ★ 취소 후 재등록은 취소일로부터 7일 이내면 '변경', 7일 이후면 '등록'으로 본다. */
+function stickKind(items, idx) {
+  const cur = items[idx];
+  if (cur.to === STICK_CANCEL) return "is-cancel";
+  if (idx === 0) return "is-register";                 // 맨 처음 = 등록
+  const prev = items[idx - 1];
+  if (prev.to === STICK_CANCEL) {                       // 직전이 취소 → 재등록 사이클
+    const a = new Date(prev.date + "T00:00:00"), b = new Date(cur.date + "T00:00:00");
+    const days = Math.round((b - a) / 86400000);
+    return (isFinite(days) && days >= 7) ? "is-register" : "is-change"; // 7일 이후=등록 / 이내=변경
+  }
+  return "is-change";                                   // 연속(직전이 등록/변경) = 변경
+}
 
 /* ---------- 로그인(본인 확인) ---------- */
 function renderLogin(msg) {
@@ -186,13 +201,13 @@ function form(act, label) {
 
 function histHtml(hist) {
   if (!hist || !hist.length) return "";
-  const rows = hist.map((h, idx) => {
-    const to = h[1], date = String(h[2] || "").slice(0, 10);
-    const cancel = (to === STICK_CANCEL);
-    const kind = cancel ? "is-cancel" : (idx === 0 ? "is-register" : "is-change"); // 첫 항목=등록, 이후=변경
+  const items = hist.map(h => ({ to: h[1], date: String(h[2] || "").slice(0, 10) }));
+  const rows = items.map((x, idx) => {
+    const cancel = (x.to === STICK_CANCEL);
+    const kind = stickKind(items, idx);
     return `<div class="hist__row ${kind}">
-      <span>${cancel ? "취소" : App.esc(to)}</span>
-      <span class="hist__date">${App.esc(date)}</span></div>`;
+      <span>${cancel ? "취소" : App.esc(x.to)}</span>
+      <span class="hist__date">${App.esc(x.date)}</span></div>`;
   }).join("");
   return `<div class="hist"><div class="hist__title">내 작대기 이력</div>${rows}</div>`;
 }
@@ -274,7 +289,7 @@ function renderAdmin(sticks) {
     const items = by[f].map((x, idx) => {
       const cancel = (x.to === STICK_CANCEL);
       const isActive = !cancel && (idx === by[f].length - 1) && activeOf[f] === x.to;
-      const kind = cancel ? "is-cancel" : (idx === 0 ? "is-register" : "is-change"); // 첫 항목=등록, 이후=변경
+      const kind = stickKind(by[f], idx); // 취소 후 7일 기준으로 등록/변경 구분
       return `<div class="col__item ${kind} ${isActive ? "is-active" : ""}">
         <span class="col__date">${App.esc(x.date.slice(0, 10))}</span>
         <span>${cancel ? "취소" : App.esc(x.to)}</span></div>`;
