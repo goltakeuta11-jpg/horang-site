@@ -162,7 +162,7 @@ function backfillDates() {
 
     // 시트가 바뀌었으니 서버 캐시 비우기 (안 하면 최대 2분간 옛 값이 나감)
     try { CacheService.getScriptCache().remove(READ_CACHE_KEY); } catch (eC) {}
-    stickIdxBust();  // 자소서 인덱스도 무효화(비번/성별 바뀔 수 있음)
+    stickIdxBust(); stickListBust();  // 자소서 인덱스+작대기 list 무효화(성별 바뀔 수 있음)
 
     var msg = "✅ 등록일 채우기 완료 — 총 " + n + "행\n" + log.join("\n");
     Logger.log(msg);
@@ -206,6 +206,8 @@ var READ_CACHE_KEY = "sitedata_v1";
 var READ_CACHE_SEC = 360;   // 6분 (keepWarm 5분보다 길게 → 예열 캐시가 끊기지 않고 항상 살아있음. 편집 시엔 doPost가 즉시 무효화하므로 반영 지연 없음)
 var STICK_IDX_KEY  = "stickidx_v1";  // 작대기용 자소서 인덱스 캐시(닉→성별/비번해시). 자소서 편집 시 무효화.
 var STICK_IDX_SEC  = 360;   // 6분 — 작대기 status/list가 자소서 탭을 매번 통째 읽던 것 제거
+var STICK_LIST_KEY = "sticklist_v1"; // 관리자 list 응답(JSON) 통째 캐시 → 스프레드시트 안 열고 반환(read처럼 빠름)
+var STICK_LIST_SEC = 360;   // 6분 — 작대기 등록/변경/취소 시 즉시 무효화하므로 반영 지연 없음
 function jsonRaw(str) {      // 이미 JSON 문자열인 걸 그대로 반환 (캐시된 응답용)
   return ContentService.createTextOutput(str).setMimeType(ContentService.MimeType.JSON);
 }
@@ -323,8 +325,8 @@ function keepWarm() {
     // read&fresh=1 로 서버 캐시(PATCH_03)를 5분마다 새로 구움 → 유저는 항상 데워진 캐시를 받음.
     if (url) UrlFetchApp.fetch(url + "?action=read&fresh=1", { muteHttpExceptions: true, followRedirects: true });
   } catch (e) { /* 실패해도 무시 (다음 타이머에 재시도) */ }
-  // 작대기용 자소서 인덱스도 미리 구움(트리거는 서버 내부라 함수 직접 호출) → 작대기 status/list 도 항상 웜
-  try { stickIdxBust(); stickMemberIndex(); } catch (e2) {}
+  // 작대기용 캐시도 미리 구움(트리거는 서버 내부라 함수 직접 호출) → 작대기 status/list 도 항상 웜
+  try { stickIdxBust(); stickMemberIndex(); stickListBust(); stickListPayload(); } catch (e2) {}
 }
 
 /* ⭐ keepAlive — 1분마다 가벼운 ping(시트 안 읽음)으로 인스턴스가 잠들지 않게.
@@ -600,6 +602,21 @@ function stickGenders() {
   return map;
 }
 
+/* ⭐ 관리자 list 응답(JSON 문자열)을 빌드 + CacheService에 저장 후 반환.
+   스프레드시트 열기(느림)를 캐시 뒤로 숨김 → 등록/변경/취소 시 stickListBust()로 무효화. */
+function stickListPayload() {
+  var all = stickAll(stickSheet()), out = [];
+  all.order.forEach(function (f) {
+    all.by[f].forEach(function (x) { out.push([f, x.to, x.date]); });
+  });
+  var str = JSON.stringify({ ok: true, sticks: out, genders: stickGenders() });
+  try { CacheService.getScriptCache().put(STICK_LIST_KEY, str, STICK_LIST_SEC); } catch (e) {}
+  return str;
+}
+
+/* 작대기 list 캐시 무효화 (등록/변경/취소 후 호출) */
+function stickListBust() { try { CacheService.getScriptCache().remove(STICK_LIST_KEY); } catch (e) {} }
+
 /* ---- 작대기 탭: 행(가로) 구조 ----
    1행 = 라벨("닉네임" | "상대/변경일자"). 2행부터 사람 1명 = 행 1개.
    각 사람 행: A열 = 닉네임, B열부터 오른쪽으로 "상대/날짜" 또는 "작대기 취소/날짜"(이력).
@@ -686,17 +703,15 @@ function stickAll(sh) {
 /* 작대기 요청 전체 처리 — doPost 의 lock 안에서 호출(동시성 보호). */
 function handleStick(body) {
   var act = String(body.stickAction || "");
-  var sh = stickSheet();
 
-  // --- 관리자 전체 목록 → 프론트 호환 위해 [보낸사람,받는사람,날짜] 행배열로 변환(시간순) ---
+  // --- 관리자 전체 목록 → 캐시 우선(스프레드시트 안 열고 즉시 반환). read(doGet)처럼 빠르게. ---
   if (act === "list") {
     if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
-    var all = stickAll(sh), out = [];
-    all.order.forEach(function (f) {
-      all.by[f].forEach(function (x) { out.push([f, x.to, x.date]); });
-    });
-    return json({ ok: true, sticks: out, genders: stickGenders() });
+    try { var hit = CacheService.getScriptCache().get(STICK_LIST_KEY); if (hit) return jsonRaw(hit); } catch (e) {}
+    return jsonRaw(stickListPayload());   // 캐시 미스 → 빌드(내부에서 캐시 저장)
   }
+
+  var sh = stickSheet();
 
   // --- 이하 전부 본인 인증 필요 ---
   var from = String(body.from || "").trim();
@@ -726,6 +741,7 @@ function handleStick(body) {
   if (act === "cancel") {
     if (!active) return json({ ok: false, error: "취소할 작대기가 없어요." });
     stickAppend(sh, from, STICK_CANCEL + "/" + stickDate());
+    stickListBust();  // 관리자 list 캐시 무효화
     return json({ ok: true, action: "cancel" });
   }
 
@@ -739,6 +755,7 @@ function handleStick(body) {
     if (act === "change"   && !hasAny) return json({ ok: false, error: "등록된 작대기가 없어요. '작대기 등록'을 먼저 해주세요." });
     if (active === to) return json({ ok: false, error: "이미 '" + to + "' 님에게 작대기 중이에요." });
     stickAppend(sh, from, to + "/" + stickDate());
+    stickListBust();  // 관리자 list 캐시 무효화
     return json({ ok: true, action: (hasAny ? "change" : "register") });
   }
 
@@ -863,7 +880,7 @@ function doPost(e) {
     }
 
     try { CacheService.getScriptCache().remove(READ_CACHE_KEY); } catch (eC) {} // ★ PATCH_03: 편집됐으니 서버 캐시 무효화
-    stickIdxBust();  // 자소서 인덱스도 무효화(비번/성별 바뀔 수 있음)
+    stickIdxBust(); stickListBust();  // 자소서 인덱스+작대기 list 무효화(성별 바뀔 수 있음)
     return json({ ok: true, admin: isAdmin });
   } catch (err) {
     return json({ ok: false, error: String(err) });
