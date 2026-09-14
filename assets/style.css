@@ -120,7 +120,7 @@ h1, h2, h3 { margin: 0; line-height: 1.25; letter-spacing: -0.02em; }
 /* ============================================================
    페이지 머리말
    ============================================================ */
-.page { padding: 40px 0 80px; }
+.page { padding: 40px 20px 80px; }   /* 좌우 20px 유지 — .wrap의 좌우 패딩을 덮어써 모바일에서 텍스트가 잘리던 문제 해결 */
 .page__eyebrow {
   font-size: 12px; font-weight: 700; letter-spacing: .14em;
   color: var(--accent); text-transform: uppercase; margin-bottom: 10px;
