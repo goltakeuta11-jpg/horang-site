@@ -162,6 +162,7 @@ function backfillDates() {
 
     // 시트가 바뀌었으니 서버 캐시 비우기 (안 하면 최대 2분간 옛 값이 나감)
     try { CacheService.getScriptCache().remove(READ_CACHE_KEY); } catch (eC) {}
+    stickIdxBust();  // 자소서 인덱스도 무효화(비번/성별 바뀔 수 있음)
 
     var msg = "✅ 등록일 채우기 완료 — 총 " + n + "행\n" + log.join("\n");
     Logger.log(msg);
@@ -203,6 +204,8 @@ function json(obj) {
    대부분의 요청이 탭 5개 읽기 + 비번 해시 없이 즉시 응답. 편집(doPost) 시 무효화. */
 var READ_CACHE_KEY = "sitedata_v1";
 var READ_CACHE_SEC = 360;   // 6분 (keepWarm 5분보다 길게 → 예열 캐시가 끊기지 않고 항상 살아있음. 편집 시엔 doPost가 즉시 무효화하므로 반영 지연 없음)
+var STICK_IDX_KEY  = "stickidx_v1";  // 작대기용 자소서 인덱스 캐시(닉→성별/비번해시). 자소서 편집 시 무효화.
+var STICK_IDX_SEC  = 360;   // 6분 — 작대기 status/list가 자소서 탭을 매번 통째 읽던 것 제거
 function jsonRaw(str) {      // 이미 JSON 문자열인 걸 그대로 반환 (캐시된 응답용)
   return ContentService.createTextOutput(str).setMimeType(ContentService.MimeType.JSON);
 }
@@ -320,6 +323,8 @@ function keepWarm() {
     // read&fresh=1 로 서버 캐시(PATCH_03)를 5분마다 새로 구움 → 유저는 항상 데워진 캐시를 받음.
     if (url) UrlFetchApp.fetch(url + "?action=read&fresh=1", { muteHttpExceptions: true, followRedirects: true });
   } catch (e) { /* 실패해도 무시 (다음 타이머에 재시도) */ }
+  // 작대기용 자소서 인덱스도 미리 구움(트리거는 서버 내부라 함수 직접 호출) → 작대기 status/list 도 항상 웜
+  try { stickIdxBust(); stickMemberIndex(); } catch (e2) {}
 }
 
 /* ⭐ keepAlive — 1분마다 가벼운 ping(시트 안 읽음)으로 인스턴스가 잠들지 않게.
@@ -549,43 +554,49 @@ function setupSummaryTrigger() {
    작대기(매칭) — 조회/등록/변경/취소. 전부 doPost 로 들어옴(doGet 캐시 안 탐).
    ============================================================ */
 
-/* 자소서 명단에서 닉을 찾아 비번 해시를 검증 (doGet members 와 같은 해시 규칙).
-   반환: "ok" | "no_member"(자소서 없음) | "no_pw"(비번 미설정) | "wrong_pw" */
-function stickVerifyPw(nick, pwHash) {
-  var found = null;
-  Object.keys(MEMBER_TABS).forEach(function (g) {
-    readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
-      if (String(row[0]).trim() === nick) found = row;
-    });
-  });
-  if (!found) return "no_member";
-  var v = String(found[PW_IDX] || "");
-  if (!v) return "no_pw";
-  var expected = /^[0-9a-f]{64}$/.test(v) ? v : sha256hex(v);  // 오염(이중해시) 계정도 통과
-  return (String(pwHash) === expected) ? "ok" : "wrong_pw";
-}
-
-/* 자소서 명단에 이 닉이 존재하나 (받는사람 검증용) */
-function stickMemberExists(nick) {
-  var yes = false;
-  Object.keys(MEMBER_TABS).forEach(function (g) {
-    readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
-      if (String(row[0]).trim() === nick) yes = true;
-    });
-  });
-  return yes;
-}
-
-/* 닉 → 성별 맵 { 닉: "남"|"여" } — 자소서가 남/여 탭으로 나뉘어 있으니 "어느 탭에 있나"로 판별. */
-function stickGenders() {
-  var map = {};
+/* ⭐ 자소서 인덱스(닉→{성별, 비번해시}) — status/list 가 자소서 남/여 탭을 매 요청마다 통째
+   읽던 병목 제거. 결과를 CacheService에 캐싱(6분). 자소서 편집 시 무효화(stickIdxBust).
+   반환 형태: { 닉: { g:"남"|"여", pw:"<64hex 또는 ''>" } } */
+function stickMemberIndex() {
+  var cache = CacheService.getScriptCache();
+  try {
+    var hit = cache.get(STICK_IDX_KEY);
+    if (hit) return JSON.parse(hit);
+  } catch (e) {}
+  var idx = {};
   Object.keys(MEMBER_TABS).forEach(function (g) {
     var short = (g === "남자") ? "남" : "여";
     readTab(MEMBER_TABS[g], MEMBER_HEADER).forEach(function (row) {
       var n = String(row[0]).trim();
-      if (n) map[n] = short;
+      if (!n) return;
+      var v = String(row[PW_IDX] || "");
+      var pw = v ? (/^[0-9a-f]{64}$/.test(v) ? v : sha256hex(v)) : "";  // 오염(이중해시) 계정도 통과
+      idx[n] = { g: short, pw: pw };
     });
   });
+  try { cache.put(STICK_IDX_KEY, JSON.stringify(idx), STICK_IDX_SEC); } catch (e2) {}
+  return idx;
+}
+
+/* 자소서 인덱스 캐시 무효화 (자소서 편집 후 호출) */
+function stickIdxBust() { try { CacheService.getScriptCache().remove(STICK_IDX_KEY); } catch (e) {} }
+
+/* 자소서 명단에서 닉의 비번 해시를 검증 (doGet members 와 같은 해시 규칙).
+   반환: "ok" | "no_member"(자소서 없음) | "no_pw"(비번 미설정) | "wrong_pw" */
+function stickVerifyPw(nick, pwHash) {
+  var rec = stickMemberIndex()[nick];
+  if (!rec) return "no_member";
+  if (!rec.pw) return "no_pw";
+  return (String(pwHash) === rec.pw) ? "ok" : "wrong_pw";
+}
+
+/* 자소서 명단에 이 닉이 존재하나 (받는사람 검증용) */
+function stickMemberExists(nick) { return !!stickMemberIndex()[nick]; }
+
+/* 닉 → 성별 맵 { 닉: "남"|"여" } — 인덱스에서 성별만 추출. */
+function stickGenders() {
+  var idx = stickMemberIndex(), map = {};
+  Object.keys(idx).forEach(function (n) { map[n] = idx[n].g; });
   return map;
 }
 
@@ -852,6 +863,7 @@ function doPost(e) {
     }
 
     try { CacheService.getScriptCache().remove(READ_CACHE_KEY); } catch (eC) {} // ★ PATCH_03: 편집됐으니 서버 캐시 무효화
+    stickIdxBust();  // 자소서 인덱스도 무효화(비번/성별 바뀔 수 있음)
     return json({ ok: true, admin: isAdmin });
   } catch (err) {
     return json({ ok: false, error: String(err) });
