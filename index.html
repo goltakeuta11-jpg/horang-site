@@ -7,18 +7,9 @@
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.21"></script>
+<script src="assets/inapp.js?v=20260831.22"></script>
 <title>호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.21">
-<style>
-  .donate { display: flex; gap: 14px; align-items: center;
-    background: linear-gradient(135deg, rgba(255,92,122,.12), rgba(255,171,64,.10));
-    border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 16px 18px; }
-  .donate__ico { font-size: 30px; line-height: 1; flex: none; }
-  .donate__title { display: block; font-size: 15px; font-weight: 800; margin-bottom: 4px; }
-  .donate__desc { margin: 0; font-size: 14px; line-height: 1.6; color: var(--text-dim); }
-  .donate__desc b { color: var(--accent); font-weight: 800; }
-</style>
+<link rel="stylesheet" href="assets/style.css?v=20260831.22">
 </head>
 <body>
 
@@ -33,16 +24,7 @@
     </p>
   </section>
 
-  <!-- 서버비 후원 안내 -->
-  <section class="donate" style="margin-top:24px">
-    <div class="donate__ico" aria-hidden="true">☕</div>
-    <div class="donate__body">
-      <strong class="donate__title">서버비 후원</strong>
-      <p class="donate__desc">공주에게 서버비를 후원해주시면 소정의 감사 선물을 드려요!<br>서버비는 월 <b>8,000원</b>이에요 🙏</p>
-    </div>
-  </section>
-
-  <!-- 최근 패치노트 — 명령어·멤버소개 타일 자리(맨 위 콘텐츠) -->
+  <!-- 최근 패치노트 -->
   <section style="margin-top:32px" data-patch-home></section>
 
   <section style="margin-top:40px" data-admin-box></section>
@@ -52,9 +34,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.21"></script>
-<script src="assets/store.js?v=20260831.21"></script>
-<script src="assets/app.js?v=20260831.21"></script>
+<script src="assets/config.js?v=20260831.22"></script>
+<script src="assets/store.js?v=20260831.22"></script>
+<script src="assets/app.js?v=20260831.22"></script>
 <script>
   document.title = CONFIG.ROOM_NAME + " 허브";
   App.header("index.html");

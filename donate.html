@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:type" content="website">
+<meta property="og:title" content="후원 · 호랑봇 허브">
+<meta property="og:description" content="호랑봇 허브 서버비 후원 안내.">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.22"></script>
+<title>후원 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.22">
+<style>
+  .dnt { max-width: 520px; margin: 8px auto 0; text-align: center; }
+  .dnt__ico { font-size: 56px; line-height: 1; }
+  .dnt__title { font-size: clamp(24px, 6vw, 34px); font-weight: 800; margin: 14px 0 6px; letter-spacing: -0.02em; }
+  .dnt__lead { color: var(--text-dim); font-size: 15.5px; line-height: 1.75; margin: 0 0 26px; }
+  .dnt__card { background: linear-gradient(135deg, rgba(255,92,122,.14), rgba(255,171,64,.11));
+    border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 26px 22px; }
+  .dnt__card p { margin: 0; font-size: 16px; line-height: 1.8; }
+  .dnt__price { display: inline-block; margin-top: 14px; font-size: 22px; font-weight: 800; color: var(--accent); }
+  .dnt__note { color: var(--text-dim); font-size: 13px; margin-top: 22px; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page">
+  <div class="dnt">
+    <div class="dnt__ico" aria-hidden="true">☕</div>
+    <h1 class="dnt__title">서버비 후원</h1>
+    <p class="dnt__lead">호랑봇 허브는 공주가 직접 서버를 운영해서 여러분께 제공하고 있어요.<br>작은 후원이 큰 힘이 됩니다 🙏</p>
+
+    <div class="dnt__card">
+      <p>공주에게 서버비를 후원해주시면<br><b>소정의 감사 선물</b>을 드려요!</p>
+      <span class="dnt__price">서버비 월 8,000원</span>
+    </div>
+
+    <p class="dnt__note">후원 방법이 궁금하시면 방에서 공주에게 문의해주세요 💌</p>
+  </div>
+</main>
+
+<script src="assets/config.js?v=20260831.22"></script>
+<script src="assets/store.js?v=20260831.22"></script>
+<script src="assets/app.js?v=20260831.22"></script>
+<script>
+  App.header("donate.html");
+</script>
+</body>
+</html>
