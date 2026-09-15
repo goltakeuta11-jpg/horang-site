@@ -168,6 +168,7 @@
       ["outings.html", "외출"],
       ["patchnotes.html", "패치노트"]
     ];
+    if (isAdmin()) nav.push(["admin.html", "관리전용"]);   // 관리자 키일 때만 노출
     const hit = nav.find(([h]) => h === active);   // 조회통계: 이 페이지 이름으로 1건 기록
     trackHit(hit ? hit[1] : active);
     const el = document.querySelector("[data-header]");

@@ -821,6 +821,22 @@ function doPost(e) {
     // ★ 작대기(매칭): 별도 흐름으로 처리하고 즉시 반환 (자소서/명령어 저장과 무관)
     if (body.stickAction) return handleStick(body);
 
+    // ★ 조회통계 백업: 서버(horangbot)가 주기적으로 view_hits 를 통째로 밀어넣음(백업용)
+    if (body.action === "syncviews") {
+      if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
+      var vsh = viewSheet();
+      var views = body.views || [];
+      vsh.clear();
+      vsh.getRange("A:A").setNumberFormat("@");
+      var vout = [["날짜", "페이지", "횟수", "일수"]];
+      for (var vi = 0; vi < views.length; vi++) {
+        var v = views[vi];
+        vout.push([String(v.date), String(v.page), Number(v.count) || 0, Number(v.days) || 1]);
+      }
+      vsh.getRange(1, 1, vout.length, 4).setValues(vout);
+      return json({ ok: true, synced: views.length });
+    }
+
     const isAdmin = (body.key === ADMIN_KEY);
     const incoming = body.data || {};
 
