@@ -180,7 +180,8 @@
         <span class="brand__name">${esc(CONFIG.ROOM_NAME)}</span>
         <span class="brand__sub">${esc(sub)}</span>
       </a>
-      <nav class="nav">
+      <button class="nav-toggle" data-nav-toggle aria-label="메뉴 열기" aria-expanded="false">☰</button>
+      <nav class="nav" data-nav>
         ${nav.map(([h, t]) =>
           `<a href="${link(h)}" class="nav__item${h === active ? " is-on" : ""}">${t}</a>`).join("")}
       </nav>
@@ -192,6 +193,13 @@
       </span>
       ${isAdmin() ? '<button class="btn btn--ghost btn--sm" data-logout>나가기</button>' : ""}
     `;
+    const navToggle = el.querySelector("[data-nav-toggle]");
+    const navEl = el.querySelector("[data-nav]");
+    if (navToggle && navEl) navToggle.onclick = () => {
+      const open = navEl.classList.toggle("nav--open");
+      navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      navToggle.textContent = open ? "✕" : "☰";
+    };
     const tt = el.querySelector("[data-theme-toggle]");
     if (tt) tt.onclick = () => {
       const now = (document.documentElement.getAttribute("data-theme") === "light") ? "dark" : "light";

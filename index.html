@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 안내소">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.17"></script>
+<script src="assets/inapp.js?v=20260831.18"></script>
 <title>호랑봇 안내소</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.17">
+<link rel="stylesheet" href="assets/style.css?v=20260831.18">
 <style>
   .donate { display: flex; gap: 14px; align-items: center;
     background: linear-gradient(135deg, rgba(255,92,122,.12), rgba(255,171,64,.10));
@@ -45,34 +45,6 @@
   <!-- 최근 패치노트 — 명령어·멤버소개 타일 자리(맨 위 콘텐츠) -->
   <section style="margin-top:32px" data-patch-home></section>
 
-  <section class="grid grid--3" style="margin-top:32px">
-    <a class="tile" href="commands.html" data-tile="commands">
-      <span class="tile__no">01</span>
-      <h2 class="tile__title">명령어</h2>
-      <p class="tile__desc">봇에게 뭐라고 쳐야 하는지, 무엇이 나오는지.</p>
-    </a>
-    <a class="tile" href="members.html?g=남자" data-tile="members-m">
-      <span class="tile__no">02</span>
-      <h2 class="tile__title">남자 자소서</h2>
-      <p class="tile__desc">남자 멤버들 자기소개.</p>
-    </a>
-    <a class="tile" href="members.html?g=여자" data-tile="members-f">
-      <span class="tile__no">03</span>
-      <h2 class="tile__title">여자 자소서</h2>
-      <p class="tile__desc">여자 멤버들 자기소개.</p>
-    </a>
-    <a class="tile" href="psychtest.html" data-tile="psychtest">
-      <span class="tile__no">04</span>
-      <h2 class="tile__title">심리테스트</h2>
-      <p class="tile__desc">연애유형 테스트 하고 자소서에 등록.</p>
-    </a>
-    <a class="tile" href="outings.html" data-tile="outings">
-      <span class="tile__no">05</span>
-      <h2 class="tile__title">외출</h2>
-      <p class="tile__desc">방에서 외출한 사람 목록.</p>
-    </a>
-  </section>
-
   <section style="margin-top:40px" data-admin-box></section>
 
   <section class="note" style="margin-top:30px">
@@ -80,17 +52,12 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.17"></script>
-<script src="assets/store.js?v=20260831.17"></script>
-<script src="assets/app.js?v=20260831.17"></script>
+<script src="assets/config.js?v=20260831.18"></script>
+<script src="assets/store.js?v=20260831.18"></script>
+<script src="assets/app.js?v=20260831.18"></script>
 <script>
   document.title = CONFIG.ROOM_NAME + " 안내소";
   App.header("index.html");
-
-  // 관리자면 타일 링크에도 키를 붙여줍니다.
-  document.querySelectorAll("[data-tile]").forEach(a => {
-    a.href = App.link(a.getAttribute("href"));
-  });
 
   /* ---------- 홈 최근 패치노트 ---------- */
   function pretty(d) {
