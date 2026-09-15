@@ -5,6 +5,17 @@
    다른 스크립트보다 먼저 실행되도록 <head> 에서 부릅니다.
    ============================================================ */
 
+/* ── 새 주소로 통합: 옛 GitHub Pages 접속은 horangbot.co.kr 로 즉시 이동 ──
+   (서버가 원본이 된 뒤 GitHub로 쓰면 데이터가 어긋나므로 한 길로 모음) */
+(function () {
+  try {
+    if (location.hostname.indexOf("github.io") !== -1) {
+      var p = location.pathname.replace(/^\/horang-site/, "");   // /horang-site/x → /x
+      location.replace("https://horangbot.co.kr" + (p || "/") + location.search + location.hash);
+    }
+  } catch (e) {}
+})();
+
 /* ── 테마(웜차콜/라이트) 즉시 적용 ─────────────────────────────
    렌더 전에 <html data-theme> 를 미리 박아 깜빡임을 막습니다.
    저장값 우선 → 없으면 기기(OS) 설정 → 기본은 웜차콜(다크). */

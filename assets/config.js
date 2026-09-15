@@ -26,9 +26,12 @@ window.CONFIG = {
   /* 시트 주소 가운데 부분 */
   SHEET_ID: "1aYSJxF7fICdud5SpTIXjQTCIlldru1trP-Hpf_bvrOU",
 
-  /* Apps Script 를 배포하고 받은 주소 (.../exec 로 끝납니다)
-     비워두면 읽기 전용으로 동작합니다. */
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyRlMLzUFwhUi8q7j969nH86iTWZNT-G8DWovAh40Jqya2grTuqugClRLU67BpIiK90/exec",
+  /* Apps Script 주소.
+     - horangbot.co.kr(자체 서버): 같은 출처 프록시(/api/gs) → 브라우저 CORS·리다이렉트·간헐 인터스티셜 회피
+     - 그 외(GitHub Pages 등): Apps Script 직접 호출 */
+  SCRIPT_URL: (typeof location !== "undefined" && location.hostname === "horangbot.co.kr")
+    ? "/api/gs"
+    : "https://script.google.com/macros/s/AKfycbyRlMLzUFwhUi8q7j969nH86iTWZNT-G8DWovAh40Jqya2grTuqugClRLU67BpIiK90/exec",
 
   /* 각 화면이 쓸 탭(시트) 이름 — 시트의 탭 이름과 정확히 같아야 합니다 */
   SHEETS: {
