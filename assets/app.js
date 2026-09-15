@@ -159,14 +159,14 @@
 
   function header(active) {
     const nav = [
+      ["donate.html", "후원"],
       ["index.html", "홈"],
       ["commands.html", "명령어"],
       ["members.html", "자소서"],
       ["sticks.html", "작대기"],
       ["psychtest.html", "심리테스트"],
       ["outings.html", "외출"],
-      ["patchnotes.html", "패치노트"],
-      ["donate.html", "후원"]
+      ["patchnotes.html", "패치노트"]
     ];
     if (isAdmin()) nav.push(["admin.html", "관리전용"]);   // 관리자 키일 때만 노출
     const hit = nav.find(([h]) => h === active);   // 조회통계: 이 페이지 이름으로 1건 기록
