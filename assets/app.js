@@ -173,7 +173,7 @@
     trackHit(hit ? hit[1] : active);
     const el = document.querySelector("[data-header]");
     if (!el) return;
-    const sub = CONFIG.ROOM_NAME === CONFIG.BOT_NAME ? "안내소" : CONFIG.BOT_NAME + " 안내소";
+    const sub = CONFIG.ROOM_NAME === CONFIG.BOT_NAME ? "허브" : CONFIG.BOT_NAME + " 허브";
     el.innerHTML = `
       <a class="brand" href="${link("index.html")}">
         <span class="brand__dot" aria-hidden="true"></span>
