@@ -161,8 +161,7 @@
     const nav = [
       ["index.html", "홈"],
       ["commands.html", "명령어"],
-      ["members.html?g=남자", "남자 자소서"],
-      ["members.html?g=여자", "여자 자소서"],
+      ["members.html", "자소서"],
       ["sticks.html", "작대기"],
       ["psychtest.html", "심리테스트"],
       ["outings.html", "외출"],

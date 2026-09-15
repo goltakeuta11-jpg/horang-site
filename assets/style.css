@@ -112,6 +112,12 @@ h1, h2, h3 { margin: 0; line-height: 1.25; letter-spacing: -0.02em; }
 }
 .nav__item:hover { color: var(--text); background: var(--panel-2); }
 .nav__item.is-on { color: var(--bg); background: var(--text); }
+/* 자소서 남/여 세그먼트 토글 */
+.gseg { display: inline-flex; gap: 4px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px; margin: 14px 0 4px; }
+.gseg__btn { text-decoration: none; font-size: 14px; font-weight: 700; color: var(--text-dim);
+  padding: 7px 18px; border-radius: 999px; }
+.gseg__btn.is-on { color: var(--bg); background: var(--text); }
 /* 햄버거 버튼 — 데스크톱에선 숨김, 모바일에서만 노출 */
 .nav-toggle { display: none; margin-left: auto; background: var(--panel); color: var(--text);
   border: 1px solid var(--line); border-radius: 10px; font-size: 20px; line-height: 1;

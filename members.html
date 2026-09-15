@@ -7,9 +7,9 @@
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.24"></script>
+<script src="assets/inapp.js?v=20260831.25"></script>
 <title>자소서 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.24">
+<link rel="stylesheet" href="assets/style.css?v=20260831.25">
 </head>
 <body>
 
@@ -19,6 +19,8 @@
   <p class="page__eyebrow" data-eyebrow>자소서</p>
   <h1 class="page__title" data-title>방 사람들 자기소개</h1>
   <p class="page__desc">누구나 자기 소개를 <b>등록 · 수정</b>할 수 있어요. (삭제는 운영자만)</p>
+
+  <div class="gseg" data-gseg></div>
 
   <div class="toolbar">
     <input class="input" style="max-width:260px" placeholder="닉네임 · 취미 · MBTI 검색" data-search>
@@ -48,14 +50,16 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260831.24"></script>
-<script src="assets/store.js?v=20260831.24"></script>
-<script src="assets/app.js?v=20260831.24"></script>
+<script src="assets/config.js?v=20260831.25"></script>
+<script src="assets/store.js?v=20260831.25"></script>
+<script src="assets/app.js?v=20260831.25"></script>
 <script>
 // 이 탭이 담당하는 성별 (?g=남자 / ?g=여자, 기본 남자)
 const GENDER = new URLSearchParams(location.search).get("g") === "여자" ? "여자" : "남자";
 
-App.header("members.html?g=" + GENDER);
+App.header("members.html");
+document.querySelector("[data-gseg]").innerHTML = ["남자", "여자"]
+  .map(g => `<a href="${App.link("members.html?g=" + g)}" class="gseg__btn${g === GENDER ? " is-on" : ""}">${g}</a>`).join("");
 document.title = GENDER + " 자소서 · 호랑봇 허브";
 document.querySelector("[data-eyebrow]").textContent = GENDER + " 자소서";
 document.querySelector("[data-title]").textContent = GENDER + " 방 사람들 자기소개";
