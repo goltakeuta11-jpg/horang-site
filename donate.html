@@ -7,9 +7,9 @@
 <meta property="og:title" content="후원 · 호랑봇 허브">
 <meta property="og:description" content="호랑봇 허브 서버비 후원 안내.">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.23"></script>
+<script src="assets/inapp.js?v=20260831.24"></script>
 <title>후원 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.23">
+<link rel="stylesheet" href="assets/style.css?v=20260831.24">
 <style>
   .dnt { max-width: 520px; margin: 8px auto 0; text-align: center; }
   .dnt__ico { font-size: 56px; line-height: 1; }
@@ -20,6 +20,19 @@
   .dnt__card p { margin: 0; font-size: 16px; line-height: 1.8; }
   .dnt__price { display: inline-block; margin-top: 14px; font-size: 22px; font-weight: 800; color: var(--accent); }
   .dnt__note { color: var(--text-dim); font-size: 13px; margin-top: 22px; line-height: 1.7; }
+  /* 후원자 명단 */
+  .dnt__roll { margin-top: 34px; }
+  .dnt__roll h2 { font-size: 16px; font-weight: 800; margin: 0 0 12px; }
+  .roll-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .roll-chip { background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+    padding: 7px 14px; font-size: 14px; font-weight: 700; }
+  .roll-empty { color: var(--text-dim); font-size: 14px; }
+  .dnt-admin { margin-top: 22px; text-align: left; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); padding: 14px; }
+  .dnt-admin h3 { font-size: 13px; color: var(--text-dim); margin: 0 0 8px; }
+  .dnt-admin textarea { width: 100%; box-sizing: border-box; min-height: 120px; resize: vertical;
+    font: inherit; font-size: 14px; background: var(--bg); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
 </style>
 </head>
 <body>
@@ -38,14 +51,73 @@
     </div>
 
     <p class="dnt__note">후원하시려면 공주에게 <b>'후원'</b>이라고 보내주세요! 💌<br>후원해주신 분들은 이 페이지 명단에 올려드려요 🙌</p>
+
+    <div class="dnt__roll">
+      <h2>💛 후원해주신 분들</h2>
+      <div class="roll-list" data-roll><span class="roll-empty">불러오는 중…</span></div>
+      <div data-roll-admin></div>
+    </div>
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.23"></script>
-<script src="assets/store.js?v=20260831.23"></script>
-<script src="assets/app.js?v=20260831.23"></script>
+<script src="assets/config.js?v=20260831.24"></script>
+<script src="assets/store.js?v=20260831.24"></script>
+<script src="assets/app.js?v=20260831.24"></script>
 <script>
   App.header("donate.html");
+
+  const URL_ = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
+  const KEY = (window.CONFIG && CONFIG.ADMIN_KEY) || "";
+  const rollEl = document.querySelector("[data-roll]");
+  const adminEl = document.querySelector("[data-roll-admin]");
+  let donors = [];
+
+  function renderRoll() {
+    rollEl.innerHTML = donors.length
+      ? donors.map(n => `<span class="roll-chip">${App.esc(n)}</span>`).join("")
+      : '<span class="roll-empty">아직 후원해주신 분이 없어요. 첫 후원의 주인공이 되어주세요! 🙏</span>';
+    if (App.isAdmin()) renderAdmin();
+  }
+
+  function renderAdmin() {
+    adminEl.innerHTML = `
+      <div class="dnt-admin">
+        <h3>후원자 명단 편집 (관리자) — 한 줄에 한 명</h3>
+        <textarea data-names placeholder="호랑&#10;표독&#10;봉필">${App.esc(donors.join("\n"))}</textarea>
+        <div class="toolbar" style="margin:10px 0 0">
+          <button class="btn btn--primary" data-save>저장</button>
+        </div>
+      </div>`;
+    adminEl.querySelector("[data-save]").onclick = save;
+  }
+
+  async function load() {
+    try {
+      const r = await fetch(URL_ + "?action=donors&_=" + Date.now());
+      const j = await r.json();
+      donors = (j && j.donors) || [];
+    } catch (e) { donors = []; }
+    renderRoll();
+  }
+
+  async function save() {
+    const names = (adminEl.querySelector("[data-names]").value || "")
+      .split("\n").map(s => s.trim()).filter(Boolean);
+    const btn = adminEl.querySelector("[data-save]");
+    btn.disabled = true; btn.textContent = "저장 중…";
+    try {
+      const r = await fetch(URL_, { method: "POST", redirect: "follow",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ donorAction: "save", key: KEY, donors: names }) });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || "실패");
+      donors = names; renderRoll();
+      App.toast("저장했어요 (" + names.length + "명)");
+    } catch (e) { App.toast("저장 실패: " + e.message, true); }
+    finally { btn.disabled = false; btn.textContent = "저장"; }
+  }
+
+  load();
 </script>
 </body>
 </html>
