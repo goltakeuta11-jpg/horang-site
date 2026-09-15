@@ -1,6 +1,8 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 /* ============================================================
    style.css — 이 파일만 고치면 사이트 전체 모양이 바뀝니다.
    맨 위 :root 의 값들이 색·글꼴·간격을 전부 결정합니다.
+   글꼴: Pretendard (가독성·스타일 좋은 한글 웹폰트, dynamic-subset 로 필요한 글자만 로드).
    ============================================================ */
 
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
@@ -22,7 +24,7 @@
   --catmod:    #7cc4ff;   /* 카테고리 칩(모드) */
 
   /* --- 글꼴 ------------------------------------------------- */
-  --font: "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font: "Pretendard Variable", "Pretendard", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "D2Coding", Menlo, monospace;
 
   /* --- 모양 ------------------------------------------------- */
