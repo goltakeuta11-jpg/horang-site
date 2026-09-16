@@ -158,22 +158,28 @@
   }
 
   function header(active) {
-    const nav = [
-      ["index.html", "홈"],
-      ["donate.html", "후원"],
+    // 항상 보이는 탭 (홈은 좌측 로고가 대신함)
+    const primary = [
       ["notices.html", "공지"],
       ["commands.html", "명령어"],
       ["members.html", "자소서"],
       ["sticks.html", "작대기"],
+      ["donate.html", "후원"]
+    ];
+    // "더보기 ▾" 안에 접히는 탭 (자주 안 보는 것)
+    const more = [
       ["psychtest.html", "심리테스트"],
       ["outings.html", "외출"],
       ["patchnotes.html", "패치노트"]
     ];
-    if (isAdmin()) nav.push(["admin.html", "관리전용"]);   // 관리자 키일 때만 노출
-    const hit = nav.find(([h]) => h === active);   // 조회통계: 이 페이지 이름으로 1건 기록
+    if (isAdmin()) more.push(["admin.html", "관리전용"]);   // 관리자 키일 때만 노출
+    const all = primary.concat(more, [["index.html", "홈"]]);
+    const hit = all.find(([h]) => h === active);   // 조회통계: 이 페이지 이름으로 1건 기록
     trackHit(hit ? hit[1] : active);
     const el = document.querySelector("[data-header]");
     if (!el) return;
+    const moreActive = more.some(([h]) => h === active);   // 더보기 안 페이지에 있으면 버튼 강조
+    const itemHtml = ([h, t]) => `<a href="${link(h)}" class="nav__item${h === active ? " is-on" : ""}">${t}</a>`;
     const sub = CONFIG.ROOM_NAME === CONFIG.BOT_NAME ? "허브" : CONFIG.BOT_NAME + " 허브";
     el.innerHTML = `
       <a class="brand" href="${link("index.html")}">
@@ -183,8 +189,12 @@
       </a>
       <button class="nav-toggle" data-nav-toggle aria-label="메뉴 열기" aria-expanded="false">☰</button>
       <nav class="nav" data-nav>
-        ${nav.map(([h, t]) =>
-          `<a href="${link(h)}" class="nav__item${h === active ? " is-on" : ""}">${t}</a>`).join("")}
+        ${primary.map(itemHtml).join("")}
+        <div class="nav__more" data-more>
+          <button type="button" class="nav__item nav__more-btn${moreActive ? " is-on" : ""}"
+            data-more-btn aria-haspopup="true" aria-expanded="false">더보기</button>
+          <div class="nav__menu" data-more-menu>${more.map(itemHtml).join("")}</div>
+        </div>
       </nav>
       <button class="btn btn--ghost btn--sm" data-theme-toggle title="화면 밝기 전환" aria-label="테마 전환">${
         (document.documentElement.getAttribute("data-theme") === "light") ? "☀️" : "🌙"
@@ -201,6 +211,22 @@
       navToggle.setAttribute("aria-expanded", open ? "true" : "false");
       navToggle.textContent = open ? "✕" : "☰";
     };
+    // "더보기" 드롭다운 열고닫기 (+ 바깥 클릭 시 닫힘)
+    const moreWrap = el.querySelector("[data-more]");
+    const moreBtn = el.querySelector("[data-more-btn]");
+    if (moreWrap && moreBtn) {
+      moreBtn.onclick = (e) => {
+        e.stopPropagation();
+        const open = moreWrap.classList.toggle("is-open");
+        moreBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      };
+      document.addEventListener("click", (e) => {
+        if (!moreWrap.contains(e.target)) {
+          moreWrap.classList.remove("is-open");
+          moreBtn.setAttribute("aria-expanded", "false");
+        }
+      });
+    }
     const tt = el.querySelector("[data-theme-toggle]");
     if (tt) tt.onclick = () => {
       const now = (document.documentElement.getAttribute("data-theme") === "light") ? "dark" : "light";
