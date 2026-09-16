@@ -161,14 +161,14 @@
     // 항상 보이는 탭 (홈은 좌측 로고가 대신함)
     const primary = [
       ["notices.html", "공지"],
-      ["commands.html", "명령어"],
+      ["psychtest.html", "심리테스트"],
       ["members.html", "자소서"],
       ["sticks.html", "작대기"],
       ["donate.html", "후원"]
     ];
     // "더보기 ▾" 안에 접히는 탭 (자주 안 보는 것)
     const more = [
-      ["psychtest.html", "심리테스트"],
+      ["commands.html", "명령어"],
       ["outings.html", "외출"],
       ["patchnotes.html", "패치노트"]
     ];
