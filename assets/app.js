@@ -161,6 +161,7 @@
     const nav = [
       ["index.html", "홈"],
       ["donate.html", "후원"],
+      ["notices.html", "공지"],
       ["commands.html", "명령어"],
       ["members.html", "자소서"],
       ["sticks.html", "작대기"],

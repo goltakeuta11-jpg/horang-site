@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.33">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.33">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.33">
+<meta property="og:type" content="website">
+<meta property="og:title" content="공지 · 호랑봇 허브">
+<meta property="og:description" content="방 소식과 규칙 변경을 한 곳에서.">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.33"></script>
+<title>공지 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.33">
+<style>
+  /* 공지 목록 (카페 게시판 느낌) */
+  .nlist { display: flex; flex-direction: column; }
+  .nrow { display: flex; align-items: center; gap: 12px; width: 100%;
+    text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line);
+    padding: 15px 12px; cursor: pointer; font: inherit; color: var(--text); }
+  .nrow:last-child { border-bottom: 0; }
+  .nrow:hover { background: var(--panel); }
+  .nrow__pin { flex: none; font-size: 14px; width: 18px; text-align: center; opacity: .95; }
+  .nrow__title { flex: 1 1 auto; min-width: 0; font-size: 15.5px; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nrow--pinned .nrow__title { color: var(--accent); }
+  .nrow__date { flex: none; font-size: 12.5px; color: var(--text-dim); }
+  .nrow__arrow { flex: none; color: var(--text-dim); font-size: 13px; }
+  .nrow__admin { flex: none; display: inline-flex; gap: 6px; }
+
+  /* 공지 전문 (게시글 열림) */
+  .ndetail__back { margin-bottom: 14px; }
+  .ndetail__head { border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 16px; }
+  .ndetail__title { font-size: clamp(20px, 5vw, 26px); font-weight: 800; margin: 0; line-height: 1.35; letter-spacing: -0.01em; }
+  .ndetail__meta { margin-top: 8px; font-size: 13px; color: var(--text-dim); display: flex; gap: 10px; align-items: center; }
+  .ndetail__pin { color: var(--accent); font-weight: 700; }
+  .ndetail__body { font-size: 15.5px; line-height: 1.85; white-space: pre-wrap; word-break: break-word; }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page">
+  <p class="page__eyebrow">공지</p>
+  <h1 class="page__title">방 공지사항</h1>
+  <p class="page__desc">방 소식과 규칙이 바뀌면 여기에 올립니다. 제목을 누르면 전문을 볼 수 있어요.</p>
+
+  <div class="toolbar">
+    <input class="input" style="max-width:240px" placeholder="제목 · 내용 검색" data-search>
+    <span class="toolbar__spacer"></span>
+    <span data-admin-tools></span>
+  </div>
+
+  <!-- 목록 -->
+  <div class="card" style="padding:4px 8px" data-list-wrap>
+    <div class="nlist" data-list></div>
+  </div>
+
+  <!-- 전문 (게시글) -->
+  <div class="card" data-detail hidden></div>
+</main>
+
+<!-- 공지 입력 창 -->
+<div class="modal" data-modal>
+  <div class="modal__box">
+    <h2 class="modal__title" data-modal-title>공지 작성</h2>
+
+    <label class="field"><span class="field__label">날짜 (필수)</span>
+      <input class="input" type="date" data-f-date></label>
+
+    <label class="field"><span class="field__label">제목 (필수)</span>
+      <input class="input" data-f-title placeholder="예: 8월 정기모임 안내"></label>
+
+    <label class="field"><span class="field__label">내용 (필수)</span>
+      <textarea class="textarea" data-f-body style="min-height:200px"
+        placeholder="공지 내용을 적어주세요.&#10;줄바꿈도 그대로 보입니다."></textarea></label>
+
+    <label class="field field--row" style="align-items:center;gap:8px;flex-direction:row">
+      <input type="checkbox" data-f-pin>
+      <span class="field__label" style="margin:0">📌 맨 위에 고정</span></label>
+
+    <div class="modal__foot">
+      <button class="btn btn--ghost" data-cancel>취소</button>
+      <button class="btn btn--primary" data-save>저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/config.js?v=20260831.33"></script>
+<script src="assets/store.js?v=20260831.33"></script>
+<script src="assets/app.js?v=20260831.33"></script>
+<script>
+App.header("notices.html");
+const admin = App.isAdmin();
+const readOnly = !Store.canWrite;
+const canEdit = admin && !readOnly;
+const listWrap = document.querySelector("[data-list-wrap]");
+const listEl = document.querySelector("[data-list]");
+const detailEl = document.querySelector("[data-detail]");
+const modal = document.querySelector("[data-modal]");
+let editIndex = -1;
+let openIndex = -1;   // 지금 전문 보기로 열린 공지 (없으면 -1)
+
+if (admin) {
+  const tools = document.querySelector("[data-admin-tools]");
+  if (readOnly) {
+    tools.innerHTML = `<a class="btn btn--primary" target="_blank" rel="noopener" href="${Store.sheetEditUrl()}">시트에서 수정하기</a>`;
+  } else {
+    tools.innerHTML = `<button class="btn btn--primary" data-add>공지 작성</button>`;
+    tools.querySelector("[data-add]").onclick = () => open(-1);
+  }
+}
+
+function pretty(d) {
+  const m = (d || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[1]}. ${+m[2]}. ${+m[3]}` : (d || "");
+}
+
+/* 원본 배열 인덱스와 함께, 고정 먼저 + 최신(나중에 쓴 글) 먼저로 정렬 */
+function ordered() {
+  return Store.get().notices
+    .map((n, i) => ({ n, i }))
+    .sort((a, b) => (b.n.pin ? 1 : 0) - (a.n.pin ? 1 : 0) || b.i - a.i);
+}
+
+function renderList() {
+  detailEl.hidden = true; listWrap.hidden = false; openIndex = -1;
+  const q = (document.querySelector("[data-search]").value || "").toLowerCase().trim();
+  const list = ordered().filter(({ n }) =>
+    !q || (n.title + " " + n.body).toLowerCase().includes(q));
+
+  if (!list.length) {
+    listEl.innerHTML = `<div class="empty" style="border:none">
+      <strong>아직 공지가 없어요</strong>${canEdit ? "‘공지 작성’으로 첫 공지를 올려보세요." : "새 소식이 생기면 여기에 올라와요."}</div>`;
+    return;
+  }
+
+  listEl.innerHTML = list.map(({ n, i }) => `
+    <button class="nrow${n.pin ? " nrow--pinned" : ""}" data-open="${i}">
+      <span class="nrow__pin">${n.pin ? "📌" : ""}</span>
+      <span class="nrow__title">${App.esc(n.title)}</span>
+      <span class="nrow__date">${App.esc(pretty(n.date))}</span>
+      ${canEdit ? `<span class="nrow__admin">
+        <button class="btn btn--sm btn--ghost" data-edit="${i}">수정</button>
+        <button class="btn btn--sm btn--danger" data-del="${i}">삭제</button>
+      </span>` : `<span class="nrow__arrow">›</span>`}
+    </button>`).join("");
+
+  listEl.querySelectorAll("[data-open]").forEach(b => b.onclick = e => {
+    if (e.target.closest("[data-edit],[data-del]")) return;   // 관리 버튼 클릭은 열기 아님
+    showDetail(+b.dataset.open);
+  });
+  if (canEdit) {
+    listEl.querySelectorAll("[data-edit]").forEach(b => b.onclick = ev => { ev.stopPropagation(); open(+b.dataset.edit); });
+    listEl.querySelectorAll("[data-del]").forEach(b => b.onclick = ev => { ev.stopPropagation(); remove(+b.dataset.del); });
+  }
+}
+
+function showDetail(i) {
+  const n = Store.get().notices[i];
+  if (!n) return renderList();
+  openIndex = i;
+  listWrap.hidden = true; detailEl.hidden = false;
+  detailEl.innerHTML = `
+    <button class="btn btn--ghost btn--sm ndetail__back" data-back>← 목록으로</button>
+    <div class="ndetail__head">
+      <h2 class="ndetail__title">${App.esc(n.title)}</h2>
+      <div class="ndetail__meta">
+        ${n.pin ? `<span class="ndetail__pin">📌 고정 공지</span>` : ""}
+        <span>${App.esc(pretty(n.date))}</span>
+      </div>
+    </div>
+    <div class="ndetail__body">${App.esc(n.body)}</div>
+    ${canEdit ? `<div class="modal__foot" style="margin-top:20px;border-top:1px solid var(--line);padding-top:16px">
+      <button class="btn btn--ghost btn--sm" data-d-edit>수정</button>
+      <button class="btn btn--danger btn--sm" data-d-del>삭제</button>
+    </div>` : ""}`;
+  detailEl.querySelector("[data-back]").onclick = renderList;
+  if (canEdit) {
+    detailEl.querySelector("[data-d-edit]").onclick = () => open(i);
+    detailEl.querySelector("[data-d-del]").onclick = () => remove(i);
+  }
+  window.scrollTo(0, 0);
+}
+
+function open(i) {
+  editIndex = i;
+  const today = new Date();
+  const iso = today.getFullYear() + "-" + ("0" + (today.getMonth() + 1)).slice(-2) + "-" + ("0" + today.getDate()).slice(-2);
+  const n = i < 0 ? { date: iso, title: "", body: "", pin: false } : Store.get().notices[i];
+  document.querySelector("[data-modal-title]").textContent = i < 0 ? "공지 작성" : "공지 수정";
+  document.querySelector("[data-f-date]").value = n.date || iso;
+  document.querySelector("[data-f-title]").value = n.title || "";
+  document.querySelector("[data-f-body]").value = n.body || "";
+  document.querySelector("[data-f-pin]").checked = !!n.pin;
+  modal.classList.add("is-on");
+  document.querySelector("[data-f-title]").focus();
+}
+
+function close() { modal.classList.remove("is-on"); }
+document.querySelector("[data-cancel]").onclick = close;
+modal.onclick = e => { if (e.target === modal) close(); };
+
+document.querySelector("[data-save]").onclick = () => {
+  const item = {
+    date: document.querySelector("[data-f-date]").value,
+    title: document.querySelector("[data-f-title]").value.trim(),
+    body: document.querySelector("[data-f-body]").value.trim(),
+    pin: document.querySelector("[data-f-pin]").checked
+  };
+  if (!item.date) return App.toast("날짜를 골라주세요.", true);
+  if (!item.title) return App.toast("제목을 적어주세요.", true);
+  if (!item.body) return App.toast("내용을 적어주세요.", true);
+
+  const data = Store.get();
+  if (editIndex < 0) data.notices.push(item); else data.notices[editIndex] = item;
+  if (!Store.set(data)) return;   // 저장 차단(로드 전)이면 화면갱신 안 함
+  close();
+  App.toast(editIndex < 0 ? "공지를 올렸어요." : "수정했어요.");
+  // 방금 저장한 글로 이동 (새 글은 목록에, 수정은 그 전문으로)
+  if (editIndex >= 0 && openIndex >= 0) showDetail(editIndex); else renderList();
+};
+
+function remove(i) {
+  const data = Store.get();
+  if (!confirm(`"${data.notices[i].title}" 공지를 삭제할까요?`)) return;
+  data.notices.splice(i, 1);
+  if (!Store.set(data)) return;
+  App.toast("삭제했어요.");
+  renderList();
+}
+
+document.querySelector("[data-search]").oninput = renderList;
+
+Store.load()
+  .then(renderList)
+  .catch(e => { renderList(); App.toast(e.message, true); });
+</script>
+</body>
+</html>
