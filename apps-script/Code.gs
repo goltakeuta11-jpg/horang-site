@@ -214,31 +214,6 @@ function jsonRaw(str) {      // 이미 JSON 문자열인 걸 그대로 반환 (�
   return ContentService.createTextOutput(str).setMimeType(ContentService.MimeType.JSON);
 }
 
-/* 봇이 미전송 서버경고를 가져감 — 가져간 행은 전송됨=Y 로 표시해서 중복 발송을 막음.
-   (봇 폰은 VPS에 직접 못 가므로, 서버가 여기 적어두고 봇이 방에서 발화할 때 이걸 읽어감) */
-function pullBotAlerts() {
-  var lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(10000);
-    var sh = book().getSheetByName("봇알림");
-    if (!sh || sh.getLastRow() < 2) return json({ ok: true, alerts: [] });
-    var n = sh.getLastRow() - 1;
-    var vals = sh.getRange(2, 1, n, 3).getValues();
-    var out = [];
-    for (var i = 0; i < vals.length; i++) {
-      if (!String(vals[i][2]).trim()) {          // 전송됨 칸이 비어있으면 = 아직 안 보낸 경고
-        out.push(String(vals[i][1]));
-        sh.getRange(i + 2, 3).setValue("Y");     // 가져갔다고 표시(다음엔 안 보냄)
-      }
-    }
-    return json({ ok: true, alerts: out });
-  } catch (e) {
-    return json({ ok: true, alerts: [] });        // 오류 시 조용히 빈 배열 (봇 방해 안 함)
-  } finally {
-    try { lock.releaseLock(); } catch (ig) {}
-  }
-}
-
 /* 이름+헤더로 탭 확보 (없으면 헤더 넣어 새로 만듦) */
 function getSheet(name, header) {
   const ss = book();
@@ -303,8 +278,6 @@ function doGet(e) {
     if (p.action === "ping") return json({ ok: true, pong: true }); // 예열용: 시트 안 읽고 런타임만 깨움
     if (p.action === "hit") return recordHit(p.page);          // 페이지 조회 1건 기록(+1)
     if (p.action === "viewstats") return json({ ok: true, views: readViews() }); // 조회통계 반환
-    if (p.action === "botalerts") return pullBotAlerts();      // 봇이 서버 자동점검 경고를 가져감(가져가면 전송됨 표시)
-    if (p.action === "botstatus") return json({ ok: true, status: PropertiesService.getScriptProperties().getProperty("HEALTH_STATUS") || "" }); // /서버 명령용: 마지막 점검 결과
 
     // ★ PATCH_03: 서버 캐시 히트면 탭 안 읽고 즉시 반환 (?fresh=1 이면 무시하고 새로 빌드)
     var scache = CacheService.getScriptCache();
@@ -849,20 +822,6 @@ function doPost(e) {
 
     // ★ 작대기(매칭): 별도 흐름으로 처리하고 즉시 반환 (자소서/명령어 저장과 무관)
     if (body.stickAction) return handleStick(body);
-
-    // ★ 서버 자동점검 경고: VPS healthcheck가 문제 발견 시 여기 적어둠 → 봇이 방에 띄움(폰이 못 가는 서버 대신 시트가 중계)
-    if (body.botAlert) {
-      if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
-      getSheet("봇알림", ["시각", "메시지", "전송됨"]).appendRow([stampNow(), String(body.msg || ""), ""]);
-      return json({ ok: true });
-    }
-
-    // ★ 서버 최신 상태 저장: healthcheck가 매 점검마다(정상 포함) 최신 한 줄을 남김 → /서버 명령이 읽음
-    if (body.botStatus) {
-      if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
-      PropertiesService.getScriptProperties().setProperty("HEALTH_STATUS", String(body.status || ""));
-      return json({ ok: true });
-    }
 
     // ★ 조회통계 백업: 서버(horangbot)가 주기적으로 view_hits 를 통째로 밀어넣음(백업용)
     if (body.action === "syncviews") {
