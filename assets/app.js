@@ -69,29 +69,18 @@
     });
   }
 
-  /* 주소에 ?key=... 가 있으면 관리자 모드로 들어옵니다.
-     탭을 닫으면 풀립니다. */
-  const params = new URLSearchParams(location.search);
-  if (params.get("key")) {
-    try {
-      if (params.get("key") === CONFIG.ADMIN_KEY) {
-        sessionStorage.setItem(SESSION, "1");
-        sessionStorage.setItem("horang.key", params.get("key")); // 시트 저장 요청에 함께 보냅니다
-      } else {
-        sessionStorage.removeItem(SESSION);
-        sessionStorage.removeItem("horang.key");
-      }
-    } catch (e) {}
-  }
-
+  /* 관리자 인증은 서버 로그인(홈 화면 비밀번호)으로만. URL ?key= 방식은 폐지.
+     로그인 성공 시 서버가 준 '임시 토큰'을 horang.key 에 저장하고, 저장 요청에 함께 보냅니다. */
   function isAdmin() {
-    try { return sessionStorage.getItem(SESSION) === "1"; } catch (e) { return false; }
+    try { return sessionStorage.getItem(SESSION) === "1" && !!sessionStorage.getItem("horang.key"); } catch (e) { return false; }
+  }
+  /* 서버가 발급한 관리자 토큰 (없으면 빈 문자열) — 저장 요청의 key 로 전송 */
+  function key() {
+    try { return sessionStorage.getItem("horang.key") || ""; } catch (e) { return ""; }
   }
 
-  function link(page) {
-    if (!isAdmin()) return page;
-    return page + (page.indexOf("?") >= 0 ? "&" : "?") + "key=" + encodeURIComponent(CONFIG.ADMIN_KEY);
-  }
+  /* 관리자 상태는 sessionStorage(같은 출처)로 페이지 간 유지되므로 URL에 키를 붙이지 않습니다. */
+  function link(page) { return page; }
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
@@ -243,15 +232,24 @@
 
   /* 주소를 새로 만들어 이동하지 않고 그 자리에서 로그인합니다.
      파일을 직접 열어본 경우 주소 이동이 실패하는 일이 있어서입니다. */
-  function signIn(key) {
-    if (key !== CONFIG.ADMIN_KEY) return "wrong";
+  /* 서버에 비밀번호로 로그인 → 임시 토큰 발급받아 저장. 비동기(Promise) 반환. */
+  async function signIn(password) {
+    const url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
+    if (!url) return "wrong";
+    let j;
+    try {
+      const r = await fetch(url.replace(/\/api\/gs$/, "") + "/api/login", {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ password: String(password || "") })
+      });
+      j = await r.json();
+    } catch (e) { return "neterr"; }
+    if (!j || !j.ok || !j.token) return "wrong";
     try {
       sessionStorage.setItem(SESSION, "1");
-      sessionStorage.setItem("horang.key", key);
+      sessionStorage.setItem("horang.key", j.token);
       return "ok";
-    } catch (e) {
-      return "nostorage";
-    }
+    } catch (e) { return "nostorage"; }
   }
 
   /* 버전 오름차순 비교 — 숫자 단위로 비교해서 "1.10 < 1.2" 같은 문자열 오류 방지.
@@ -267,5 +265,5 @@
     return 0;
   }
 
-  window.App = { isAdmin, link, esc, toast, header, signIn, verCmp, sha256 };
+  window.App = { isAdmin, key, link, esc, toast, header, signIn, verCmp, sha256 };
 })();

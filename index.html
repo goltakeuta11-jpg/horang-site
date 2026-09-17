@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.37">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.37">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.37">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.38">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.38">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.38">
 <meta property="og:type" content="website">
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.37"></script>
+<script src="assets/inapp.js?v=20260831.38"></script>
 <title>호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.37">
+<link rel="stylesheet" href="assets/style.css?v=20260831.38">
 </head>
 <body>
 
@@ -41,9 +41,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.37"></script>
-<script src="assets/store.js?v=20260831.37"></script>
-<script src="assets/app.js?v=20260831.37"></script>
+<script src="assets/config.js?v=20260831.38"></script>
+<script src="assets/store.js?v=20260831.38"></script>
+<script src="assets/app.js?v=20260831.38"></script>
 <script>
   document.title = CONFIG.ROOM_NAME + " 허브";
   App.header("index.html");
@@ -169,21 +169,25 @@
       <div class="card">
         <h2 style="font-size:17px;margin-bottom:8px">운영자이신가요?</h2>
         <p style="color:var(--text-dim);font-size:14px;margin:0 0 14px">
-          관리자 키를 입력하면 수정 화면이 열립니다.
+          관리자 비밀번호를 입력하면 수정 화면이 열립니다.
         </p>
         <div class="toolbar" style="margin:0">
-          <input class="input" style="max-width:240px" type="password" placeholder="관리자 키" data-key>
-          <button class="btn btn--primary" data-in>들어가기</button>
+          <input class="input" style="max-width:240px" type="password" placeholder="관리자 비밀번호" data-key>
+          <button class="btn btn--primary" data-in>로그인</button>
         </div>
       </div>`;
     const input = box.querySelector("[data-key]");
-    const go = () => {
-      const r = App.signIn(input.value.trim());
+    const btn = box.querySelector("[data-in]");
+    const go = async () => {
+      btn.disabled = true; btn.textContent = "확인 중…";
+      const r = await App.signIn(input.value.trim());
+      btn.disabled = false; btn.textContent = "로그인";
       if (r === "ok") location.reload();
-      else if (r === "nostorage") App.toast("이 브라우저에서는 로그인 정보를 저장할 수 없습니다. 관리자 링크(주소 뒤 ?key=)로 열어주세요.", true);
-      else App.toast("키가 맞지 않습니다.", true);
+      else if (r === "nostorage") App.toast("이 브라우저에서는 로그인 정보를 저장할 수 없어요.", true);
+      else if (r === "neterr") App.toast("서버에 연결하지 못했어요. 잠시 후 다시 시도해주세요.", true);
+      else App.toast("비밀번호가 맞지 않습니다.", true);
     };
-    box.querySelector("[data-in]").onclick = go;
+    btn.onclick = go;
     input.onkeydown = e => { if (e.key === "Enter") go(); };
   }
 </script>
