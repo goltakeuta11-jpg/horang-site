@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.38">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.38">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.38">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.39">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.39">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.39">
 <meta property="og:type" content="website">
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.38"></script>
+<script src="assets/inapp.js?v=20260831.39"></script>
 <title>호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.38">
+<link rel="stylesheet" href="assets/style.css?v=20260831.39">
 </head>
 <body>
 
@@ -41,9 +41,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.38"></script>
-<script src="assets/store.js?v=20260831.38"></script>
-<script src="assets/app.js?v=20260831.38"></script>
+<script src="assets/config.js?v=20260831.39"></script>
+<script src="assets/store.js?v=20260831.39"></script>
+<script src="assets/app.js?v=20260831.39"></script>
 <script>
   document.title = CONFIG.ROOM_NAME + " 허브";
   App.header("index.html");
@@ -102,12 +102,16 @@
         </div>
         <div class="toolbar" style="margin:0">
           <button class="btn btn--primary" data-copy>주소 복사</button>
+          <button class="btn" data-pull title="구글 시트를 직접 고쳤을 때 눌러서 서버에 반영">🔄 시트 → 서버 반영</button>
           <button class="btn" onclick="Store.export()">데이터 내보내기</button>
           <label class="btn" style="display:inline-block">
             데이터 가져오기
             <input type="file" accept="application/json" hidden data-import>
           </label>
         </div>
+        <p style="color:var(--text-dim);font-size:12.5px;margin:12px 0 0">
+          💡 구글 시트에서 직접 수정·삭제했다면 <b>‘시트 → 서버 반영’</b>을 눌러야 사이트에 나타나요.
+        </p>
       </div>
       <div class="card" style="margin-top:16px" data-viewstats>
         <h2 style="font-size:17px;margin-bottom:4px">📊 탭별 하루 평균 조회</h2>
@@ -163,6 +167,28 @@
       const f = e.target.files[0];
       if (!f) return;
       Store.import(f, err => err ? App.toast(err.message, true) : (App.toast("데이터를 가져왔습니다."), renderPatchHome()));
+    };
+
+    /* ---------- 시트 → 서버 반영 (시트 직접 수정분을 서버 DB로 끌어옴) ---------- */
+    const pullBtn = box.querySelector("[data-pull]");
+    if (pullBtn) pullBtn.onclick = async () => {
+      if (!confirm("구글 시트의 현재 내용으로 서버를 덮어쓸까요?\n(시트에서 지운 항목은 사이트에서도 사라집니다)")) return;
+      const url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
+      pullBtn.disabled = true; pullBtn.textContent = "반영 중…";
+      try {
+        const r = await fetch(url, { method: "POST", redirect: "follow",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ pullSheet: true, key: App.key() }) });
+        const j = await r.json();
+        if (!j || !j.ok) throw new Error((j && j.error) || "실패");
+        const s = j.synced || {};
+        const parts = Object.keys(s).map(k => k + " " + s[k]).join(" · ");
+        try { Store.clearCache && Store.clearCache(); } catch (e) {}
+        App.toast("시트 내용을 서버에 반영했어요! (" + (parts || "완료") + ")");
+        setTimeout(() => location.reload(), 900);
+      } catch (e) {
+        App.toast("반영 실패: " + e.message, true);
+      } finally { pullBtn.disabled = false; pullBtn.textContent = "🔄 시트 → 서버 반영"; }
     };
   } else {
     box.innerHTML = `
