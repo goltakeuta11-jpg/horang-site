@@ -158,6 +158,7 @@
     // "더보기 ▾" 안에 접히는 탭 (자주 안 보는 것)
     const more = [
       ["commands.html", "명령어"],
+      ["ranking.html", "게임랭킹"],
       ["outings.html", "외출"],
       ["patchnotes.html", "패치노트"]
     ];

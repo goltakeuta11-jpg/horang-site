@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.40">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.40">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.40">
+<meta property="og:type" content="website">
+<meta property="og:title" content="게임 랭킹 · 호랑봇 허브">
+<meta property="og:description" content="선빵·폭탄·암산 1대1 게임 전적 랭킹.">
+<meta property="og:url" content="https://horangbot.co.kr/ranking.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.40"></script>
+<title>게임 랭킹 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.40">
+<style>
+  .rk-seg { display: inline-flex; gap: 4px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px; margin: 6px 0 18px; flex-wrap: wrap; }
+  .rk-seg__btn { border: 0; background: none; cursor: pointer; font: inherit; font-size: 14px; font-weight: 700;
+    color: var(--text-dim); padding: 7px 16px; border-radius: 999px; }
+  .rk-seg__btn.is-on { color: var(--bg); background: var(--text); }
+  .rk-champ { background: linear-gradient(135deg, rgba(255,92,122,.16), rgba(255,171,64,.12));
+    border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 16px 18px; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 14px; }
+  .rk-champ__crown { font-size: 38px; line-height: 1; }
+  .rk-champ__who b { font-size: 20px; font-weight: 800; }
+  .rk-champ__who span { color: var(--text-dim); font-size: 13.5px; }
+  .rk-table { width: 100%; border-collapse: collapse; }
+  .rk-table th { text-align: left; font-size: 12px; color: var(--text-dim); font-weight: 700;
+    padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  .rk-table td { padding: 11px 10px; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+  .rk-table tr:last-child td { border-bottom: 0; }
+  .rk-rank { width: 40px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text-dim); }
+  .rk-rank.top1 { color: #FFC24B; } .rk-rank.top2 { color: #C9D1DC; } .rk-rank.top3 { color: #E08A4B; }
+  .rk-nick { font-weight: 700; }
+  .rk-num { font-variant-numeric: tabular-nums; }
+  .rk-rate { font-weight: 800; }
+  .rk-streak { color: var(--accent); font-weight: 700; }
+  .rk-badge { font-size: 12px; }
+  .rk-hint { color: var(--text-dim); font-size: 13px; margin: 4px 0 0; }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page">
+  <p class="page__eyebrow">게임 랭킹</p>
+  <h1 class="page__title">🏆 1대1 게임 랭킹</h1>
+  <p class="page__desc">방에서 한 선빵 · 폭탄 · 암산 대결 전적이에요. 많이 이길수록 위로!</p>
+
+  <div class="rk-seg" data-seg>
+    <button class="rk-seg__btn is-on" data-g="all">🏅 종합</button>
+    <button class="rk-seg__btn" data-g="snipe">🔫 선빵</button>
+    <button class="rk-seg__btn" data-g="bomb">💣 폭탄</button>
+    <button class="rk-seg__btn" data-g="math">🧮 암산</button>
+  </div>
+
+  <div data-board><div class="empty" style="padding:30px"><strong>불러오는 중…</strong></div></div>
+</main>
+
+<script src="assets/config.js?v=20260831.40"></script>
+<script src="assets/store.js?v=20260831.40"></script>
+<script src="assets/app.js?v=20260831.40"></script>
+<script>
+App.header("ranking.html");
+
+const GAME_LABEL = { all: "종합", snipe: "선빵", bomb: "폭탄", math: "암산" };
+const boardEl = document.querySelector("[data-board]");
+let RECORDS = [];      // [{nick,game,wins,losses,streak,best}]
+let cur = "all";
+
+/* 게임별 필터 → 닉별 집계. all은 게임 합산(연승은 최고연승 사용). */
+function aggregate(game) {
+  const map = {};
+  RECORDS.forEach(r => {
+    if (game !== "all" && r.game !== game) return;
+    if (!map[r.nick]) map[r.nick] = { nick: r.nick, wins: 0, losses: 0, streak: 0, best: 0 };
+    const m = map[r.nick];
+    m.wins += r.wins; m.losses += r.losses;
+    m.best = Math.max(m.best, r.best);
+    m.streak = Math.max(m.streak, r.streak);   // 게임별이면 그 게임 현재연승, 종합이면 최고 현재연승
+  });
+  return Object.keys(map).map(k => {
+    const m = map[k], total = m.wins + m.losses;
+    m.total = total; m.rate = total ? Math.round(m.wins / total * 100) : 0;
+    return m;
+  }).sort((a, b) => b.wins - a.wins || b.rate - a.rate || a.losses - b.losses);
+}
+
+function render() {
+  const list = aggregate(cur);
+  if (!list.length) {
+    boardEl.innerHTML = `<div class="empty" style="padding:34px 20px">
+      <strong>아직 ${GAME_LABEL[cur]} 전적이 없어요</strong>방에서 ${cur === "all" ? "/선빵 · /폭탄 · /암산" : "/" + GAME_LABEL[cur]} 한판 하면 여기 올라와요!</div>`;
+    return;
+  }
+  const champ = list[0];
+  const medal = ["top1", "top2", "top3"];
+  const streakLabel = cur === "all" ? "최고연승" : "연승";
+  const streakVal = m => cur === "all" ? m.best : m.streak;
+
+  boardEl.innerHTML = `
+    <div class="rk-champ">
+      <div class="rk-champ__crown">👑</div>
+      <div class="rk-champ__who">
+        <b>${App.esc(champ.nick)}</b>
+        <div><span>${GAME_LABEL[cur]} 1위 · ${champ.wins}승 ${champ.losses}패 (승률 ${champ.rate}%)</span></div>
+      </div>
+    </div>
+    <div class="card" style="padding:4px 10px">
+      <table class="rk-table">
+        <thead><tr>
+          <th>순위</th><th>닉</th><th class="rk-num">전적</th><th class="rk-num">승률</th><th class="rk-num">${streakLabel}</th>
+        </tr></thead>
+        <tbody>
+          ${list.map((m, i) => `
+            <tr>
+              <td class="rk-rank ${medal[i] || ""}">${i < 3 ? ["🥇","🥈","🥉"][i] : (i + 1)}</td>
+              <td class="rk-nick">${App.esc(m.nick)}</td>
+              <td class="rk-num">${m.wins}승 ${m.losses}패</td>
+              <td class="rk-num rk-rate">${m.rate}%</td>
+              <td class="rk-num">${streakVal(m) >= 2 ? `<span class="rk-streak">🔥${streakVal(m)}</span>` : streakVal(m)}</td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+    <p class="rk-hint">💡 종합은 세 게임 합산이에요. 승 → 승률 → 적은 패배 순으로 정렬돼요.</p>`;
+}
+
+document.querySelector("[data-seg]").addEventListener("click", e => {
+  const btn = e.target.closest("[data-g]");
+  if (!btn) return;
+  cur = btn.dataset.g;
+  document.querySelectorAll("[data-g]").forEach(b => b.classList.toggle("is-on", b === btn));
+  render();
+});
+
+const URL_ = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
+fetch(URL_ + "?action=ranking&_=" + Date.now())
+  .then(r => r.json())
+  .then(j => { RECORDS = (j && j.records) || []; render(); })
+  .catch(() => { boardEl.innerHTML = `<div class="empty" style="padding:30px"><strong>랭킹을 불러오지 못했어요</strong>잠시 후 다시 시도해주세요.</div>`; });
+</script>
+</body>
+</html>
