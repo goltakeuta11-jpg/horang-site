@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.49">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.49">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.50">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.50">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.49"></script>
+<script src="assets/inapp.js?v=20260831.50"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.49">
+<link rel="stylesheet" href="assets/style.css?v=20260831.50">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -57,6 +57,12 @@
   .win-citizen { background: rgba(52,211,153,.16); color: #34D399; border: 1px solid #34D399; }
   .mf-invest { font-size: 13px; margin-top: 8px; }
   .mf-invest div { padding: 3px 0; }
+  .mf-reveal { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .rv { padding: 8px 12px; border-radius: 10px; font-size: 14px; }
+  .rv-mafia { background: rgba(255,92,122,.14); }
+  .rv-doctor { background: rgba(52,211,153,.13); }
+  .rv-police { background: rgba(255,196,75,.14); }
+  .rv-citizen { background: rgba(120,160,255,.12); }
   /* 채팅 */
   .mf-chat { display: flex; flex-direction: column; height: 460px; background: var(--panel);
     border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
@@ -139,9 +145,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.49"></script>
-<script src="assets/store.js?v=20260831.49"></script>
-<script src="assets/app.js?v=20260831.49"></script>
+<script src="assets/config.js?v=20260831.50"></script>
+<script src="assets/store.js?v=20260831.50"></script>
+<script src="assets/app.js?v=20260831.50"></script>
 <script>
 App.header("game.html");
 
@@ -151,6 +157,10 @@ const $ = s => document.querySelector(s);
 const esc = App.esc;
 const ROLE = { mafia: ["🔪", "마피아", "role-mafia"], citizen: ["🙂", "시민", "role-citizen"],
   doctor: ["🩺", "의사", "role-doctor"], police: ["🔎", "경찰", "role-police"] };
+function rolePreview(n) {   // 서버 배정 공식과 동일 (대기실 미리보기용)
+  const mafia = n <= 6 ? 1 : n <= 9 ? 2 : n <= 12 ? 3 : 4, doctor = n >= 6 ? 1 : 0, police = n >= 6 ? 1 : 0;
+  return { mafia, doctor, police, citizen: Math.max(0, n - mafia - doctor - police) };
+}
 
 let sess = null, sinceId = 0, pollTimer = null, tickTimer = null, phaseDeadline = 0, S = null;
 try { sess = JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) {}
@@ -245,7 +255,9 @@ function renderPlayers(j) {
   const night = j.phase === "night", day = j.phase === "day";
   const iCanNight = night && j.me.alive && ["mafia", "doctor", "police"].includes(j.me.role);
   const iCanVote = day && j.me.alive;
-  $("[data-players-label]").textContent = `참가자 ${j.players.filter(p => p.alive).length}/${j.players.length}명 생존`;
+  let label = `참가자 ${j.players.filter(p => p.alive).length}/${j.players.length}명 생존`;
+  if (j.counts) label += ` · 🔪 마피아 ${j.counts.mafia}명`;
+  $("[data-players-label]").textContent = label;
 
   wrap.innerHTML = j.players.map(p => {
     const roleTag = p.role ? `<span class="mf-role ${ROLE[p.role][2]}" style="font-size:10px;padding:1px 6px">${ROLE[p.role][0]}${ROLE[p.role][1]}</span>` : "";
@@ -286,9 +298,14 @@ function renderContext(j) {
   if (j.phase === "lobby") {
     const n = j.players.length;
     const canStart = j.isHost && n >= 4;
+    const pv = rolePreview(n);
+    const pvLine = n >= 4
+      ? `이 인원이면 → 🔪 마피아 <b>${pv.mafia}</b> · 🩺 의사 ${pv.doctor} · 🔎 경찰 ${pv.police} · 🙂 시민 ${pv.citizen}`
+      : "4명부터 시작할 수 있어요.";
     el.innerHTML = `
       <div style="font-weight:800;font-size:16px;margin-bottom:6px">대기실 · ${n}명</div>
-      <p class="mf-hint">코드 <b>${j.code}</b> 를 친구들에게 공유하세요. 최소 4명부터 시작할 수 있어요 (최대 15명).<br>
+      <p class="mf-hint">코드 <b>${j.code}</b> 를 친구들에게 공유하세요. 최소 4명 · 최대 15명.<br>
+      ${pvLine}<br>
       ${n >= 6 ? "6명 이상이라 의사·경찰이 등장해요." : "6명이 되면 의사·경찰도 등장해요."}</p>
       ${j.isHost
         ? `<button class="btn btn--primary" data-start ${canStart ? "" : "disabled"} style="margin-top:10px">${canStart ? "게임 시작 🎬" : `시작하려면 ${4 - n}명 더 필요`}</button>`
@@ -298,14 +315,22 @@ function renderContext(j) {
     return;
   }
   if (j.phase === "ended") {
+    const by = r => j.players.filter(p => p.role === r).map(p => esc(p.nick)).join(", ") || "—";
+    const reveal = `<div class="mf-reveal">
+      <div class="rv rv-mafia">🔪 마피아 <b>${by("mafia")}</b></div>
+      ${j.counts && j.counts.doctor ? `<div class="rv rv-doctor">🩺 의사 <b>${by("doctor")}</b></div>` : ""}
+      ${j.counts && j.counts.police ? `<div class="rv rv-police">🔎 경찰 <b>${by("police")}</b></div>` : ""}
+      <div class="rv rv-citizen">🙂 시민 <b>${by("citizen")}</b></div>
+    </div>`;
     if (j.isHost) {
-      el.innerHTML = `<p class="mf-hint">게임이 끝났어요. 모든 역할이 공개됐어요. 같은 방·같은 참가자로 바로 새 게임을 시작할 수 있어요.</p>
-        <button class="btn btn--primary" data-again style="margin-top:10px">🔄 새 게임 (같은 방)</button>
-        <button class="btn btn--ghost btn--sm" data-newroom style="margin-top:10px;margin-left:8px">새 방 만들기</button>`;
+      el.innerHTML = `<p class="mf-hint">게임 끝! 역할을 공개할게요.</p>${reveal}
+        <button class="btn btn--primary" data-again style="margin-top:12px">🔄 새 게임 (같은 방)</button>
+        <button class="btn btn--ghost btn--sm" data-newroom style="margin-top:12px;margin-left:8px">새 방 만들기</button>`;
       el.querySelector("[data-again]").onclick = async () => { const r = await api("restart"); if (!r.ok) App.toast(r.error); else poll(); };
       el.querySelector("[data-newroom]").onclick = () => { clearSess(); stopPoll(); location.reload(); };
     } else {
-      el.innerHTML = `<p class="mf-hint">게임이 끝났어요. 모든 역할이 공개됐어요.<br>👑 방장이 새 게임을 시작하면 자동으로 대기실로 이동해요.</p>`;
+      el.innerHTML = `<p class="mf-hint">게임 끝! 역할을 공개할게요.</p>${reveal}
+        <p class="mf-hint" style="margin-top:10px">👑 방장이 새 게임을 시작하면 자동으로 대기실로 이동해요.</p>`;
     }
     return;
   }
