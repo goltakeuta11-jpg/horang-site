@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.50">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.50">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.51">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.51">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.50"></script>
+<script src="assets/inapp.js?v=20260831.51"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.50">
+<link rel="stylesheet" href="assets/style.css?v=20260831.51">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -145,9 +145,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.50"></script>
-<script src="assets/store.js?v=20260831.50"></script>
-<script src="assets/app.js?v=20260831.50"></script>
+<script src="assets/config.js?v=20260831.51"></script>
+<script src="assets/store.js?v=20260831.51"></script>
+<script src="assets/app.js?v=20260831.51"></script>
 <script>
 App.header("game.html");
 
@@ -163,14 +163,20 @@ function rolePreview(n) {   // 서버 배정 공식과 동일 (대기실 미리�
 }
 
 let sess = null, sinceId = 0, pollTimer = null, tickTimer = null, phaseDeadline = 0, S = null;
+let polling = false;           // 동시 폴링 방지
+const seenMsgs = new Set();    // 이미 그린 메시지 id (중복 렌더 방지)
 try { sess = JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) {}
 function saveSess(s) { sess = s; try { localStorage.setItem(LS, JSON.stringify(s)); } catch (e) {} }
 function clearSess() { sess = null; try { localStorage.removeItem(LS); } catch (e) {} }
 
 async function api(op, extra) {
   const body = Object.assign({ op }, sess ? { code: sess.code, pid: sess.pid } : {}, extra || {});
-  const r = await fetch(MAFIA_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
-  return r.json();
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);   // 8초 타임아웃 (요청 무한대기·쌓임 방지)
+  try {
+    const r = await fetch(MAFIA_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body), signal: ctrl.signal });
+    return await r.json();
+  } finally { clearTimeout(t); }
 }
 function show(which) {
   $("[data-noserver]").hidden = which !== "noserver";
@@ -204,10 +210,15 @@ function startGame() { show("game"); startPoll(); }
 function startPoll() { stopPoll(); poll(); pollTimer = setInterval(poll, 1500); tickTimer = setInterval(tick, 250); }
 function stopPoll() { clearInterval(pollTimer); clearInterval(tickTimer); pollTimer = tickTimer = null; }
 async function poll() {
-  let j; try { j = await api("state", { since: sinceId }); } catch (e) { return; }
+  if (polling) return;   // 이전 폴링이 아직 안 끝났으면 건너뜀 (타임아웃 8초로 무한대기 방지)
+  polling = true;
+  let j;
+  try { j = await api("state", { since: sinceId }); }
+  catch (e) { return; }
+  finally { polling = false; }
   if (!j.ok) { if (j.gone) { clearSess(); stopPoll(); show("setup"); App.toast(j.error || "다시 입장해주세요."); } return; }
   S = j;
-  if (j.msgs && j.msgs.length) { appendMsgs(j.msgs); sinceId = j.msgs[j.msgs.length - 1].id; }
+  if (j.msgs && j.msgs.length) appendMsgs(j.msgs);
   render(j);
 }
 function tick() {
@@ -277,7 +288,7 @@ function renderPlayers(j) {
     const mpickBadge = mpick ? `<span class="pl__votes">🔪${mpick}</span>` : "";
     return `<div class="pl ${p.alive ? "" : "dead"} ${able ? "able" : ""} ${picked ? "picked" : ""}" data-pid="${p.pid}">
       ${!p.alive ? '<span class="pl__x">💀</span>' : ""}${votes || mpickBadge}
-      <div class="pl__nick">${esc(p.nick)}${p.isMe ? " <span style='color:var(--accent)'>(나)</span>" : ""}</div>
+      <div class="pl__nick">${esc(p.nick)}${p.role === "mafia" ? " <span style='color:#FF6B81;font-weight:800'>(마피아)</span>" : ""}${p.isMe ? " <span style='color:var(--accent)'>(나)</span>" : ""}</div>
       <div class="pl__sub">${sub}</div>
     </div>`;
   }).join("");
@@ -361,13 +372,17 @@ function renderContext(j) {
 function appendMsgs(msgs) {
   const body = $("[data-chat-body]");
   const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+  let added = 0;
   msgs.forEach(m => {
+    if (seenMsgs.has(m.id)) return;   // 이미 그린 메시지면 건너뜀 (중복 방지)
+    seenMsgs.add(m.id);
+    if (m.id > sinceId) sinceId = m.id;
     const d = document.createElement("div");
     if (m.sys) { d.className = "msg sys"; d.textContent = m.text; }
     else { d.className = "msg " + (m.ch || "all"); d.innerHTML = `<span class="msg__from">${esc(m.from)}</span> ${esc(m.text)}`; }
-    body.appendChild(d);
+    body.appendChild(d); added++;
   });
-  if (atBottom) body.scrollTop = body.scrollHeight;
+  if (added && atBottom) body.scrollTop = body.scrollHeight;
 }
 async function sendChat() {
   const inp = $("[data-chat-input]");
