@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.51">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.51">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.52">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.52">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.51"></script>
+<script src="assets/inapp.js?v=20260831.52"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.51">
+<link rel="stylesheet" href="assets/style.css?v=20260831.52">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -64,7 +64,7 @@
   .rv-police { background: rgba(255,196,75,.14); }
   .rv-citizen { background: rgba(120,160,255,.12); }
   /* 채팅 */
-  .mf-chat { display: flex; flex-direction: column; height: 460px; background: var(--panel);
+  .mf-chat { display: flex; flex-direction: column; height: 560px; background: var(--panel);
     border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
   .mf-chat__head { padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: 800; font-size: 13.5px; }
   .mf-chat__body { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
@@ -145,9 +145,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.51"></script>
-<script src="assets/store.js?v=20260831.51"></script>
-<script src="assets/app.js?v=20260831.51"></script>
+<script src="assets/config.js?v=20260831.52"></script>
+<script src="assets/store.js?v=20260831.52"></script>
+<script src="assets/app.js?v=20260831.52"></script>
 <script>
 App.header("game.html");
 
@@ -158,7 +158,7 @@ const esc = App.esc;
 const ROLE = { mafia: ["🔪", "마피아", "role-mafia"], citizen: ["🙂", "시민", "role-citizen"],
   doctor: ["🩺", "의사", "role-doctor"], police: ["🔎", "경찰", "role-police"] };
 function rolePreview(n) {   // 서버 배정 공식과 동일 (대기실 미리보기용)
-  const mafia = n <= 6 ? 1 : n <= 9 ? 2 : n <= 12 ? 3 : 4, doctor = n >= 6 ? 1 : 0, police = n >= 6 ? 1 : 0;
+  const mafia = n <= 6 ? 1 : n <= 9 ? 2 : 3, doctor = n >= 6 ? 1 : 0, police = n >= 6 ? 1 : 0;
   return { mafia, doctor, police, citizen: Math.max(0, n - mafia - doctor - police) };
 }
 
