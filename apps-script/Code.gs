@@ -818,6 +818,46 @@ function transposeSticks() {
   return "완료: " + people.length + "명, " + cnt + "개 항목을 행 단위로 전치했어요.";
 }
 
+/* 내보내기용: 서버의 [[보낸,받는,날짜],...] 를 작대기 탭의 '사람별 가로 이력' 포맷으로 통째 재작성.
+   (stickAll/stickReadRow 이 읽는 구조와 동일해야 왕복 시 안 깨진다 — writeTab(직사각형) 쓰면 안 됨) */
+function writeStickHistory(rows) {
+  var order = [], by = {};
+  (rows || []).forEach(function (r) {
+    var f = String((r && r[0]) == null ? "" : r[0]).trim();
+    if (!f) return;
+    if (!(f in by)) { by[f] = []; order.push(f); }
+    var to = String((r && r[1]) == null ? "" : r[1]).trim();
+    var dt = String((r && r[2]) == null ? "" : r[2]).trim();
+    by[f].push(to + "/" + dt);   // "상대/날짜" (stickParseCell 이 마지막 '/' 로 분리)
+  });
+  var ss = book();
+  var sh = ss.getSheetByName(STICK_TAB);
+  if (!sh) sh = ss.insertSheet(STICK_TAB);
+  sh.clear();
+  sh.getRange(1, 1).setValue("닉네임").setFontWeight("bold");
+  sh.getRange(1, 2).setValue("상대/변경일자").setFontWeight("bold");
+  sh.setFrozenRows(1);
+  sh.setFrozenColumns(1);
+  var maxLen = 0;
+  order.forEach(function (f) { if (by[f].length > maxLen) maxLen = by[f].length; });
+  if (order.length && maxLen > 0) {
+    var width = 1 + maxLen;
+    var grid = order.map(function (f) {
+      var items = by[f].slice();
+      while (items.length < maxLen) items.push("");
+      return [f].concat(items);
+    });
+    sh.getRange(2, 1, grid.length, width).setNumberFormat("@");   // 날짜 자동변환 방지
+    sh.getRange(2, 1, grid.length, width).setValues(grid);
+    order.forEach(function (f, i) { sh.getRange(2 + i, 1).setFontWeight("bold"); });
+  } else if (order.length) {
+    // 이력 셀이 하나도 없는 경우(닉만) — 닉만 A열에
+    var col = order.map(function (f) { return [f]; });
+    sh.getRange(2, 1, col.length, 1).setValues(col);
+    order.forEach(function (f, i) { sh.getRange(2 + i, 1).setFontWeight("bold"); });
+  }
+}
+
 /* ============================================================
    쓰기 — 관리자가 사이트에서 저장할 때
    ============================================================ */
@@ -836,7 +876,7 @@ function doPost(e) {
     if (body.bulkTabs) {
       if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
       var bt = body.bulkTabs;
-      if (Array.isArray(bt.sticks)) writeTab(STICK_TAB, STICK_HEADER, bt.sticks);   // [[보낸,받는,날짜],...]
+      if (Array.isArray(bt.sticks)) writeStickHistory(bt.sticks);   // [[보낸,받는,날짜],...] → 사람별 가로 이력(stickAll 이 읽는 포맷)
       if (Array.isArray(bt.donors)) writeTab("후원", ["닉네임"], bt.donors);         // [[닉],...]
       return json({ ok: true });
     }
