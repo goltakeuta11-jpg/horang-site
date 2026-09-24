@@ -40,10 +40,11 @@ const HEADERS = {
 };
 
 /* 자소서 탭 헤더 — 성별 열은 없습니다(탭 이름이 성별)
-   ★ "등록일"은 반드시 맨 끝에 둘 것. readTab 이 헤더 이름이 아니라 "위치"로 읽기 때문에,
-     중간에 열을 끼워넣으면 기존 시트의 비번이 한 칸씩 밀려 통째로 어긋납니다. */
+   ★ readTab 이 헤더 이름이 아니라 "위치"로 읽으므로, 새 열은 반드시 "맨 끝"에만 추가할 것.
+     중간에 끼워넣으면 기존 시트의 비번·등록일이 한 칸씩 밀려 통째로 어긋납니다.
+     (비번/등록일 위치는 아래 PW_IDX/AT_IDX 가 indexOf 로 자동 추종하므로, 뒤에 붙는 건 안전) */
 const MEMBER_HEADER = ["닉네임", "나이", "사는 곳", "키", "전공 or 직업", "쉬는 요일", "취미", "MBTI",
-                       "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "연애유형", "비번", "등록일"];
+                       "본인의 매력", "이상형", "흡연유무 & 주량", "하고싶은 말", "연애유형", "비번", "등록일", "생일"];
 
 /* 탭 행에서의 열 위치 (하드코딩 금지 — 헤더가 바뀌면 여기서 자동으로 따라감) */
 const PW_IDX = MEMBER_HEADER.indexOf("비번");     // 13
@@ -836,6 +837,7 @@ function doPost(e) {
         vout.push([String(v.date), String(v.page), Number(v.count) || 0, Number(v.days) || 1]);
       }
       vsh.getRange(1, 1, vout.length, 4).setValues(vout);
+      try { styleViewsByDay(); } catch (e) { /* 색 입히기 실패해도 백업 자체는 성공 */ }  // ★ 매 백업이 clear로 서식을 지우므로 색을 다시 입힘(안 하면 매시간 컬러코딩 풀림)
       return json({ ok: true, synced: views.length });
     }
 

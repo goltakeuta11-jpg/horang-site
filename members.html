@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.41">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.41">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.41">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.42">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.42">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.42">
 <meta property="og:type" content="website">
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.41"></script>
+<script src="assets/inapp.js?v=20260831.42"></script>
 <title>자소서 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.41">
+<link rel="stylesheet" href="assets/style.css?v=20260831.42">
 </head>
 <body>
 
@@ -57,9 +57,9 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260831.41"></script>
-<script src="assets/store.js?v=20260831.41"></script>
-<script src="assets/app.js?v=20260831.41"></script>
+<script src="assets/config.js?v=20260831.42"></script>
+<script src="assets/store.js?v=20260831.42"></script>
+<script src="assets/app.js?v=20260831.42"></script>
 <script>
 // 이 탭이 담당하는 성별 (?g=남자 / ?g=여자, 기본 남자)
 const GENDER = new URLSearchParams(location.search).get("g") === "여자" ? "여자" : "남자";
@@ -88,6 +88,7 @@ const FORM = [
   { k: "age",    label: "나이",            type: "text" },
   { k: "height", label: "키",              type: "text" },
   { k: "region", label: "사는 곳",          type: "text" },
+  { k: "bday",   label: "생일",            type: "bday", note: "공개를 원하지 않는다면 공란으로 둬도 됩니다." },
   { k: "job",    label: "전공 or 직업",     type: "text" },
   { k: "off",    label: "쉬는 요일",        type: "text" },
   { k: "hobby",  label: "취미",            type: "text" },
@@ -107,6 +108,19 @@ if (readOnly) {
   tools.querySelector("[data-add]").onclick = () => open(-1);
 }
 
+/* 생일: 월/일 드롭다운 옵션 + 표시 변환 (연도 없음, "MM-DD" 저장) */
+function bdayOpts(cur, isMonth) {
+  var n = isMonth ? 12 : 31, unit = isMonth ? "월" : "일";
+  var s = "<option value=''>" + unit + "</option>";
+  for (var i = 1; i <= n; i++) { var v = ("0" + i).slice(-2); s += "<option value='" + v + "'" + (v === cur ? " selected" : "") + ">" + i + unit + "</option>"; }
+  return s;
+}
+function bdayText(v) {   // "03-15" → "3월 15일" · 빈값/오류면 ""
+  var p = ("" + (v || "")).split("-");
+  if (p.length !== 2 || !p[0] || !p[1]) return "";
+  return (+p[0]) + "월 " + (+p[1]) + "일";
+}
+
 function card(m, i) {
   return `
     <article class="card member">
@@ -117,8 +131,8 @@ function card(m, i) {
         ${m.type && m.type !== "미분류" ? `<span class="member__mbti" style="white-space:nowrap;font-size:11px;padding:2px 6px">💘 ${App.esc(m.type)}</span>` : ""}
       </div>
       <div class="rows">
-        ${FORM.filter(f => !["nick", "age", "height", "region", "mbti", "type"].includes(f.k) && m[f.k])
-          .map(f => `<div class="row"><span class="row__k">${f.label}</span><span class="row__v">${App.esc(m[f.k])}</span></div>`)
+        ${FORM.filter(f => !["nick", "age", "height", "region", "mbti", "type"].includes(f.k) && m[f.k] && (f.k !== "bday" || bdayText(m.bday)))
+          .map(f => `<div class="row"><span class="row__k">${f.label}</span><span class="row__v">${f.k === "bday" ? App.esc(bdayText(m.bday)) : App.esc(m[f.k])}</span></div>`)
           .join("")}
       </div>
       ${canWrite ? `<div class="member__tools">
@@ -256,6 +270,12 @@ function open(i) {
         ? `<select class="select" data-k="${f.k}">${f.options.map(o => `<option${(m[f.k] || "미분류") === o ? " selected" : ""}>${o}</option>`).join("")}</select>`
         : f.type === "area"
         ? `<textarea class="textarea" data-k="${f.k}">${App.esc(m[f.k] || "")}</textarea>`
+        : f.type === "bday"
+        ? `<div style="display:flex;gap:8px">
+             <select class="select" data-bday-mm>${bdayOpts(((m.bday || "").split("-")[0] || ""), true)}</select>
+             <select class="select" data-bday-dd>${bdayOpts(((m.bday || "").split("-")[1] || ""), false)}</select>
+           </div>
+           <span style="color:var(--text-dim);font-size:12.5px;display:block;margin-top:6px">${f.note}</span>`
         : `<input class="input" data-k="${f.k}" value="${App.esc(m[f.k] || "")}">`}
     </label>`).join("")
     + `<label class="field"><span class="field__label">🔒 ${i < 0 ? "비밀번호 설정 (선택)" : "새 비밀번호 (안 바꾸려면 비워두세요)"}</span>
@@ -272,6 +292,9 @@ modal.onclick = e => { if (e.target === modal) close(); };
 document.querySelector("[data-save]").onclick = async () => {
   const item = {};
   modal.querySelectorAll("[data-k]").forEach(el => item[el.dataset.k] = el.value.trim());
+  /* 생일: 월·일 둘 다 골랐을 때만 "MM-DD"로 저장(하나만 고르면 공란=비공개) */
+  const bmm = modal.querySelector("[data-bday-mm]"), bdd = modal.querySelector("[data-bday-dd]");
+  item.bday = (bmm && bdd && bmm.value && bdd.value) ? (bmm.value + "-" + bdd.value) : "";
   if (!item.nick) return App.toast("닉네임은 반드시 적어주세요.", true);
   item.gender = GENDER;   // 이 탭의 성별로 저장
   /* 비밀번호: 입력하면 원문 전송(서버가 시트엔 원문 저장) · 비우면 기존값(해시) 그대로 → 서버가 원문 유지 */
