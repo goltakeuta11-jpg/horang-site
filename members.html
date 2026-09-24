@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.44">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.44">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.44">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.45">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.45">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.45">
 <meta property="og:type" content="website">
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.44"></script>
+<script src="assets/inapp.js?v=20260831.45"></script>
 <title>자소서 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.44">
+<link rel="stylesheet" href="assets/style.css?v=20260831.45">
 </head>
 <body>
 
@@ -57,9 +57,9 @@
   </div>
 </div>
 
-<script src="assets/config.js?v=20260831.44"></script>
-<script src="assets/store.js?v=20260831.44"></script>
-<script src="assets/app.js?v=20260831.44"></script>
+<script src="assets/config.js?v=20260831.45"></script>
+<script src="assets/store.js?v=20260831.45"></script>
+<script src="assets/app.js?v=20260831.45"></script>
 <script>
 // 이 탭이 담당하는 성별 (?g=남자 / ?g=여자, 기본 남자)
 const GENDER = new URLSearchParams(location.search).get("g") === "여자" ? "여자" : "남자";
@@ -301,7 +301,8 @@ document.querySelector("[data-save]").onclick = async () => {
   const pwEl = modal.querySelector("[data-pw]");
   const pwVal = pwEl ? pwEl.value.trim() : "";
   const prev = editIndex < 0 ? null : Store.get().members[editIndex];
-  item.pw = pwVal ? pwVal : (prev ? (prev.pw || "") : "");
+  // 새 비번 입력 시 클라에서 SHA-256 해시해 전송(서버는 받은 값을 그대로 저장) · 안 바꾸면 기존 해시 유지
+  item.pw = pwVal ? await App.sha256(pwVal) : (prev ? (prev.pw || "") : "");
   /* 등록일: 수정이면 기존 값 그대로(빈칸이면 빈칸 유지), 새 등록이면 지금 시각을 임시로 채움.
      시트에 실제로 들어가는 값은 서버가 KST 기준으로 다시 정합니다(브라우저 시계는 안 믿음).
      그래도 여기서 채워둬야 방금 등록한 사람이 새로고침 전에도 목록 맨 위에 바로 보입니다. */

@@ -146,7 +146,32 @@
     try { fetch(url + "?action=hit&page=" + encodeURIComponent(page) + "&_=" + Date.now(), { cache: "no-store", mode: "no-cors" }).catch(function () {}); } catch (e) {}
   }
 
+  /* 편집 잠금(데이터 업데이트 중) 배너 — 모든 페이지 상단에 표시 */
+  function maintBanner() {
+    var url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
+    if (!url) return;
+    fetch(url + "?action=lockstatus&_=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.locked) return;
+        if (document.querySelector("[data-maint-banner]")) return;
+        var run = function () {
+          var b = document.createElement("div");
+          b.setAttribute("data-maint-banner", "");
+          b.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99998;background:#FFAB40;color:#17070C;"
+            + "font:700 14px/1.5 -apple-system,sans-serif;padding:11px 16px;text-align:center;"
+            + "box-shadow:0 2px 14px rgba(0,0,0,.35)";
+          b.textContent = "🔧 현재 데이터 업데이트 중입니다. 잠시 후에 이용 바랍니다.";
+          document.body.appendChild(b);
+          document.body.style.paddingTop = "44px";
+        };
+        if (document.body) run(); else document.addEventListener("DOMContentLoaded", run);
+      })
+      .catch(function () {});
+  }
+
   function header(active) {
+    maintBanner();   // 잠금 상태면 상단 점검 배너
     // 항상 보이는 탭 (홈은 좌측 로고가 대신함)
     const primary = [
       ["notices.html", "공지"],

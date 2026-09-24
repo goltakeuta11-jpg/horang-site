@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.44">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.44">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.44">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.45">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.45">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.45">
 <meta property="og:type" content="website">
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.44"></script>
+<script src="assets/inapp.js?v=20260831.45"></script>
 <title>호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.44">
+<link rel="stylesheet" href="assets/style.css?v=20260831.45">
 </head>
 <body>
 
@@ -41,9 +41,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.44"></script>
-<script src="assets/store.js?v=20260831.44"></script>
-<script src="assets/app.js?v=20260831.44"></script>
+<script src="assets/config.js?v=20260831.45"></script>
+<script src="assets/store.js?v=20260831.45"></script>
+<script src="assets/app.js?v=20260831.45"></script>
 <script>
   document.title = CONFIG.ROOM_NAME + " 허브";
   App.header("index.html");
@@ -101,17 +101,16 @@
           <input class="input" readonly data-share>
         </div>
         <div class="toolbar" style="margin:0">
-          <button class="btn btn--primary" data-copy>주소 복사</button>
-          <button class="btn" data-pull title="구글 시트를 직접 고쳤을 때 눌러서 서버에 반영">🔄 시트 → 서버 반영</button>
-          <button class="btn" onclick="Store.export()">데이터 내보내기</button>
-          <label class="btn" style="display:inline-block">
-            데이터 가져오기
-            <input type="file" accept="application/json" hidden data-import>
-          </label>
+          <button class="btn btn--primary" data-export>📤 데이터 내보내기 (시트 편집 시작)</button>
+          <button class="btn btn--primary" data-import-sheet>📥 데이터 가져오기 (편집 완료·반영)</button>
+          <button class="btn" data-copy>주소 복사</button>
+          <button class="btn" onclick="Store.export()" title="JSON 파일로 백업 다운로드">JSON 백업</button>
         </div>
-        <p style="color:var(--text-dim);font-size:12.5px;margin:12px 0 0">
-          💡 구글 시트에서 직접 수정·삭제했다면 <b>‘시트 → 서버 반영’</b>을 눌러야 사이트에 나타나요.
-        </p>
+        <div style="color:var(--text-dim);font-size:12.5px;margin:12px 0 0;line-height:1.7">
+          💡 <b>편집 방법</b>: ①<b>내보내기</b>를 누르면 모든 데이터가 구글 시트로 나가고 <b>편집 잠금</b>이 걸려요(그동안 사용자 편집 차단).
+          ②시트(Bot-Web)에서 수정·삭제한 뒤 ③<b>가져오기</b>를 누르면 사이트에 반영되고 잠금이 풀려요.
+          <span data-lockline></span>
+        </div>
       </div>
       <div class="card" style="margin-top:16px" data-viewstats>
         <h2 style="font-size:17px;margin-bottom:4px">📊 탭별 하루 평균 조회</h2>
@@ -163,32 +162,51 @@
         "</div>" +
         `<p style="color:var(--text-dim);font-size:12px;margin:12px 0 0">집계 기간 ${days}일 · 총 ${views.reduce((s, v) => s + v.count, 0)}회</p>`;
     })();
-    box.querySelector("[data-import]").onchange = e => {
-      const f = e.target.files[0];
-      if (!f) return;
-      Store.import(f, err => err ? App.toast(err.message, true) : (App.toast("데이터를 가져왔습니다."), renderPatchHome()));
+    /* ---------- 📤 내보내기 / 📥 가져오기 (서버 ↔ 시트) + 잠금 상태 ---------- */
+    const url_ = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
+    const lockLine = box.querySelector("[data-lockline]");
+    async function refreshLockLine() {
+      try {
+        const r = await fetch(url_ + "?action=lockstatus&_=" + Date.now());
+        const j = await r.json();
+        if (lockLine) lockLine.innerHTML = j.locked
+          ? '<br><b style="color:var(--accent)">🔒 현재 편집 잠금 상태 (시트 편집 중) — 완료했으면 가져오기를 누르세요.</b>'
+          : '<br><span style="color:#4caf7d">🔓 지금은 정상 상태예요.</span>';
+      } catch (e) {}
+    }
+    refreshLockLine();
+
+    const exportBtn = box.querySelector("[data-export]");
+    if (exportBtn) exportBtn.onclick = async () => {
+      if (!confirm("모든 데이터를 구글 시트로 내보내고 편집 잠금을 켤까요?\n(잠금 중엔 사용자 편집이 막혀요. 시트 수정 후 '가져오기'를 누르세요.)")) return;
+      exportBtn.disabled = true; exportBtn.textContent = "내보내는 중…";
+      try {
+        const r = await fetch(url_, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ exportSheet: true, key: App.key() }) });
+        const j = await r.json();
+        if (!j || !j.ok) throw new Error((j && j.error) || "실패");
+        App.toast("시트로 내보냈어요! 지금부터 편집 잠금 🔒 — 시트 수정 후 '가져오기'를 누르세요.");
+        refreshLockLine();
+      } catch (e) { App.toast("내보내기 실패: " + e.message, true); }
+      finally { exportBtn.disabled = false; exportBtn.textContent = "📤 데이터 내보내기 (시트 편집 시작)"; }
     };
 
-    /* ---------- 시트 → 서버 반영 (시트 직접 수정분을 서버 DB로 끌어옴) ---------- */
-    const pullBtn = box.querySelector("[data-pull]");
-    if (pullBtn) pullBtn.onclick = async () => {
-      if (!confirm("구글 시트의 현재 내용으로 서버를 덮어쓸까요?\n(시트에서 지운 항목은 사이트에서도 사라집니다)")) return;
-      const url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
-      pullBtn.disabled = true; pullBtn.textContent = "반영 중…";
+    const importBtn = box.querySelector("[data-import-sheet]");
+    if (importBtn) importBtn.onclick = async () => {
+      if (!confirm("구글 시트의 현재 내용으로 서버를 덮어쓰고 편집 잠금을 해제할까요?\n(시트에서 지운 항목은 사이트에서도 사라집니다.)")) return;
+      importBtn.disabled = true; importBtn.textContent = "가져오는 중…";
       try {
-        const r = await fetch(url, { method: "POST", redirect: "follow",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ pullSheet: true, key: App.key() }) });
+        const r = await fetch(url_, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ importSheet: true, key: App.key() }) });
         const j = await r.json();
         if (!j || !j.ok) throw new Error((j && j.error) || "실패");
         const s = j.synced || {};
         const parts = Object.keys(s).map(k => k + " " + s[k]).join(" · ");
         try { Store.clearCache && Store.clearCache(); } catch (e) {}
-        App.toast("시트 내용을 서버에 반영했어요! (" + (parts || "완료") + ")");
+        App.toast("시트 내용을 반영하고 잠금을 해제했어요! (" + (parts || "완료") + ")");
         setTimeout(() => location.reload(), 900);
-      } catch (e) {
-        App.toast("반영 실패: " + e.message, true);
-      } finally { pullBtn.disabled = false; pullBtn.textContent = "🔄 시트 → 서버 반영"; }
+      } catch (e) { App.toast("가져오기 실패: " + e.message, true); }
+      finally { importBtn.disabled = false; importBtn.textContent = "📥 데이터 가져오기 (편집 완료·반영)"; }
     };
   } else {
     box.innerHTML = `

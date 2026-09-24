@@ -281,6 +281,12 @@ function doGet(e) {
     if (p.action === "ping") return json({ ok: true, pong: true }); // 예열용: 시트 안 읽고 런타임만 깨움
     if (p.action === "hit") return recordHit(p.page);          // 페이지 조회 1건 기록(+1)
     if (p.action === "viewstats") return json({ ok: true, views: readViews() }); // 조회통계 반환
+    if (p.action === "donorsheet") {          // 가져오기용: '후원' 탭 명단 반환 (서버가 읽어감)
+      var dsh = book().getSheetByName("후원");
+      if (!dsh || dsh.getLastRow() < 2) return json({ ok: true, donors: [] });
+      var dv = dsh.getRange(2, 1, dsh.getLastRow() - 1, 1).getValues();
+      return json({ ok: true, donors: dv.map(function (r) { return String(r[0] || "").trim(); }).filter(String) });
+    }
 
     // ★ PATCH_03: 서버 캐시 히트면 탭 안 읽고 즉시 반환 (?fresh=1 이면 무시하고 새로 빌드)
     var scache = CacheService.getScriptCache();
@@ -825,6 +831,15 @@ function doPost(e) {
 
     // ★ 작대기(매칭): 별도 흐름으로 처리하고 즉시 반환 (자소서/명령어 저장과 무관)
     if (body.stickAction) return handleStick(body);
+
+    // ★ 내보내기용 bulk 쓰기: 서버가 작대기·후원명단을 통째로 시트에 씀 (관리자만)
+    if (body.bulkTabs) {
+      if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
+      var bt = body.bulkTabs;
+      if (Array.isArray(bt.sticks)) writeTab(STICK_TAB, STICK_HEADER, bt.sticks);   // [[보낸,받는,날짜],...]
+      if (Array.isArray(bt.donors)) writeTab("후원", ["닉네임"], bt.donors);         // [[닉],...]
+      return json({ ok: true });
+    }
 
     // ★ 조회통계 백업: 서버(horangbot)가 주기적으로 view_hits 를 통째로 밀어넣음(백업용)
     if (body.action === "syncviews") {
