@@ -154,12 +154,12 @@
       ["donate.html", "후원"],
       ["members.html", "자소서"],
       ["psychtest.html", "심리테스트"],
-      ["sticks.html", "작대기"],
-      ["ranking.html", "게임랭킹"]
+      ["sticks.html", "작대기"]
     ];
     // "더보기 ▾" 안에 접히는 탭 (자주 안 보는 것)
     const more = [
       ["commands.html", "명령어"],
+      ["ranking.html", "게임랭킹"],
       ["outings.html", "외출"],
       ["patchnotes.html", "패치노트"]
     ];
