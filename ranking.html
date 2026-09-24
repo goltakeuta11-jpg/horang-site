@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.45">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.45">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.45">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.46">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.46">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.46">
 <meta property="og:type" content="website">
 <meta property="og:title" content="게임 랭킹 · 호랑봇 허브">
 <meta property="og:description" content="선빵·폭탄·암산 1대1 게임 전적 랭킹.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.45"></script>
+<script src="assets/inapp.js?v=20260831.46"></script>
 <title>게임 랭킹 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.45">
+<link rel="stylesheet" href="assets/style.css?v=20260831.46">
 <style>
   .rk-seg { display: inline-flex; gap: 4px; background: var(--panel); border: 1px solid var(--line);
     border-radius: 999px; padding: 4px; margin: 6px 0 18px; flex-wrap: wrap; }
@@ -42,6 +42,10 @@
   .rk-streak { color: var(--accent); font-weight: 700; }
   .rk-badge { font-size: 12px; }
   .rk-hint { color: var(--text-dim); font-size: 13px; margin: 4px 0 0; }
+  .rk-del { border: 0; background: none; cursor: pointer; font-size: 15px; opacity: .55; padding: 4px 8px;
+    border-radius: 8px; line-height: 1; }
+  .rk-del:hover { opacity: 1; background: rgba(255,92,122,.16); }
+  .rk-th-del, .rk-td-del { width: 40px; text-align: center; }
 </style>
 </head>
 <body>
@@ -63,9 +67,9 @@
   <div data-board><div class="empty" style="padding:30px"><strong>불러오는 중…</strong></div></div>
 </main>
 
-<script src="assets/config.js?v=20260831.45"></script>
-<script src="assets/store.js?v=20260831.45"></script>
-<script src="assets/app.js?v=20260831.45"></script>
+<script src="assets/config.js?v=20260831.46"></script>
+<script src="assets/store.js?v=20260831.46"></script>
+<script src="assets/app.js?v=20260831.46"></script>
 <script>
 App.header("ranking.html");
 
@@ -103,6 +107,7 @@ function render() {
   const medal = ["top1", "top2", "top3"];
   const streakLabel = cur === "all" ? "최고연승" : "연승";
   const streakVal = m => cur === "all" ? m.best : m.streak;
+  const admin = App.isAdmin();
 
   boardEl.innerHTML = `
     <div class="rk-champ">
@@ -115,7 +120,7 @@ function render() {
     <div class="card" style="padding:4px 10px">
       <table class="rk-table">
         <thead><tr>
-          <th>순위</th><th>닉</th><th class="rk-num">전적</th><th class="rk-num">승률</th><th class="rk-num">${streakLabel}</th>
+          <th>순위</th><th>닉</th><th class="rk-num">전적</th><th class="rk-num">승률</th><th class="rk-num">${streakLabel}</th>${admin ? '<th class="rk-th-del"></th>' : ""}
         </tr></thead>
         <tbody>
           ${list.map((m, i) => `
@@ -125,11 +130,12 @@ function render() {
               <td class="rk-num">${m.wins}승 ${m.losses}패</td>
               <td class="rk-num rk-rate">${m.rate}%</td>
               <td class="rk-num">${streakVal(m) >= 2 ? `<span class="rk-streak">🔥${streakVal(m)}</span>` : streakVal(m)}</td>
+              ${admin ? `<td class="rk-td-del"><button class="rk-del" data-del="${App.esc(m.nick)}" title="이 사람 전적 삭제">🗑️</button></td>` : ""}
             </tr>`).join("")}
         </tbody>
       </table>
     </div>
-    <p class="rk-hint">💡 종합은 세 게임 합산이에요. 승 → 승률 → 적은 패배 순으로 정렬돼요.</p>`;
+    <p class="rk-hint">💡 종합은 세 게임 합산이에요. 승 → 승률 → 적은 패배 순으로 정렬돼요.${admin ? " 🗑️로 방 나간 사람 전적을 지울 수 있어요(모든 게임 기록 삭제)." : ""}</p>`;
 }
 
 document.querySelector("[data-seg]").addEventListener("click", e => {
@@ -145,6 +151,28 @@ fetch(URL_ + "?action=ranking&_=" + Date.now())
   .then(r => r.json())
   .then(j => { RECORDS = (j && j.records) || []; render(); })
   .catch(() => { boardEl.innerHTML = `<div class="empty" style="padding:30px"><strong>랭킹을 불러오지 못했어요</strong>잠시 후 다시 시도해주세요.</div>`; });
+
+/* 관리자: 특정 닉 전적 전체 삭제 (방 나간 사람 정리) */
+boardEl.addEventListener("click", async e => {
+  const btn = e.target.closest("[data-del]");
+  if (!btn || !App.isAdmin()) return;
+  const nick = btn.dataset.del;
+  if (!confirm(`'${nick}' 님의 모든 게임 전적을 삭제할까요?\n(선빵·폭탄·암산 기록이 전부 지워지고 되돌릴 수 없어요)`)) return;
+  btn.disabled = true; btn.textContent = "⏳";
+  try {
+    const r = await fetch(URL_, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ rankDelete: true, nick, key: App.key() }) });
+    const j = await r.json();
+    if (j && j.ok) {
+      RECORDS = RECORDS.filter(x => String(x.nick).trim() !== nick);   // 로컬 즉시 반영
+      render();
+      App.toast(`'${nick}' 전적 삭제 완료 (${j.deleted || 0}건)`);
+    } else {
+      btn.disabled = false; btn.textContent = "🗑️";
+      App.toast((j && j.error) || "삭제 실패");
+    }
+  } catch (err) { btn.disabled = false; btn.textContent = "🗑️"; App.toast("삭제 중 오류가 났어요"); }
+});
 </script>
 </body>
 </html>
