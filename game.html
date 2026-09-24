@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.55">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.55">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.55">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.56">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.56">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.56">
 <meta property="og:type" content="website">
 <meta property="og:title" content="게임 · 호랑봇 허브">
 <meta property="og:description" content="이벤트 미니게임 — 마피아">
 <meta property="og:url" content="https://horangbot.co.kr/game.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.55"></script>
+<script src="assets/inapp.js?v=20260831.56"></script>
 <title>게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.55">
+<link rel="stylesheet" href="assets/style.css?v=20260831.56">
 <style>
   .gm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-top: 8px; }
   .gm-card { display: block; text-decoration: none; color: inherit; background: var(--panel); border: 1px solid var(--line);
@@ -36,19 +36,29 @@
 <header class="header"><div class="header__inner" data-header></div></header>
 
 <main class="wrap page">
-  <p class="page__eyebrow">게임</p>
-  <h1 class="page__title">🎮 이벤트 게임</h1>
-  <p class="page__desc">이벤트 때 열리는 미니게임이에요. 다 같이 방에서 즐겨요!</p>
+  <p class="page__eyebrow">게임 로비</p>
+  <h1 class="page__title">🎮 게임 로비</h1>
+  <p class="page__desc">언제든 즐기는 오목부터, 이벤트 때 열리는 마피아·라이어까지. 원하는 게임을 골라 입장하세요!</p>
 
+  <div class="gm-grid">
+    <a class="gm-card" href="omok.html">
+      <div class="gm-card__emoji">⚫</div>
+      <div class="gm-card__title">오목 랭크 <span style="font-size:11px;color:#34D399;font-weight:800">상시 오픈</span></div>
+      <div class="gm-card__desc">1대1 오목으로 MMR·티어를 올려요. 이길 때마다 랭크 상승, <b>2주마다 시즌 랭킹 리셋</b>. 턴당 15초!</div>
+      <div class="gm-card__meta">지금 바로 플레이 →</div>
+    </a>
+  </div>
+
+  <h2 style="font-size:16px;font-weight:800;margin:24px 0 4px">🎪 이벤트 게임</h2>
   <div class="gm-admin" data-admin hidden>
     <div class="gm-admin__txt">
-      게임탭 상태: <b data-state class="gm-off">불러오는 중…</b><br>
-      <span style="color:var(--text-dim)">비활성화하면 일반 이용자에게는 게임 탭이 안 보여요.</span>
+      이벤트 게임 상태: <b data-state class="gm-off">불러오는 중…</b><br>
+      <span style="color:var(--text-dim)">비활성화하면 마피아·라이어가 일반 이용자에게 안 보여요. (오목은 상시)</span>
     </div>
     <button class="btn btn--primary" data-toggle disabled>불러오는 중…</button>
   </div>
-
-  <div class="gm-grid">
+  <p class="page__desc" data-event-note hidden style="color:var(--text-dim)">지금은 닫혀 있어요. 이벤트 때 관리자가 열면 여기에 나타나요!</p>
+  <div class="gm-grid" data-event-grid hidden>
     <a class="gm-card" href="mafia.html">
       <div class="gm-card__emoji">🕵️</div>
       <div class="gm-card__title">마피아</div>
@@ -64,39 +74,47 @@
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.55"></script>
-<script src="assets/store.js?v=20260831.55"></script>
-<script src="assets/app.js?v=20260831.55"></script>
+<script src="assets/config.js?v=20260831.56"></script>
+<script src="assets/store.js?v=20260831.56"></script>
+<script src="assets/app.js?v=20260831.56"></script>
 <script>
 App.header("game.html");
 
-/* 관리자: 게임탭 활성화/비활성화 토글 */
+/* 이벤트 게임(마피아·라이어) 노출 제어 + (관리자면) 활성화 토글 */
 (function () {
-  if (!App.isAdmin()) return;
+  const URL_ = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
+  const admin = App.isAdmin();
+  const grid = document.querySelector("[data-event-grid]");
+  const note = document.querySelector("[data-event-note]");
   const box = document.querySelector("[data-admin]");
   const stateEl = box.querySelector("[data-state]");
   const btn = box.querySelector("[data-toggle]");
-  box.hidden = false;
-  const URL_ = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
   let on = false;
 
   function paint() {
-    stateEl.textContent = on ? "활성화 (모두에게 보임)" : "비활성화 (숨김)";
-    stateEl.className = on ? "gm-on" : "gm-off";
-    btn.textContent = on ? "비활성화하기" : "활성화하기";
-    btn.disabled = false;
+    // 이벤트 카드: 활성화됐거나 관리자면 보임
+    const visible = on || admin;
+    grid.hidden = !visible;
+    note.hidden = visible;
+    if (admin) {
+      box.hidden = false;
+      stateEl.textContent = on ? "활성화 (모두에게 보임)" : "비활성화 (관리자만 보임)";
+      stateEl.className = on ? "gm-on" : "gm-off";
+      btn.textContent = on ? "비활성화하기" : "활성화하기";
+      btn.disabled = false;
+    }
   }
   fetch(URL_ + "?action=siteflags&_=" + Date.now()).then(r => r.json())
     .then(j => { on = !!(j && j.gameOn); paint(); })
-    .catch(() => { stateEl.textContent = "상태 확인 실패"; });
+    .catch(() => { paint(); });
 
-  btn.onclick = async () => {
+  if (admin) btn.onclick = async () => {
     btn.disabled = true; btn.textContent = "처리 중…";
     try {
       const r = await fetch(URL_, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ gameToggle: !on, key: App.key() }) });
       const j = await r.json();
-      if (j && j.ok) { on = !!j.gameOn; paint(); App.toast(on ? "게임탭 활성화됨" : "게임탭 비활성화됨"); }
+      if (j && j.ok) { on = !!j.gameOn; paint(); App.toast(on ? "이벤트 게임 활성화됨" : "이벤트 게임 비활성화됨"); }
       else { paint(); App.toast((j && j.error) || "변경 실패"); }
     } catch (e) { paint(); App.toast("오류가 났어요"); }
   };

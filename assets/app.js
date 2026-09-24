@@ -146,48 +146,31 @@
     try { fetch(url + "?action=hit&page=" + encodeURIComponent(page) + "&_=" + Date.now(), { cache: "no-store", mode: "no-cors" }).catch(function () {}); } catch (e) {}
   }
 
-  /* 사이트 플래그(편집잠금 + 게임탭 활성화)를 한 번에 조회 → 배너 표시 + 게임탭 주입 */
-  function siteFlags(active) {
+  /* 편집잠금 배너 (오목 상시 오픈이라 게임탭은 항상 노출 — nav 배열에 직접 넣음) */
+  function siteFlags() {
     var url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
     if (!url) return;
     fetch(url + "?action=siteflags&_=" + Date.now(), { cache: "no-store" })
       .then(function (r) { return r.json(); })
       .then(function (j) {
-        if (!j) return;
-        // 1) 편집 잠금 배너
-        if (j.locked && !document.querySelector("[data-maint-banner]")) {
-          var run = function () {
-            var b = document.createElement("div");
-            b.setAttribute("data-maint-banner", "");
-            b.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99998;background:#FFAB40;color:#17070C;"
-              + "font:700 14px/1.5 -apple-system,sans-serif;padding:11px 16px;text-align:center;"
-              + "box-shadow:0 2px 14px rgba(0,0,0,.35)";
-            b.textContent = "🔧 현재 데이터 업데이트 중입니다. 잠시 후에 이용 바랍니다.";
-            document.body.appendChild(b);
-            document.body.style.paddingTop = "44px";
-          };
-          if (document.body) run(); else document.addEventListener("DOMContentLoaded", run);
-        }
-        // 2) 게임탭: 활성화됐거나(모두) 관리자면 nav 에 주입 (관리자는 꺼져 있어도 관리하러 들어가야 하니 항상 보임)
-        if ((j.gameOn || isAdmin()) && !document.querySelector("[data-game-tab]")) {
-          var nav = document.querySelector("[data-nav]");
-          var more = nav && nav.querySelector("[data-more]");
-          if (nav) {
-            var a = document.createElement("a");
-            a.setAttribute("data-game-tab", "");
-            var onGame = active === "game.html" || active === "mafia.html";
-            a.href = "game.html";
-            a.className = "nav__item" + (onGame ? " is-on" : "");
-            a.textContent = j.gameOn ? "🎮 게임" : "🎮 게임(비공개)";
-            if (more) nav.insertBefore(a, more); else nav.appendChild(a);
-          }
-        }
+        if (!j || !j.locked || document.querySelector("[data-maint-banner]")) return;
+        var run = function () {
+          var b = document.createElement("div");
+          b.setAttribute("data-maint-banner", "");
+          b.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99998;background:#FFAB40;color:#17070C;"
+            + "font:700 14px/1.5 -apple-system,sans-serif;padding:11px 16px;text-align:center;"
+            + "box-shadow:0 2px 14px rgba(0,0,0,.35)";
+          b.textContent = "🔧 현재 데이터 업데이트 중입니다. 잠시 후에 이용 바랍니다.";
+          document.body.appendChild(b);
+          document.body.style.paddingTop = "44px";
+        };
+        if (document.body) run(); else document.addEventListener("DOMContentLoaded", run);
       })
       .catch(function () {});
   }
 
   function header(active) {
-    siteFlags(active);   // 잠금 배너 + 게임탭 주입
+    siteFlags();   // 잠금 배너
     // 항상 보이는 탭 (홈은 좌측 로고가 대신함)
     const primary = [
       ["notices.html", "공지"],
@@ -195,7 +178,8 @@
       ["donate.html", "후원"],
       ["members.html", "자소서"],
       ["psychtest.html", "심리테스트"],
-      ["sticks.html", "작대기"]
+      ["sticks.html", "작대기"],
+      ["game.html", "🎮 게임"]
     ];
     // "더보기 ▾" 안에 접히는 탭 (자주 안 보는 것)
     const more = [
