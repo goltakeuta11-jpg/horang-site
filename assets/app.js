@@ -150,6 +150,7 @@
     // 항상 보이는 탭 (홈은 좌측 로고가 대신함)
     const primary = [
       ["notices.html", "공지"],
+      ["calendar.html", "캘린더"],
       ["donate.html", "후원"],
       ["members.html", "자소서"],
       ["psychtest.html", "심리테스트"],

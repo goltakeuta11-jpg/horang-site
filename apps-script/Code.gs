@@ -19,7 +19,8 @@ const TABS = {
   commands: "명령어",
   patchnotes: "패치노트",
   outings: "외출",
-  notices: "공지"
+  notices: "공지",
+  events: "일정"
 };
 
 /* 자소서는 성별별로 탭 2개. 성별은 "탭"이 정합니다(열이 아니라). */
@@ -36,7 +37,8 @@ const HEADERS = {
   commands: ["명령어", "설명", "분류", "관리자전용"],
   patchnotes: ["날짜", "분류", "버전", "내용"],
   outings: ["내용"],
-  notices: ["날짜", "제목", "내용", "고정"]
+  notices: ["날짜", "제목", "내용", "고정"],
+  events: ["날짜", "제목"]
 };
 
 /* 자소서 탭 헤더 — 성별 열은 없습니다(탭 이름이 성별)

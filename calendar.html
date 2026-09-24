@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.43">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.43">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.43">
+<meta property="og:type" content="website">
+<meta property="og:title" content="캘린더 · 호랑봇 허브">
+<meta property="og:description" content="생일과 방 일정을 한눈에.">
+<meta property="og:url" content="https://horangbot.co.kr/calendar.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.43"></script>
+<title>캘린더 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.43">
+<style>
+  .cal-head { display:flex; align-items:center; justify-content:center; gap:16px; margin:8px 0 14px; }
+  .cal-head .mtitle { font-size:20px; font-weight:800; min-width:150px; text-align:center; letter-spacing:-.02em; }
+  .cal-nav { background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:10px;
+    width:38px; height:38px; font-size:17px; cursor:pointer; }
+  .cal-nav:hover { background:var(--panel-2); }
+  .cal-today-btn { background:var(--panel); border:1px solid var(--line); color:var(--text-dim); border-radius:999px;
+    padding:6px 13px; font-size:13px; font-weight:700; cursor:pointer; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+  .cal-wd { text-align:center; font-size:12px; font-weight:700; color:var(--text-dim); padding:4px 0; }
+  .cal-wd.sun { color:#ff7a90; } .cal-wd.sat { color:#7aa8ff; }
+  .cal-cell { background:var(--panel); border:1px solid var(--line); border-radius:10px; min-height:92px;
+    padding:6px 5px; display:flex; flex-direction:column; gap:3px; overflow:hidden; }
+  .cal-cell.other { background:transparent; border-color:transparent; }
+  .cal-cell.today { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+  .cal-dn { font-size:12.5px; font-weight:700; color:var(--text-dim); }
+  .cal-cell.today .cal-dn { color:var(--accent); }
+  .cal-dn.sun { color:#ff7a90; } .cal-dn.sat { color:#7aa8ff; }
+  .cal-chip { font-size:11px; line-height:1.35; border-radius:6px; padding:2px 5px; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:2px; }
+  .cal-chip.bday { background:rgba(255,171,64,.16); color:#ffcf8a; }
+  .cal-chip.evt { background:rgba(255,92,122,.16); color:#ff9db1; }
+  .cal-chip .x { margin-left:auto; cursor:pointer; opacity:.7; font-weight:800; padding:0 2px; }
+  .cal-chip .x:hover { opacity:1; }
+  /* 이달의 목록 */
+  .cal-list { margin-top:26px; }
+  .cal-list h2 { font-size:16px; font-weight:800; margin-bottom:10px; }
+  .cal-li { display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid var(--line); font-size:14px; }
+  .cal-li:last-child { border-bottom:0; }
+  .cal-li .d { font-variant-numeric:tabular-nums; color:var(--text-dim); font-size:13px; min-width:52px; }
+  .cal-li .ic { font-size:15px; }
+  .cal-empty { color:var(--text-dim); font-size:13.5px; padding:14px 2px; }
+  @media(max-width:560px){
+    .cal-cell { min-height:74px; }
+    .cal-chip { font-size:10px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page">
+  <p class="page__eyebrow">캘린더</p>
+  <h1 class="page__title">📅 방 캘린더</h1>
+  <p class="page__desc">멤버 생일(🎂)이 자동으로 뜨고, 방 일정(📌)은 운영자가 등록해요.</p>
+
+  <div class="toolbar">
+    <span class="toolbar__spacer"></span>
+    <span data-admin-tools></span>
+  </div>
+
+  <div class="cal-head">
+    <button class="cal-nav" data-prev aria-label="이전 달">‹</button>
+    <span class="mtitle" data-mtitle></span>
+    <button class="cal-nav" data-next aria-label="다음 달">›</button>
+    <button class="cal-today-btn" data-today>오늘</button>
+  </div>
+
+  <div class="cal-grid" data-grid></div>
+
+  <div class="cal-list">
+    <h2 data-listtitle>이달의 일정 · 생일</h2>
+    <div class="card" style="padding:2px 10px"><div data-listbody></div></div>
+  </div>
+</main>
+
+<!-- 일정 추가/수정 (관리자) -->
+<div class="modal" data-modal>
+  <div class="modal__box">
+    <h2 class="modal__title" data-modal-title>일정 추가</h2>
+    <label class="field"><span class="field__label">날짜</span>
+      <input class="input" type="date" data-f-date></label>
+    <label class="field"><span class="field__label">일정 내용</span>
+      <input class="input" data-f-title placeholder="예: 정기 번개 모임 🍻"></label>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" data-cancel>취소</button>
+      <button class="btn btn--primary" data-save>저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/config.js?v=20260831.43"></script>
+<script src="assets/store.js?v=20260831.43"></script>
+<script src="assets/app.js?v=20260831.43"></script>
+<script>
+App.header("calendar.html");
+const admin = App.isAdmin();
+const canEdit = admin && Store.canWrite;
+const WD = ["일","월","화","수","목","금","토"];
+const gridEl = document.querySelector("[data-grid]");
+const modal = document.querySelector("[data-modal]");
+let view = new Date(); view.setDate(1);   // 현재 보고 있는 달(1일로 고정)
+
+function pad(n){ return ("0"+n).slice(-2); }
+function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+
+if (canEdit) {
+  const t = document.querySelector("[data-admin-tools]");
+  t.innerHTML = `<button class="btn btn--primary" data-add>➕ 일정 추가</button>`;
+  t.querySelector("[data-add]").onclick = () => openAdd();
+}
+
+/* 생일 맵: "MM-DD" → [닉,...] · 일정 맵: "YYYY-MM-DD" → [{title, idx},...] */
+function buildMaps() {
+  const bday = {}, evt = {};
+  (Store.get().members || []).forEach(m => {
+    if (!m.bday) return;
+    (bday[m.bday] = bday[m.bday] || []).push(m.nick);
+  });
+  (Store.get().events || []).forEach((e, i) => {
+    if (!e.date) return;
+    (evt[e.date] = evt[e.date] || []).push({ title: e.title, idx: i });
+  });
+  return { bday, evt };
+}
+
+function render() {
+  const M = buildMaps();
+  const y = view.getFullYear(), mo = view.getMonth();
+  document.querySelector("[data-mtitle]").textContent = y + "년 " + (mo + 1) + "월";
+  document.querySelector("[data-listtitle]").textContent = (mo + 1) + "월 일정 · 생일";
+
+  const first = new Date(y, mo, 1), start = first.getDay();      // 그 달 1일의 요일
+  const daysInMonth = new Date(y, mo + 1, 0).getDate();
+  const todayStr = ymd(new Date());
+
+  let html = WD.map((w, i) => `<div class="cal-wd ${i===0?"sun":i===6?"sat":""}">${w}</div>`).join("");
+  // 6주 × 7일 = 42칸
+  for (let cell = 0; cell < 42; cell++) {
+    const dayNum = cell - start + 1;
+    if (dayNum < 1 || dayNum > daysInMonth) { html += `<div class="cal-cell other"></div>`; continue; }
+    const dow = cell % 7;
+    const dateStr = y + "-" + pad(mo + 1) + "-" + pad(dayNum);
+    const md = pad(mo + 1) + "-" + pad(dayNum);
+    const isToday = dateStr === todayStr;
+    let chips = "";
+    (M.bday[md] || []).forEach(nick => {
+      chips += `<span class="cal-chip bday" title="${App.esc(nick)} 생일">🎂 ${App.esc(nick)}</span>`;
+    });
+    (M.evt[dateStr] || []).forEach(e => {
+      chips += `<span class="cal-chip evt" title="${App.esc(e.title)}">📌 ${App.esc(e.title)}`
+        + (canEdit ? `<span class="x" data-del="${e.idx}">✕</span>` : "") + `</span>`;
+    });
+    html += `<div class="cal-cell${isToday?" today":""}">`
+      + `<span class="cal-dn ${dow===0?"sun":dow===6?"sat":""}">${dayNum}</span>${chips}</div>`;
+  }
+  gridEl.innerHTML = html;
+  if (canEdit) gridEl.querySelectorAll("[data-del]").forEach(x => x.onclick = e => { e.stopPropagation(); delEvent(+x.dataset.del); });
+
+  renderList(M, y, mo);
+}
+
+/* 이달의 일정+생일을 날짜순 목록으로 */
+function renderList(M, y, mo) {
+  const items = [];
+  const daysInMonth = new Date(y, mo + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const md = pad(mo + 1) + "-" + pad(d), dateStr = y + "-" + pad(mo + 1) + "-" + pad(d);
+    (M.bday[md] || []).forEach(nick => items.push({ d, ic: "🎂", txt: nick + " 생일" }));
+    (M.evt[dateStr] || []).forEach(e => items.push({ d, ic: "📌", txt: e.title, idx: e.idx }));
+  }
+  const body = document.querySelector("[data-listbody]");
+  if (!items.length) { body.innerHTML = `<div class="cal-empty">이번 달 일정·생일이 없어요.</div>`; return; }
+  body.innerHTML = items.map(it =>
+    `<div class="cal-li"><span class="d">${mo+1}/${it.d}</span><span class="ic">${it.ic}</span>`
+    + `<span style="flex:1">${App.esc(it.txt)}</span>`
+    + (canEdit && it.idx != null ? `<button class="btn btn--sm btn--danger" data-dl="${it.idx}">삭제</button>` : "")
+    + `</div>`).join("");
+  if (canEdit) body.querySelectorAll("[data-dl]").forEach(b => b.onclick = () => delEvent(+b.dataset.dl));
+}
+
+/* ---------- 관리자: 일정 추가/삭제 ---------- */
+let editIdx = -1;
+function openAdd() {
+  editIdx = -1;
+  document.querySelector("[data-modal-title]").textContent = "일정 추가";
+  const d = new Date();
+  document.querySelector("[data-f-date]").value = ymd(view.getMonth()===d.getMonth() && view.getFullYear()===d.getFullYear() ? d : view);
+  document.querySelector("[data-f-title]").value = "";
+  modal.classList.add("is-on");
+  document.querySelector("[data-f-title]").focus();
+}
+function close(){ modal.classList.remove("is-on"); }
+document.querySelector("[data-cancel]").onclick = close;
+modal.onclick = e => { if (e.target === modal) close(); };
+
+document.querySelector("[data-save]").onclick = () => {
+  const date = document.querySelector("[data-f-date]").value;
+  const title = document.querySelector("[data-f-title]").value.trim();
+  if (!date) return App.toast("날짜를 골라주세요.", true);
+  if (!title) return App.toast("일정 내용을 적어주세요.", true);
+  const data = Store.get();
+  data.events.push({ date: date, title: title });
+  if (!Store.set(data)) return;
+  close();
+  App.toast("일정을 추가했어요.");
+  render();
+};
+
+function delEvent(idx) {
+  const data = Store.get();
+  const e = data.events[idx];
+  if (!e) return;
+  if (!confirm(`"${e.title}" (${e.date}) 일정을 삭제할까요?`)) return;
+  data.events.splice(idx, 1);
+  if (!Store.set(data)) return;
+  App.toast("삭제했어요.");
+  render();
+}
+
+document.querySelector("[data-prev]").onclick = () => { view.setMonth(view.getMonth() - 1); render(); };
+document.querySelector("[data-next]").onclick = () => { view.setMonth(view.getMonth() + 1); render(); };
+document.querySelector("[data-today]").onclick = () => { view = new Date(); view.setDate(1); render(); };
+
+Store.load().then(render).catch(e => { render(); App.toast(e.message, true); });
+</script>
+</body>
+</html>

@@ -108,6 +108,9 @@
     notices: [
       { date: "2026-09-16", title: "호랑봇 허브에 오신 걸 환영해요 🐯", pin: true,
         body: "공지 게시판이 열렸어요!\n앞으로 방 소식과 규칙 변경을 여기에 올릴게요.\n제목을 누르면 전문을 볼 수 있어요 😊" }
+    ],
+    events: [
+      { date: "2026-09-01", title: "호랑봇 허브 오픈 🎉" }
     ]
   };
 
@@ -115,7 +118,7 @@
   /* 빠진 항목이 있어도 화면이 깨지지 않게 채워줍니다. */
   function normalize(d) {
     d = d || {};
-    ["commands", "members", "patchnotes", "outings", "notices"].forEach(k => {
+    ["commands", "members", "patchnotes", "outings", "notices", "events"].forEach(k => {
       if (!Array.isArray(d[k])) d[k] = [];
     });
     return d;
@@ -184,6 +187,12 @@
                      pin: /^(y|yes|true|o|ㅇ|고정)$/i.test(r[3] || "") }),
       toRow: n => [n.date, n.title, n.body, n.pin ? "Y" : "N"],
       keep: x => !!x.title
+    },
+    events: {
+      head: ["날짜", "제목"],
+      toObj: r => ({ date: normDate(r[0]), title: r[1] || "" }),
+      toRow: e => [e.date, e.title],
+      keep: x => !!x.date && !!x.title
     }
   };
 
