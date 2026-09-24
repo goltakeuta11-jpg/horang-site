@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.47">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.47">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.48">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.48">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.47"></script>
+<script src="assets/inapp.js?v=20260831.48"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.47">
+<link rel="stylesheet" href="assets/style.css?v=20260831.48">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -88,8 +88,9 @@
   <!-- 셋업 -->
   <section data-setup hidden>
     <p class="page__desc">방을 만들어 코드를 공유하거나, 받은 코드로 참가하세요. 최소 4명 · 최대 15명.</p>
+    <p class="mf-hint" data-create-note hidden style="margin:-4px 0 12px">💡 방 생성은 관리자만 할 수 있어요. 관리자가 만든 방 코드를 받아 참가해주세요.</p>
     <div class="mf-setup">
-      <div class="mf-box">
+      <div class="mf-box" data-create-box>
         <h2>➕ 방 만들기</h2>
         <input class="mf-input" data-create-nick maxlength="16" placeholder="내 닉네임">
         <button class="btn btn--primary" data-create style="width:100%">방 만들기</button>
@@ -138,9 +139,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.47"></script>
-<script src="assets/store.js?v=20260831.47"></script>
-<script src="assets/app.js?v=20260831.47"></script>
+<script src="assets/config.js?v=20260831.48"></script>
+<script src="assets/store.js?v=20260831.48"></script>
+<script src="assets/app.js?v=20260831.48"></script>
 <script>
 App.header("game.html");
 
@@ -171,7 +172,7 @@ function show(which) {
 $("[data-create]").onclick = async () => {
   const nick = $("[data-create-nick]").value.trim();
   if (!nick) return App.toast("닉네임을 입력해주세요.");
-  const j = await api("create", { nick });
+  const j = await api("create", { nick, key: App.key() });
   if (!j.ok) return App.toast(j.error || "방 생성 실패");
   saveSess({ code: j.code, pid: j.pid }); sinceId = 0; startGame();
 };
@@ -349,6 +350,13 @@ $("[data-chat-send]").onclick = sendChat;
 $("[data-chat-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
 
 /* ---------- 시작 ---------- */
+if (!App.isAdmin()) {   // 방 생성은 관리자만 — 비관리자는 생성 박스 숨기고 참가만
+  const cb = $("[data-create-box]"), note = $("[data-create-note]");
+  if (cb) cb.hidden = true;
+  if (note) note.hidden = false;
+  const setup = document.querySelector(".mf-setup");
+  if (setup) setup.style.gridTemplateColumns = "1fr";
+}
 if (!MAFIA_URL) show("noserver");
 else if (sess) startGame();
 else show("setup");
