@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.47">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.47">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.47">
+<meta property="og:type" content="website">
+<meta property="og:title" content="게임 · 호랑봇 허브">
+<meta property="og:description" content="이벤트 미니게임 — 마피아">
+<meta property="og:url" content="https://horangbot.co.kr/game.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.47"></script>
+<title>게임 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.47">
+<style>
+  .gm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-top: 8px; }
+  .gm-card { display: block; text-decoration: none; color: inherit; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); padding: 20px; transition: transform .12s, border-color .12s; }
+  .gm-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .gm-card__emoji { font-size: 40px; line-height: 1; }
+  .gm-card__title { font-size: 18px; font-weight: 800; margin: 12px 0 4px; }
+  .gm-card__desc { color: var(--text-dim); font-size: 13.5px; line-height: 1.5; }
+  .gm-card__meta { margin-top: 12px; font-size: 12.5px; color: var(--accent); font-weight: 700; }
+  .gm-admin { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    background: var(--panel); border: 1px dashed var(--line); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 18px; }
+  .gm-admin__txt { font-size: 13.5px; }
+  .gm-admin__txt b { font-weight: 800; }
+  .gm-on { color: #34D399; } .gm-off { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page">
+  <p class="page__eyebrow">게임</p>
+  <h1 class="page__title">🎮 이벤트 게임</h1>
+  <p class="page__desc">이벤트 때 열리는 미니게임이에요. 다 같이 방에서 즐겨요!</p>
+
+  <div class="gm-admin" data-admin hidden>
+    <div class="gm-admin__txt">
+      게임탭 상태: <b data-state class="gm-off">불러오는 중…</b><br>
+      <span style="color:var(--text-dim)">비활성화하면 일반 이용자에게는 게임 탭이 안 보여요.</span>
+    </div>
+    <button class="btn btn--primary" data-toggle disabled>불러오는 중…</button>
+  </div>
+
+  <div class="gm-grid">
+    <a class="gm-card" href="mafia.html">
+      <div class="gm-card__emoji">🕵️</div>
+      <div class="gm-card__title">마피아</div>
+      <div class="gm-card__desc">밤엔 마피아가 시민을 제거하고, 낮엔 토론·투표로 마피아를 찾아내는 심리 게임. 최대 15명.</div>
+      <div class="gm-card__meta">방 만들기 · 참가하기 →</div>
+    </a>
+  </div>
+</main>
+
+<script src="assets/config.js?v=20260831.47"></script>
+<script src="assets/store.js?v=20260831.47"></script>
+<script src="assets/app.js?v=20260831.47"></script>
+<script>
+App.header("game.html");
+
+/* 관리자: 게임탭 활성화/비활성화 토글 */
+(function () {
+  if (!App.isAdmin()) return;
+  const box = document.querySelector("[data-admin]");
+  const stateEl = box.querySelector("[data-state]");
+  const btn = box.querySelector("[data-toggle]");
+  box.hidden = false;
+  const URL_ = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
+  let on = false;
+
+  function paint() {
+    stateEl.textContent = on ? "활성화 (모두에게 보임)" : "비활성화 (숨김)";
+    stateEl.className = on ? "gm-on" : "gm-off";
+    btn.textContent = on ? "비활성화하기" : "활성화하기";
+    btn.disabled = false;
+  }
+  fetch(URL_ + "?action=siteflags&_=" + Date.now()).then(r => r.json())
+    .then(j => { on = !!(j && j.gameOn); paint(); })
+    .catch(() => { stateEl.textContent = "상태 확인 실패"; });
+
+  btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = "처리 중…";
+    try {
+      const r = await fetch(URL_, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ gameToggle: !on, key: App.key() }) });
+      const j = await r.json();
+      if (j && j.ok) { on = !!j.gameOn; paint(); App.toast(on ? "게임탭 활성화됨" : "게임탭 비활성화됨"); }
+      else { paint(); App.toast((j && j.error) || "변경 실패"); }
+    } catch (e) { paint(); App.toast("오류가 났어요"); }
+  };
+})();
+</script>
+</body>
+</html>
