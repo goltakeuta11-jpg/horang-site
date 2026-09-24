@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.48">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.48">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.49">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.49">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.48"></script>
+<script src="assets/inapp.js?v=20260831.49"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.48">
+<link rel="stylesheet" href="assets/style.css?v=20260831.49">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -139,9 +139,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.48"></script>
-<script src="assets/store.js?v=20260831.48"></script>
-<script src="assets/app.js?v=20260831.48"></script>
+<script src="assets/config.js?v=20260831.49"></script>
+<script src="assets/store.js?v=20260831.49"></script>
+<script src="assets/app.js?v=20260831.49"></script>
 <script>
 App.header("game.html");
 
@@ -298,9 +298,15 @@ function renderContext(j) {
     return;
   }
   if (j.phase === "ended") {
-    el.innerHTML = `<p class="mf-hint">게임이 끝났어요. 모든 역할이 공개됐어요.</p>
-      <button class="btn btn--primary" data-again style="margin-top:10px">새 게임 만들기</button>`;
-    el.querySelector("[data-again]").onclick = () => { clearSess(); stopPoll(); location.reload(); };
+    if (j.isHost) {
+      el.innerHTML = `<p class="mf-hint">게임이 끝났어요. 모든 역할이 공개됐어요. 같은 방·같은 참가자로 바로 새 게임을 시작할 수 있어요.</p>
+        <button class="btn btn--primary" data-again style="margin-top:10px">🔄 새 게임 (같은 방)</button>
+        <button class="btn btn--ghost btn--sm" data-newroom style="margin-top:10px;margin-left:8px">새 방 만들기</button>`;
+      el.querySelector("[data-again]").onclick = async () => { const r = await api("restart"); if (!r.ok) App.toast(r.error); else poll(); };
+      el.querySelector("[data-newroom]").onclick = () => { clearSess(); stopPoll(); location.reload(); };
+    } else {
+      el.innerHTML = `<p class="mf-hint">게임이 끝났어요. 모든 역할이 공개됐어요.<br>👑 방장이 새 게임을 시작하면 자동으로 대기실로 이동해요.</p>`;
+    }
     return;
   }
   // 진행 중
