@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.65">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.65">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.66">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.66">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.65"></script>
+<script src="assets/inapp.js?v=20260831.66"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.65">
+<link rel="stylesheet" href="assets/style.css?v=20260831.66">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -149,9 +149,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.65"></script>
-<script src="assets/store.js?v=20260831.65"></script>
-<script src="assets/app.js?v=20260831.65"></script>
+<script src="assets/config.js?v=20260831.66"></script>
+<script src="assets/store.js?v=20260831.66"></script>
+<script src="assets/app.js?v=20260831.66"></script>
 <script>
 App.header("game.html");
 
@@ -257,21 +257,27 @@ function render(j) {
   renderContext(j);
   // 채팅 입력 가능 여부 / 채널 안내
   const myMafiaTeam = j.me.role === "mafia" || (j.me.role === "spy" && j.me.spyTeam === "mafia");
-  const nightMafia = j.phase === "night" && myMafiaTeam;
+  const spyCh = j.me.role === "spy" ? j.me.spyContact : null;
+  const night = j.phase === "night";
+  const nightMafia = night && myMafiaTeam;
+  const nightPolice = night && j.canChat && (j.me.role === "police" || spyCh === "police");
+  const nightDoctor = night && j.canChat && (j.me.role === "doctor" || spyCh === "doctor");
   const inp = $("[data-chat-input]");
   inp.disabled = !j.canChat;
   inp.placeholder = j.canChat
-    ? (nightMafia ? "🔪 마피아 채팅…" : (!j.me.alive ? "👻 유령 채팅…" : "메시지 입력…"))
-    : (j.phase === "night" ? "밤에는 마피아만 대화할 수 있어요" : "지금은 채팅할 수 없어요");
+    ? (nightMafia ? "🔪 마피아 채팅…" : nightPolice ? "🔎 경찰팀 채팅…" : nightDoctor ? "🩺 의사팀 채팅…" : (!j.me.alive ? "👻 유령 채팅…" : "메시지 입력…"))
+    : (night ? "밤에는 대화할 수 없어요 (특수 역할만)" : "지금은 채팅할 수 없어요");
   $("[data-chat-head]").textContent = !j.me.alive ? "👻 유령 채팅 (관전)"
     : nightMafia ? "🔪 마피아 채팅"
+    : nightPolice ? "🔎 경찰팀 채팅"
+    : nightDoctor ? "🩺 의사팀 채팅"
     : "💬 채팅";
 }
 
 function renderPlayers(j) {
   const wrap = $("[data-players]");
   const night = j.phase === "night", day = j.phase === "day";
-  const iCanNight = night && j.me.alive && ["mafia", "doctor", "police"].includes(j.me.role);
+  const iCanNight = night && j.me.alive && (["mafia", "doctor", "police"].includes(j.me.role) || (j.me.role === "spy" && !j.me.spyContact));
   const iCanVote = day && j.me.alive;
   let label = `참가자 ${j.players.filter(p => p.alive).length}/${j.players.length}명 생존`;
   if (j.counts) label += ` · 🔪 마피아 ${j.counts.mafia}명`;
@@ -335,7 +341,7 @@ function renderContext(j) {
   if (j.phase === "ended") {
     const by = r => j.players.filter(p => p.role === r).map(p => esc(p.nick)).join(", ") || "—";
     const spyList = j.players.filter(p => p.role === "spy").map(p =>
-      `${esc(p.nick)} (${p.spyTeam === "mafia" ? "🔪마피아편" : p.spyTeam === "police" ? "🔎시민편" : "미정"})`).join(", ") || "—";
+      `${esc(p.nick)} (${p.spyTeam === "mafia" ? "🔪마피아편" : p.spyTeam === "citizen" ? "🙂시민편" : "미정"})`).join(", ") || "—";
     const c = j.counts || {};
     const reveal = `<div class="mf-reveal">
       <div class="rv rv-mafia">🔪 마피아 <b>${by("mafia")}</b></div>
@@ -363,17 +369,14 @@ function renderContext(j) {
   } else if (j.phase === "night") {
     if (j.me.role === "spy") {
       html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — 🕶️ 스파이</div>`;
-      if (j.me.spyTeam) {
-        html += `<p class="mf-hint">이미 <b>${j.me.spyTeam === "mafia" ? "🔪 마피아" : "🔎 경찰(시민)"}</b> 편을 정했어요. (변경 불가)${j.me.spyTeam === "mafia" ? " 밤에 마피아 채팅에 참여할 수 있어요." : ""}</p>`;
+      if (j.me.spyContact) {
+        const lbl = j.me.spyContact === "mafia" ? "🔪 마피아와 접선 (마피아편)" : j.me.spyContact === "police" ? "🔎 경찰과 접선 (시민편)" : "🩺 의사와 접선 (시민편)";
+        html += `<p class="mf-hint">이미 <b>${lbl}</b> 했어요. (이 판 동안 고정) 밤에 해당 팀과 대화할 수 있어요.</p>`;
       } else {
-        const noHold = j.day >= 3;
-        html += `<p class="mf-hint">이번 밤 어느 편에 설지 골라요. ${noHold ? "<b>3일차 밤부터는 보류 없이 반드시 선택</b>해야 해요." : "보류하면 다음 밤에 다시 고를 수 있어요."} <b>한번 정하면 못 바꿔요.</b></p>
-          <div class="spy-pick">
-            <button class="btn btn--primary btn--sm" data-spy="police">🔎 경찰(시민) 편</button>
-            <button class="btn btn--primary btn--sm" data-spy="mafia">🔪 마피아 편</button>
-            ${noHold ? "" : '<button class="btn btn--ghost btn--sm" data-spy="hold">⏸️ 보류</button>'}
-          </div>`;
+        html += `<p class="mf-hint">밤마다 <b>한 명을 접선</b>하세요 (아래에서 선택). 상대가 <b>🔪마피아면 마피아편+마피아 채팅</b>, <b>🔎경찰/🩺의사면 시민편+야간 대화</b>가 열려요. 시민이면 접선 실패(다음 밤 재시도). 한번 접선하면 고정!</p>`;
       }
+      if ((j.contactLog || []).length) html += `<div class="mf-invest"><b>🕶️ 접선 기록</b>` + j.contactLog.map(x =>
+        `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.result === "mafia" ? "🔪 마피아!" : x.result === "police" ? "🔎 경찰" : x.result === "doctor" ? "🩺 의사" : "🙂 시민(실패)"}</div>`).join("") + `</div>`;
     } else {
       const guide = { mafia: "제거할 사람을 골라요. (마피아끼리 상의 가능)", doctor: "오늘 밤 살릴 사람을 골라요. (자기 자신도 가능)",
         police: "정체를 조사할 사람을 골라요. 결과는 바로 알려드려요.",
@@ -393,10 +396,6 @@ function renderContext(j) {
     }
   }
   el.innerHTML = html;
-  el.querySelectorAll("[data-spy]").forEach(b => b.onclick = async () => {   // 스파이 편 선택
-    const r = await api("spypick", { spyPick: b.dataset.spy });
-    if (!r.ok) App.toast(r.error); else poll();
-  });
 }
 
 /* ---------- 채팅 ---------- */
