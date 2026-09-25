@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.66">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.66">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.67">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.67">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.66"></script>
+<script src="assets/inapp.js?v=20260831.67"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.66">
+<link rel="stylesheet" href="assets/style.css?v=20260831.67">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -37,7 +37,9 @@
   .role-doctor { background: rgba(52,211,153,.16); color: #34D399; }
   .role-police { background: rgba(255,196,75,.18); color: #FFC24B; }
   .role-spy { background: rgba(180,180,190,.18); color: #C7CAD1; }
+  .role-politician { background: rgba(255,140,90,.18); color: #FF9E6B; }
   .rv-spy { background: rgba(180,180,190,.14); }
+  .rv-politician { background: rgba(255,140,90,.13); }
   .spy-pick { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .spy-pick button { flex: 1; min-width: 90px; }
   .mf-cols { display: grid; grid-template-columns: 1fr 340px; gap: 14px; align-items: start; }
@@ -149,9 +151,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.66"></script>
-<script src="assets/store.js?v=20260831.66"></script>
-<script src="assets/app.js?v=20260831.66"></script>
+<script src="assets/config.js?v=20260831.67"></script>
+<script src="assets/store.js?v=20260831.67"></script>
+<script src="assets/app.js?v=20260831.67"></script>
 <script>
 App.header("game.html");
 
@@ -161,10 +163,10 @@ const $ = s => document.querySelector(s);
 const esc = App.esc;
 const ROLE = { mafia: ["🔪", "마피아", "role-mafia"], citizen: ["🙂", "시민", "role-citizen"],
   doctor: ["🩺", "의사", "role-doctor"], police: ["🔎", "경찰", "role-police"],
-  spy: ["🕶️", "스파이", "role-spy"] };
+  spy: ["🕶️", "스파이", "role-spy"], politician: ["🏛️", "정치인", "role-politician"] };
 function rolePreview(n) {   // 서버 배정 공식과 동일 (대기실 미리보기용)
-  const mafia = n <= 6 ? 1 : n <= 9 ? 2 : 3, doctor = n >= 6 ? 1 : 0, police = n >= 6 ? 1 : 0, spy = n >= 9 ? 1 : 0;
-  return { mafia, doctor, police, spy, citizen: Math.max(0, n - mafia - doctor - police - spy) };
+  const mafia = n <= 6 ? 1 : n <= 9 ? 2 : 3, doctor = n >= 6 ? 1 : 0, police = n >= 6 ? 1 : 0, politician = n >= 8 ? 1 : 0, spy = n >= 9 ? 1 : 0;
+  return { mafia, doctor, police, politician, spy, citizen: Math.max(0, n - mafia - doctor - police - politician - spy) };
 }
 
 let sess = null, sinceId = 0, pollTimer = null, tickTimer = null, phaseDeadline = 0, S = null;
@@ -324,7 +326,7 @@ function renderContext(j) {
     const canStart = j.isHost && n >= 4;
     const pv = rolePreview(n);
     const pvLine = n >= 4
-      ? `이 인원이면 → 🔪 마피아 <b>${pv.mafia}</b>${pv.doctor ? " · 🩺 의사 1" : ""}${pv.police ? " · 🔎 경찰 1" : ""}${pv.spy ? " · 🕶️ 스파이 1" : ""} · 🙂 시민 ${pv.citizen}`
+      ? `이 인원이면 → 🔪 마피아 <b>${pv.mafia}</b>${pv.doctor ? " · 🩺 의사 1" : ""}${pv.police ? " · 🔎 경찰 1" : ""}${pv.politician ? " · 🏛️ 정치인 1" : ""}${pv.spy ? " · 🕶️ 스파이 1" : ""} · 🙂 시민 ${pv.citizen}`
       : "4명부터 시작할 수 있어요.";
     el.innerHTML = `
       <div style="font-weight:800;font-size:16px;margin-bottom:6px">대기실 · ${n}명</div>
@@ -347,6 +349,7 @@ function renderContext(j) {
       <div class="rv rv-mafia">🔪 마피아 <b>${by("mafia")}</b></div>
       ${c.doctor ? `<div class="rv rv-doctor">🩺 의사 <b>${by("doctor")}</b></div>` : ""}
       ${c.police ? `<div class="rv rv-police">🔎 경찰 <b>${by("police")}</b></div>` : ""}
+      ${c.politician ? `<div class="rv rv-politician">🏛️ 정치인 <b>${by("politician")}</b></div>` : ""}
       ${c.spy ? `<div class="rv rv-spy">🕶️ 스파이 <b>${spyList}</b></div>` : ""}
       <div class="rv rv-citizen">🙂 시민 <b>${by("citizen")}</b></div>
     </div>`;
@@ -380,6 +383,7 @@ function renderContext(j) {
     } else {
       const guide = { mafia: "제거할 사람을 골라요. (마피아끼리 상의 가능)", doctor: "오늘 밤 살릴 사람을 골라요. (자기 자신도 가능)",
         police: "정체를 조사할 사람을 골라요. 결과는 바로 알려드려요.",
+        politician: "밤 행동은 없어요. 하지만 낮 투표에서 <b>당신의 표는 2표</b>예요! 🏛️",
         citizen: "밤이에요. 마피아의 선택을 기다려요. 아침에 만나요." }[j.me.role];
       html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — ${ROLE[j.me.role][1]}</div><p class="mf-hint">${guide}</p>`;
       if (j.me.role === "police" && j.investLog.length) {
@@ -389,7 +393,7 @@ function renderContext(j) {
     }
   } else if (j.phase === "day") {
     html = `<div style="font-weight:800;margin-bottom:4px">☀️ 낮 — 토론 & 투표</div>
-      <p class="mf-hint">토론하고, 처형할 사람을 눌러 투표하세요. 시간이 끝나면 최다 득표자가 처형돼요. (다시 누르면 취소, 동표면 아무도 안 죽어요)</p>`;
+      <p class="mf-hint">토론하고, 처형할 사람을 눌러 투표하세요. 시간이 끝나면 최다 득표자가 처형돼요. (다시 누르면 취소, 동표면 아무도 안 죽어요)${j.me.role === "politician" ? " <b style='color:#FF9E6B'>🏛️ 당신의 표는 2표!</b>" : ""}</p>`;
     if (j.me.role === "police" && j.investLog.length) {
       html += `<div class="mf-invest"><b>🔎 내 조사 기록</b>` + j.investLog.map(x =>
         `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.isMafia ? "🔪 <b style='color:#FF6B81'>마피아!</b>" : "🙂 마피아 아님"}</div>`).join("") + `</div>`;
