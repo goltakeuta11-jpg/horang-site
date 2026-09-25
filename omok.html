@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.79">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.79">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.80">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.80">
 <meta property="og:type" content="website">
 <meta property="og:title" content="오목 랭크 · 호랑봇 허브">
 <meta property="og:description" content="1대1 오목으로 MMR·티어를 올려라! 2주 시즌 랭킹.">
 <meta property="og:url" content="https://horangbot.co.kr/omok.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.79"></script>
+<script src="assets/inapp.js?v=20260831.80"></script>
 <title>오목 랭크 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.79">
+<link rel="stylesheet" href="assets/style.css?v=20260831.80">
 <style>
   .ok-wrap { max-width: 720px; }
   .ok-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text);
@@ -128,9 +128,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.79"></script>
-<script src="assets/store.js?v=20260831.79"></script>
-<script src="assets/app.js?v=20260831.79"></script>
+<script src="assets/config.js?v=20260831.80"></script>
+<script src="assets/store.js?v=20260831.80"></script>
+<script src="assets/app.js?v=20260831.80"></script>
 <script>
 App.header("game.html");
 
@@ -226,7 +226,7 @@ $("[data-lb]").addEventListener("click", async e => {
 /* 매칭 */
 $("[data-find]").onclick = findMatch;
 $("[data-again]").onclick = findMatch;
-$("[data-cancel]").onclick = async () => { await api("cancel"); goHome(); };
+$("[data-cancel]").onclick = async () => { stopLoops(); await api("cancel"); goHome(); };   // 폴링 먼저 정지(재등록 레이스 방지)
 async function findMatch() {
   stopLoops();
   const j = await api("queue");
@@ -234,7 +234,7 @@ async function findMatch() {
   if (j.inGame) { enterGame(j); return; }
   show("queued"); $("[data-qinfo]").textContent = seasonText(j);
   poll = setInterval(async () => {
-    const q = await api("queue");
+    const q = await api("queue", { poll: true });   // 폴링은 재등록 안 함
     if (q.ok && q.inGame) { enterGame(q); }
   }, 1500);
 }

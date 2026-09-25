@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.79">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.79">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.80">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.80">
 <meta property="og:type" content="website">
 <meta property="og:title" content="인디언 포커 · 호랑봇 허브">
 <meta property="og:description" content="상대 카드만 보인다! 5라운드 심리 베팅. 2주 시즌 랭킹.">
 <meta property="og:url" content="https://horangbot.co.kr/poker.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.79"></script>
+<script src="assets/inapp.js?v=20260831.80"></script>
 <title>인디언 포커 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.79">
+<link rel="stylesheet" href="assets/style.css?v=20260831.80">
 <style>
   .ok-wrap { max-width: 640px; }
   .ok-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 15px; margin-bottom: 10px; }
@@ -135,9 +135,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.79"></script>
-<script src="assets/store.js?v=20260831.79"></script>
-<script src="assets/app.js?v=20260831.79"></script>
+<script src="assets/config.js?v=20260831.80"></script>
+<script src="assets/store.js?v=20260831.80"></script>
+<script src="assets/app.js?v=20260831.80"></script>
 <script>
 App.header("game.html");
 const URL_ = ((window.CONFIG && CONFIG.SCRIPT_URL) === "/api/gs") ? "/api/poker" : null;
@@ -200,7 +200,7 @@ $("[data-lb]").addEventListener("click", async e => {
 
 $("[data-find]").onclick = findMatch;
 $("[data-again]").onclick = findMatch;
-$("[data-cancel]").onclick = async () => { await api("cancel"); goHome(); };
+$("[data-cancel]").onclick = async () => { stopLoops(); await api("cancel"); goHome(); };   // 폴링 먼저 정지(재등록 레이스 방지)
 $("[data-leave]").onclick = () => { stopLoops(); location.href = "game.html"; };
 async function findMatch() {
   stopLoops();
@@ -208,7 +208,7 @@ async function findMatch() {
   if (!j.ok) { App.toast(j.error || "오류"); if (j.auth === false) $("[data-logout]").onclick(); return; }
   if (j.inGame) { enterGame(j); return; }
   show("queued"); $("[data-qinfo]").textContent = seasonText(j);
-  poll = setInterval(async () => { const q = await api("queue"); if (q.ok && q.inGame) enterGame(q); }, 1500);
+  poll = setInterval(async () => { const q = await api("queue", { poll: true }); if (q.ok && q.inGame) enterGame(q); }, 1500);   // 폴링은 재등록 안 함
 }
 
 function enterGame(j) { stopLoops(); gameId = j.id; show("game"); $("[data-postgame]").hidden = true; render(j); poll = setInterval(async () => { const s = await api("state", { id: gameId }); if (s.ok && s.inGame) render(s); }, 1000); timeTimer = setInterval(renderTime, 250); }
