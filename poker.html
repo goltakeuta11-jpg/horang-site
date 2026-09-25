@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.80">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.80">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.81">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.81">
 <meta property="og:type" content="website">
 <meta property="og:title" content="인디언 포커 · 호랑봇 허브">
 <meta property="og:description" content="상대 카드만 보인다! 5라운드 심리 베팅. 2주 시즌 랭킹.">
 <meta property="og:url" content="https://horangbot.co.kr/poker.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.80"></script>
+<script src="assets/inapp.js?v=20260831.81"></script>
 <title>인디언 포커 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.80">
+<link rel="stylesheet" href="assets/style.css?v=20260831.81">
 <style>
   .ok-wrap { max-width: 640px; }
   .ok-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 15px; margin-bottom: 10px; }
@@ -100,6 +100,7 @@
     <div class="ok-card ok-status">
       <div style="font-size:30px">⏳</div>
       <div style="margin:8px 0">상대를 찾는 중…</div>
+      <div style="font-size:12.5px;color:var(--text-dim);margin-bottom:4px">1분 안에 상대가 없으면 🤖 AI와 매칭돼요 (이기면 +10, 져도 하락 없음)</div>
       <div class="ok-season" data-qinfo></div>
       <button class="btn btn--ghost btn--sm" data-cancel style="margin-top:12px">취소</button>
     </div>
@@ -135,9 +136,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.80"></script>
-<script src="assets/store.js?v=20260831.80"></script>
-<script src="assets/app.js?v=20260831.80"></script>
+<script src="assets/config.js?v=20260831.81"></script>
+<script src="assets/store.js?v=20260831.81"></script>
+<script src="assets/app.js?v=20260831.81"></script>
 <script>
 App.header("game.html");
 const URL_ = ((window.CONFIG && CONFIG.SCRIPT_URL) === "/api/gs") ? "/api/poker" : null;
@@ -217,7 +218,9 @@ function renderTime() { if (!gDeadline) { $("[data-time]").textContent = ""; ret
 function render(j) {
   gDeadline = (j.phase === "bet" && j.deadline) ? Date.now() + (j.deadline - j.now) : 0;
   $("[data-round]").textContent = j.over ? "게임 종료" : `라운드 ${j.round} / ${j.maxRounds}`;
-  $("[data-oppwho]").innerHTML = `${esc(j.opponent.nick)} <span style="color:var(--text-dim)">(${j.opponent.emoji}${j.opponent.name} ${j.opponent.mmr})</span> · 💰 <span class="coins">${j.oppCoins}</span>`;
+  $("[data-oppwho]").innerHTML = j.opponent.isAI
+    ? `🤖 <b>포커 AI</b> <span style="color:var(--text-dim)">(이기면 +10 · 져도 유지)</span> · 💰 <span class="coins">${j.oppCoins}</span>`
+    : `${esc(j.opponent.nick)} <span style="color:var(--text-dim)">(${j.opponent.emoji}${j.opponent.name} ${j.opponent.mmr})</span> · 💰 <span class="coins">${j.oppCoins}</span>`;
   $("[data-mewho]").innerHTML = `${esc(j.me.nick)} (나) · 💰 <span class="coins">${j.myCoins}</span>`;
   // 카드: 상대는 항상 공개, 나는 공개시에만
   $("[data-oppcard]").textContent = j.oppCard != null ? j.oppCard : "?";
