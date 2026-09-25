@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.72">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.72">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.73">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.73">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.72"></script>
+<script src="assets/inapp.js?v=20260831.73"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.72">
+<link rel="stylesheet" href="assets/style.css?v=20260831.73">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -171,9 +171,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.72"></script>
-<script src="assets/store.js?v=20260831.72"></script>
-<script src="assets/app.js?v=20260831.72"></script>
+<script src="assets/config.js?v=20260831.73"></script>
+<script src="assets/store.js?v=20260831.73"></script>
+<script src="assets/app.js?v=20260831.73"></script>
 <script>
 App.header("game.html");
 
@@ -200,7 +200,7 @@ const ROLE_LEGEND = [
 ];
 (function fillLegend() {
   const el = document.querySelector("[data-legend]"); if (!el) return;
-  el.innerHTML = `<div class="lg" style="color:var(--text-dim)">성별(♂/♀)은 시작 시 전원에게 랜덤 부여돼요 (게이=남·레즈=여 고정). 죽어도 직업은 게임 끝날 때 공개돼요.</div>` +
+  el.innerHTML = `<div class="lg" style="color:var(--text-dim)">성별(♂/♀)은 시작 시 <b>남녀가 섞이도록</b> 부여돼요 (게이=남·레즈=여 고정). <b>성별은 본인만</b> 볼 수 있고, 직업·성별 모두 게임이 끝나야 전체 공개돼요.</div>` +
     ROLE_LEGEND.map(r => `<div class="lg">${r[0]} <b>${r[1]}</b> <span class="tm tm-${r[2]}">${r[3]}</span><br>${r[4]}</div>`).join("");
 })();
 function rolePreview(n) {   // 서버 배정 공식과 동일 (대기실 미리보기용)
