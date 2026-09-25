@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.73">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.73">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.74">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.74">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.73"></script>
+<script src="assets/inapp.js?v=20260831.74"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.73">
+<link rel="stylesheet" href="assets/style.css?v=20260831.74">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -85,6 +85,7 @@
   .msg.sys { color: var(--text-dim); text-align: center; font-size: 12.5px; padding: 2px 0; }
   .msg.mafia .msg__from { color: #FF6B81; } .msg.mafia { color: #ffb3bf; }
   .msg.ghost .msg__from { color: #C79BFF; } .msg.ghost { color: #d9c2ff; }
+  .msg.seduce .msg__from { color: #FF8AD4; } .msg.seduce { color: #ffc2e6; }
   .mf-chat__foot { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
   .mf-chat__foot input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 14px; }
@@ -171,9 +172,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.73"></script>
-<script src="assets/store.js?v=20260831.73"></script>
-<script src="assets/app.js?v=20260831.73"></script>
+<script src="assets/config.js?v=20260831.74"></script>
+<script src="assets/store.js?v=20260831.74"></script>
+<script src="assets/app.js?v=20260831.74"></script>
 <script>
 App.header("game.html");
 
@@ -307,9 +308,10 @@ function render(j) {
   const inp = $("[data-chat-input]");
   inp.disabled = !j.canChat;
   inp.placeholder = j.canChat
-    ? (nightMafia ? "🔪 마피아 채팅…" : nightPolice ? "🔎 경찰팀 채팅…" : nightDoctor ? "🩺 의사팀 채팅…" : (j.speech ? "🎤 연설 중! 지금은 당신만 발언 가능…" : (!j.me.alive ? "👻 유령 채팅…" : "메시지 입력…")))
+    ? (j.me.sedChat ? "💘 유혹 대화 (둘만)…" : nightMafia ? "🔪 마피아 채팅…" : nightPolice ? "🔎 경찰팀 채팅…" : nightDoctor ? "🩺 의사팀 채팅…" : (j.speech ? "🎤 연설 중! 지금은 당신만 발언 가능…" : (!j.me.alive ? "👻 유령 채팅…" : "메시지 입력…")))
     : (night ? "밤에는 대화할 수 없어요 (특수 역할만)" : j.speech ? "🎤 연설가가 발언 중이에요… 곧 말할 수 있어요" : "지금은 채팅할 수 없어요");
   $("[data-chat-head]").textContent = !j.me.alive ? "👻 유령 채팅 (관전)"
+    : j.me.sedChat ? "💘 유혹 대화 (둘만)"
     : nightMafia ? "🔪 마피아 채팅"
     : nightPolice ? "🔎 경찰팀 채팅"
     : nightDoctor ? "🩺 의사팀 채팅"
@@ -425,7 +427,7 @@ function renderContext(j) {
       if ((j.contactLog || []).length) html += `<div class="mf-invest"><b>🕶️ 접선 기록</b>` + j.contactLog.map(x =>
         `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.result === "mafia" ? "🔪 마피아!" : x.result === "police" ? "🔎 경찰" : x.result === "doctor" ? "🩺 의사" : "🙂 시민(실패)"}</div>`).join("") + `</div>`;
     } else if (j.me.blocked) {   // 유혹당한 마피아
-      html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — 💘 유혹당함</div><p class="mf-hint">오늘 밤 <b>누군가에게 유혹당해</b> 행동도 대화도 할 수 없어요. 다음 밤을 기다려요…</p>`;
+      html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — 💘 유혹당함</div><p class="mf-hint">오늘 밤 <b>누군가에게 유혹당했어요.</b> 살해 등 <b>행동은 할 수 없고</b>, <b>마피아 채팅도 안 보여요.</b> 대신 아래 채팅으로 <b>당신을 유혹한 사람과 둘만</b> 대화할 수 있어요. 💘</p>`;
     } else if (j.me.role === "gay" || j.me.role === "lez") {
       const sek = j.me.role === "gay" ? "남성" : "여성";
       html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — ${ROLE[j.me.role][0]} ${ROLE[j.me.role][1]}</div>`;
@@ -464,8 +466,9 @@ function appendMsgs(msgs) {
     seenMsgs.add(m.id);
     if (m.id > sinceId) sinceId = m.id;
     const d = document.createElement("div");
-    if (m.sys) { d.className = "msg sys"; d.textContent = m.text; }
-    else { d.className = "msg " + (m.ch || "all"); d.innerHTML = `<span class="msg__from">${esc(m.from)}</span> ${esc(m.text)}`; }
+    const cls = m.ch && m.ch.indexOf("sed_") === 0 ? "seduce" : (m.ch || "all");
+    if (m.sys) { d.className = "msg sys" + (cls === "seduce" ? " seduce" : ""); d.textContent = m.text; }
+    else { d.className = "msg " + cls; d.innerHTML = `<span class="msg__from">${esc(m.from)}</span> ${esc(m.text)}`; }
     body.appendChild(d); added++;
   });
   if (added && atBottom) body.scrollTop = body.scrollHeight;
