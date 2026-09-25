@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.62">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.62">
+<meta property="og:type" content="website">
+<meta property="og:title" content="인디언 포커 · 호랑봇 허브">
+<meta property="og:description" content="상대 카드만 보인다! 5라운드 심리 베팅. 2주 시즌 랭킹.">
+<meta property="og:url" content="https://horangbot.co.kr/poker.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.62"></script>
+<title>인디언 포커 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.62">
+<style>
+  .ok-wrap { max-width: 640px; }
+  .ok-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 15px; margin-bottom: 10px; }
+  .ok-input:focus { outline: none; border-color: var(--accent); }
+  .ok-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 14px; }
+  .ok-prof { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .ok-prof__tier { font-size: 40px; line-height: 1; }
+  .ok-prof__info b { font-size: 19px; font-weight: 800; }
+  .ok-prof__info span { color: var(--text-dim); font-size: 13px; }
+  .ok-prof__mmr { margin-left: auto; text-align: right; }
+  .ok-prof__mmr .n { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .ok-prof__mmr .l { font-size: 11.5px; color: var(--text-dim); }
+  .ok-season { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; }
+  .ok-status { text-align: center; padding: 20px; font-weight: 700; }
+  /* 게임 */
+  .pk-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
+  .pk-time { font-variant-numeric: tabular-nums; font-weight: 800; color: var(--accent); }
+  .pk-seat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; text-align: center; margin-bottom: 12px; }
+  .pk-seat .who { font-size: 13.5px; font-weight: 700; margin-bottom: 8px; }
+  .pk-seat .coins { color: var(--accent); font-weight: 800; }
+  .pk-card { width: 84px; height: 116px; margin: 0 auto; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    font-size: 52px; font-weight: 900; border: 2px solid var(--line); }
+  .pk-card.up { background: #fff; color: #d33; }
+  .pk-card.down { background: linear-gradient(135deg,#3a4a6b,#26304a); color: #8fa8d8; font-size: 40px; }
+  .pk-pot { text-align: center; font-weight: 800; font-size: 15px; margin: 10px 0; }
+  .pk-pot b { color: #FFC24B; }
+  .pk-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+  .pk-msg { text-align: center; color: var(--text-dim); font-size: 13.5px; margin-top: 8px; }
+  .pk-reveal { text-align: center; padding: 12px; border-radius: 10px; margin-top: 10px; font-weight: 800; }
+  .rv-win { background: rgba(52,211,153,.16); color: #34D399; }
+  .rv-lose { background: rgba(255,92,122,.16); color: #FF6B81; }
+  .rv-tie { background: rgba(180,180,190,.16); color: #C7CAD1; }
+  .ok-result { text-align: center; padding: 18px; border-radius: var(--radius-sm); margin: 14px 0; font-weight: 800; }
+  .res-win { background: rgba(52,211,153,.16); color: #34D399; border: 1px solid #34D399; }
+  .res-lose { background: rgba(255,92,122,.16); color: #FF6B81; border: 1px solid #FF6B81; }
+  .res-draw { background: rgba(180,180,190,.16); color: #C7CAD1; border: 1px solid #999; }
+  .res-mmr { font-size: 15px; margin-top: 6px; }
+  .lb { width: 100%; border-collapse: collapse; }
+  .lb th { text-align: left; font-size: 12px; color: var(--text-dim); font-weight: 700; padding: 7px 8px; border-bottom: 1px solid var(--line); }
+  .lb td { padding: 9px 8px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .lb tr:last-child td { border-bottom: 0; }
+  .lb .rk { width: 34px; font-weight: 800; color: var(--text-dim); }
+  .lb .me { background: rgba(255,171,64,.1); }
+  .lb-num { font-variant-numeric: tabular-nums; }
+  .lb-btn { border: 0; background: none; cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 6px; opacity: .7; }
+  .lb-btn:hover { opacity: 1; background: rgba(255,92,122,.15); }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page ok-wrap">
+  <p class="page__eyebrow"><a href="game.html" style="color:inherit;text-decoration:none">🎮 게임</a> › 인디언 포커</p>
+  <h1 class="page__title">🃟 인디언 포커</h1>
+
+  <div data-noserver hidden class="empty" style="padding:30px"><strong>이 게임은 호랑봇 서버에서만 돌아가요</strong>horangbot.co.kr 에서 접속해주세요.</div>
+
+  <section data-login hidden>
+    <p class="page__desc">자소서 <b>닉네임+비밀번호</b>로 로그인! 상대 카드만 보이는 심리 베팅 게임. 카드 1~5 · <b>5라운드</b> · 시작 <b>20코인</b> → 코인 많은 사람 승. 2주마다 시즌 리셋.</p>
+    <div class="ok-card">
+      <input class="ok-input" data-nick maxlength="16" placeholder="자소서 닉네임">
+      <input class="ok-input" data-pw type="password" maxlength="40" placeholder="자소서 비밀번호">
+      <button class="btn btn--primary" data-enter style="width:100%">로그인</button>
+      <p class="mf-hint" style="font-size:12.5px;color:var(--text-dim);margin-top:8px">※ 자소서가 없거나 비번 미설정이면 <a href="members.html" style="color:var(--accent)">자소서</a>에서 먼저 등록·설정해주세요.</p>
+    </div>
+  </section>
+
+  <section data-home hidden>
+    <div class="ok-card" data-profile></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn btn--primary" data-find style="flex:1">⚔️ 대전 찾기</button>
+      <button class="btn btn--ghost btn--sm" data-logout>닉 변경</button>
+    </div>
+    <div class="ok-card">
+      <h3 style="font-size:15px;font-weight:800;margin:0 0 4px">🏆 시즌 랭킹</h3>
+      <div style="background:rgba(255,171,64,.14);border:1px solid rgba(255,171,64,.4);border-radius:8px;padding:9px 12px;font-size:13px;font-weight:700;margin:6px 0">🎁 시즌 <b>1위</b>에게는 <b>30분 대화권</b>을 드려요!</div>
+      <div class="ok-season" data-lbseason></div>
+      <div data-lb style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <section data-queued hidden>
+    <div class="ok-card ok-status">
+      <div style="font-size:30px">⏳</div>
+      <div style="margin:8px 0">상대를 찾는 중…</div>
+      <div class="ok-season" data-qinfo></div>
+      <button class="btn btn--ghost btn--sm" data-cancel style="margin-top:12px">취소</button>
+    </div>
+  </section>
+
+  <section data-game hidden>
+    <div class="pk-top">
+      <span data-round style="font-weight:800"></span>
+      <span class="pk-time" data-time></span>
+    </div>
+
+    <div class="pk-seat">
+      <div class="who" data-oppwho></div>
+      <div class="pk-card up" data-oppcard>?</div>
+    </div>
+
+    <div class="pk-pot" data-pot></div>
+    <div data-reveal hidden class="pk-reveal"></div>
+    <div data-result hidden></div>
+
+    <div class="pk-seat">
+      <div class="who" data-mewho></div>
+      <div class="pk-card down" data-mycard>?</div>
+    </div>
+
+    <div class="pk-actions" data-actions></div>
+    <div class="pk-msg" data-msg></div>
+
+    <div data-postgame hidden style="text-align:center;margin-top:14px">
+      <button class="btn btn--primary" data-again>⚔️ 다시 찾기</button>
+    </div>
+    <div style="margin-top:14px"><button class="btn btn--ghost btn--sm" data-leave>나가기</button></div>
+  </section>
+</main>
+
+<script src="assets/config.js?v=20260831.62"></script>
+<script src="assets/store.js?v=20260831.62"></script>
+<script src="assets/app.js?v=20260831.62"></script>
+<script>
+App.header("game.html");
+const URL_ = ((window.CONFIG && CONFIG.SCRIPT_URL) === "/api/gs") ? "/api/poker" : null;
+const $ = s => document.querySelector(s);
+const esc = App.esc;
+let nick = "", pwHash = "";
+try { nick = localStorage.getItem("horang.omok.nick") || ""; pwHash = localStorage.getItem("horang.omok.pw") || ""; } catch (e) {}
+let gameId = null, poll = null, timeTimer = null, gDeadline = 0;
+
+async function api(op, extra) {
+  const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const r = await fetch(URL_, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ op, nick, pwHash }, extra || {})), signal: ctrl.signal });
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+function show(m) { ["login", "home", "queued", "game"].forEach(x => { const el = $("[data-" + x + "]"); if (el) el.hidden = x !== m; }); $("[data-noserver]").hidden = m !== "noserver"; }
+function stopLoops() { clearInterval(poll); clearInterval(timeTimer); poll = timeTimer = null; }
+function seasonText(j) { if (!j.endsAt) return ""; const ms = j.endsAt - (j.now || Date.now()); const d = Math.floor(ms / 86400000), h = Math.floor((ms % 86400000) / 3600000); return `시즌 ${j.season} · 리셋까지 ${d}일 ${h}시간`; }
+
+async function doEnter() {
+  const v = $("[data-nick]").value.trim(), pw = $("[data-pw]").value;
+  if (!v || !pw) return App.toast("닉네임과 비밀번호를 입력해주세요.");
+  const btn = $("[data-enter]"); btn.disabled = true; btn.textContent = "확인 중…";
+  try {
+    nick = v.slice(0, 16); pwHash = await App.sha256(pw);
+    const j = await api("login");
+    if (!j.ok) { nick = ""; pwHash = ""; App.toast(j.error || "로그인 실패"); return; }
+    try { localStorage.setItem("horang.omok.nick", nick); localStorage.setItem("horang.omok.pw", pwHash); } catch (e) {}
+    goHome();
+  } catch (e) { nick = ""; pwHash = ""; App.toast("오류가 났어요"); }
+  finally { btn.disabled = false; btn.textContent = "로그인"; }
+}
+$("[data-enter]").onclick = doEnter;
+$("[data-pw]").addEventListener("keydown", e => { if (e.key === "Enter") doEnter(); });
+$("[data-logout]").onclick = () => { nick = ""; pwHash = ""; try { localStorage.removeItem("horang.omok.nick"); localStorage.removeItem("horang.omok.pw"); } catch (e) {} stopLoops(); show("login"); };
+
+async function goHome() { stopLoops(); show("home"); const p = await api("profile"); if (p.ok) renderProfile(p); loadLeaderboard(); }
+function renderProfile(j) {
+  const pr = j.profile;
+  $("[data-profile]").innerHTML = `<div class="ok-prof"><div class="ok-prof__tier">${pr.emoji}</div>
+    <div class="ok-prof__info"><b>${esc(pr.nick)}</b><br><span>${pr.emoji} ${pr.name} · ${pr.wins}승 ${pr.losses}패${pr.draws ? " " + pr.draws + "무" : ""}</span></div>
+    <div class="ok-prof__mmr"><div class="n">${pr.mmr}</div><div class="l">점수</div></div></div><div class="ok-season">${seasonText(j)}</div>`;
+}
+async function loadLeaderboard() {
+  const j = await api("leaderboard"); if (!j.ok) return;
+  $("[data-lbseason]").textContent = seasonText(j) + (j.myRank ? ` · 내 순위 ${j.myRank}위` : " · 아직 순위 없음");
+  if (!j.list.length) { $("[data-lb]").innerHTML = `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">아직 이번 시즌 기록이 없어요. 첫 판을 이겨보세요!</p>`; return; }
+  const admin = App.isAdmin();
+  $("[data-lb]").innerHTML = `<table class="lb"><thead><tr><th>#</th><th>닉</th><th>티어</th><th class="lb-num">점수</th><th class="lb-num">전적</th>${admin ? "<th></th>" : ""}</tr></thead><tbody>${
+    j.list.map(r => `<tr class="${r.nick === nick ? "me" : ""}"><td class="rk">${r.rank <= 3 ? ["🥇","🥈","🥉"][r.rank - 1] : r.rank}</td><td>${esc(r.nick)}</td><td>${r.emoji} ${r.name}</td><td class="lb-num">${r.mmr}</td><td class="lb-num">${r.wins}승 ${r.losses}패</td>${admin ? `<td style="white-space:nowrap"><button class="lb-btn" data-rn="${esc(r.nick)}">✏️</button><button class="lb-btn" data-del="${esc(r.nick)}">🗑️</button></td>` : ""}</tr>`).join("")
+  }</tbody></table>`;
+}
+$("[data-lb]").addEventListener("click", async e => {
+  if (!App.isAdmin()) return;
+  const rn = e.target.closest("[data-rn]"), del = e.target.closest("[data-del]");
+  if (rn) { const cur = rn.dataset.rn; const nn = prompt(`'${cur}' 의 새 닉네임:`, cur); if (nn === null) return; const v = nn.trim(); if (!v || v === cur) return; const r = await api("adminrename", { target: cur, newNick: v, key: App.key() }); if (r.ok) { App.toast("변경 완료"); loadLeaderboard(); } else App.toast(r.error || "실패"); }
+  else if (del) { const cur = del.dataset.del; if (!confirm(`'${cur}' 님을 랭킹에서 삭제할까요?`)) return; const r = await api("admindelete", { target: cur, key: App.key() }); if (r.ok) { App.toast("삭제 완료"); loadLeaderboard(); } else App.toast(r.error || "실패"); }
+});
+
+$("[data-find]").onclick = findMatch;
+$("[data-again]").onclick = findMatch;
+$("[data-cancel]").onclick = async () => { await api("cancel"); goHome(); };
+$("[data-leave]").onclick = () => { stopLoops(); location.href = "game.html"; };
+async function findMatch() {
+  stopLoops();
+  const j = await api("queue");
+  if (!j.ok) { App.toast(j.error || "오류"); if (j.auth === false) $("[data-logout]").onclick(); return; }
+  if (j.inGame) { enterGame(j); return; }
+  show("queued"); $("[data-qinfo]").textContent = seasonText(j);
+  poll = setInterval(async () => { const q = await api("queue"); if (q.ok && q.inGame) enterGame(q); }, 1500);
+}
+
+function enterGame(j) { stopLoops(); gameId = j.id; show("game"); $("[data-postgame]").hidden = true; render(j); poll = setInterval(async () => { const s = await api("state", { id: gameId }); if (s.ok && s.inGame) render(s); }, 1000); timeTimer = setInterval(renderTime, 250); }
+function renderTime() { if (!gDeadline) { $("[data-time]").textContent = ""; return; } const rem = Math.max(0, Math.ceil((gDeadline - Date.now()) / 1000)); $("[data-time]").textContent = "⏳ " + rem + "초"; }
+
+function render(j) {
+  gDeadline = (j.phase === "bet" && j.deadline) ? Date.now() + (j.deadline - j.now) : 0;
+  $("[data-round]").textContent = j.over ? "게임 종료" : `라운드 ${j.round} / ${j.maxRounds}`;
+  $("[data-oppwho]").innerHTML = `${esc(j.opponent.nick)} <span style="color:var(--text-dim)">(${j.opponent.emoji}${j.opponent.name} ${j.opponent.mmr})</span> · 💰 <span class="coins">${j.oppCoins}</span>`;
+  $("[data-mewho]").innerHTML = `${esc(j.me.nick)} (나) · 💰 <span class="coins">${j.myCoins}</span>`;
+  // 카드: 상대는 항상 공개, 나는 공개시에만
+  $("[data-oppcard]").textContent = j.oppCard != null ? j.oppCard : "?";
+  const myCardEl = $("[data-mycard]");
+  if (j.myCard != null) { myCardEl.textContent = j.myCard; myCardEl.className = "pk-card up"; }
+  else { myCardEl.textContent = "?"; myCardEl.className = "pk-card down"; }
+  $("[data-pot]").innerHTML = j.over ? "" : `팟 <b>${j.pot}</b> 코인`;
+
+  // 라운드 공개 결과
+  const rv = $("[data-reveal]");
+  if (j.phase === "reveal" && j.reveal) {
+    const r = j.reveal;
+    rv.hidden = false;
+    rv.className = "pk-reveal " + (r.tie ? "rv-tie" : r.iWon ? "rv-win" : "rv-lose");
+    rv.innerHTML = `내 <b>${r.myCard}</b> vs 상대 <b>${r.oppCard}</b> — ${r.folded ? "상대/내 다이! " : ""}${r.tie ? "🤝 무승부 (팟 반반)" : r.iWon ? `🎉 +${r.pot} 코인 획득!` : "😢 팟을 뺏겼어요"}`;
+  } else rv.hidden = true;
+
+  // 액션
+  const act = $("[data-actions]");
+  const msg = $("[data-msg]");
+  act.innerHTML = ""; msg.textContent = "";
+  if (j.over) {
+    act.innerHTML = "";
+    const rEl = $("[data-result]"); const r = j.result;
+    rEl.hidden = false;
+    rEl.className = "ok-result " + (j.finalWin === "win" ? "res-win" : j.finalWin === "loss" ? "res-lose" : "res-draw");
+    const label = j.finalWin === "win" ? "🎉 승리!" : j.finalWin === "loss" ? "😢 패배" : "🤝 무승부";
+    rEl.innerHTML = `${label} (내 ${r ? r.coins : j.myCoins}코인 vs 상대 ${j.oppCoins}코인)${r ? `<div class="res-mmr">점수 ${r.before} → <b>${r.after}</b> (${r.delta >= 0 ? "+" + r.delta : r.delta}) · ${r.emoji} ${r.name}</div>` : ""}`;
+    $("[data-postgame]").hidden = false;
+    return;
+  } else { $("[data-result]").hidden = true; }
+
+  if (j.phase === "reveal") { msg.textContent = "다음 라운드 준비 중…"; return; }
+  if (j.toActMe && j.canBet) {
+    (j.betOptions || []).forEach(v => { const btn = document.createElement("button"); btn.className = "btn btn--primary btn--sm"; btn.textContent = `💰 ${v} 베팅`; btn.onclick = () => act2("bet", v); act.appendChild(btn); });
+    const d = document.createElement("button"); d.className = "btn btn--ghost btn--sm"; d.textContent = "🏳️ 다이"; d.onclick = () => act2("die"); act.appendChild(d);
+    msg.textContent = j.iAmFirst ? "선(先) — 베팅하거나 다이하세요. (상대 카드를 보고 판단!)" : "";
+  } else if (j.toActMe && j.canCall) {
+    const c = document.createElement("button"); c.className = "btn btn--primary btn--sm"; c.textContent = `✅ 콜 (${j.betB})`; c.onclick = () => act2("call"); act.appendChild(c);
+    const d = document.createElement("button"); d.className = "btn btn--ghost btn--sm"; d.textContent = "🏳️ 다이"; d.onclick = () => act2("die"); act.appendChild(d);
+    msg.textContent = `상대가 ${j.betB} 베팅했어요. 콜 또는 다이.`;
+  } else {
+    msg.textContent = "상대 차례를 기다리는 중…";
+  }
+}
+async function act2(action, amount) {
+  const s = await api("act", { id: gameId, action, amount });
+  if (!s.ok) App.toast(s.error); else render(s);
+}
+
+async function init() {
+  if (!URL_) { show("noserver"); return; }
+  if (nick && pwHash) { const j = await api("login"); if (j.ok) { goHome(); return; } nick = ""; pwHash = ""; }
+  show("login");
+}
+init();
+window.addEventListener("beforeunload", stopLoops);
+</script>
+</body>
+</html>
