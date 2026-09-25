@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.83">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.83">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.84">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.84">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.83"></script>
+<script src="assets/inapp.js?v=20260831.84"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.83">
+<link rel="stylesheet" href="assets/style.css?v=20260831.84">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -204,9 +204,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.83"></script>
-<script src="assets/store.js?v=20260831.83"></script>
-<script src="assets/app.js?v=20260831.83"></script>
+<script src="assets/config.js?v=20260831.84"></script>
+<script src="assets/store.js?v=20260831.84"></script>
+<script src="assets/app.js?v=20260831.84"></script>
 <script>
 App.header("game.html");
 
@@ -234,7 +234,7 @@ const ROLE_LEGEND = [
   el.innerHTML = ROLE_LEGEND.map(r => `<div class="lg">${r[0]} <b>${r[1]}</b> <span class="tm tm-${r[2]}">${r[3]}</span><br>${r[4]}</div>`).join("");
 })();
 function rolePreview(n) {   // 서버 배정 공식과 동일 (대기실 미리보기용)
-  const mafia = n >= 12 ? 3 : 2, doctor = n >= 6 ? 1 : 0, police = n >= 6 ? 1 : 0, politician = n >= 8 ? 1 : 0, spy = n >= 9 ? 1 : 0, gay = n >= 10 ? 1 : 0, orator = n >= 11 ? 1 : 0, reporter = n >= 12 ? 1 : 0;
+  const mafia = n >= 12 ? 3 : 2, doctor = n >= 6 ? 1 : 0, police = n >= 6 ? 1 : 0, politician = n >= 8 ? 1 : 0, spy = n >= 9 ? 1 : 0, gay = n >= 10 ? 1 : 0, orator = n >= 11 ? 1 : 0, reporter = n >= 9 ? 1 : 0;
   return { mafia, doctor, police, politician, spy, gay, orator, reporter, citizen: Math.max(0, n - mafia - doctor - police - politician - spy - gay - orator - reporter) };
 }
 
