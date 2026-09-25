@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.81">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.81">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.82">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.82">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.81"></script>
+<script src="assets/inapp.js?v=20260831.82"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.81">
+<link rel="stylesheet" href="assets/style.css?v=20260831.82">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -89,6 +89,27 @@
     border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 14px; }
   .mf-chat__foot input:disabled { opacity: .5; }
   .mf-players-wrap h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; }
+  /* 참여자 서랍 토글 (오른쪽 가장자리) */
+  .mf-fab { position: fixed; right: 0; top: 46%; transform: translateY(-50%); z-index: 50;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font: inherit;
+    background: var(--accent); color: #10131a; border: 0; border-radius: 16px 0 0 16px;
+    padding: 14px 8px 14px 10px; box-shadow: -3px 3px 14px rgba(0,0,0,.4); }
+  .mf-fab__arrow { font-size: 22px; font-weight: 900; line-height: 1; }
+  .mf-fab__label { font-size: 11px; font-weight: 800; writing-mode: vertical-rl; letter-spacing: 2px; }
+  .mf-fab__dot { position: absolute; top: -5px; left: -5px; width: 14px; height: 14px; border-radius: 50%; background: #FF5C7A; border: 2px solid var(--bg); }
+  .mf-fab.act { animation: mfFab 1.3s ease-in-out infinite; }
+  @keyframes mfFab { 0%,100% { box-shadow: -3px 3px 14px rgba(0,0,0,.4); } 50% { box-shadow: -3px 3px 14px rgba(0,0,0,.4), 0 0 0 7px rgba(255,92,122,.28); } }
+  .mf-drawer__backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 60; }
+  .mf-drawer { position: fixed; top: 0; right: 0; height: 100%; width: min(90vw, 380px); z-index: 61;
+    background: var(--bg); border-left: 1px solid var(--line); box-shadow: -8px 0 28px rgba(0,0,0,.45);
+    transform: translateX(100%); transition: transform .25s ease; display: flex; flex-direction: column; }
+  .mf-drawer.is-open { transform: translateX(0); }
+  .mf-drawer__head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
+  .mf-drawer__head h3 { margin: 0; font-size: 14px; font-weight: 800; flex: 1; color: var(--text); }
+  .mf-drawer__close { background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 8px; width: 34px; height: 34px; font-size: 15px; cursor: pointer; flex: 0 0 auto; }
+  .mf-drawer__hint { margin: 12px 16px 0; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 700;
+    background: rgba(255,196,75,.15); color: #FFC24B; border: 1px solid rgba(255,196,75,.35); }
+  .mf-drawer .mf-players { padding: 14px 16px 24px; overflow-y: auto; }
   .mf-legend { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 16px; }
   .mf-legend summary { cursor: pointer; font-weight: 800; font-size: 13.5px; }
   .mf-legend .lg { font-size: 13px; line-height: 1.5; padding: 7px 0; border-bottom: 1px solid var(--line); }
@@ -144,10 +165,6 @@
     <div class="mf-cols">
       <div>
         <div class="mf-panel" data-context></div>
-        <div class="mf-players-wrap">
-          <h3 data-players-label>참가자</h3>
-          <div class="mf-players" data-players></div>
-        </div>
       </div>
       <div class="mf-chat">
         <div class="mf-chat__head" data-chat-head>💬 채팅</div>
@@ -158,6 +175,22 @@
         </div>
       </div>
     </div>
+
+    <!-- 참여자 서랍 토글 (오른쪽 가장자리) -->
+    <button class="mf-fab" data-players-toggle aria-label="참여자 목록 열기">
+      <span class="mf-fab__dot" data-fab-dot hidden></span>
+      <span class="mf-fab__arrow" data-fab-arrow>‹</span>
+      <span class="mf-fab__label" data-fab-label>참여자</span>
+    </button>
+    <div class="mf-drawer__backdrop" data-players-backdrop hidden></div>
+    <aside class="mf-drawer" data-players-drawer>
+      <div class="mf-drawer__head">
+        <h3 data-players-label>참가자</h3>
+        <button class="mf-drawer__close" data-players-close aria-label="닫기">✕</button>
+      </div>
+      <div class="mf-drawer__hint" data-drawer-hint hidden></div>
+      <div class="mf-players" data-players></div>
+    </aside>
 
     <details class="mf-legend" style="margin-top:14px">
       <summary>📖 역할 설명 보기</summary>
@@ -170,9 +203,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.81"></script>
-<script src="assets/store.js?v=20260831.81"></script>
-<script src="assets/app.js?v=20260831.81"></script>
+<script src="assets/config.js?v=20260831.82"></script>
+<script src="assets/store.js?v=20260831.82"></script>
+<script src="assets/app.js?v=20260831.82"></script>
 <script>
 App.header("game.html");
 
@@ -323,6 +356,17 @@ function renderPlayers(j) {
   let label = `참가자 ${j.players.filter(p => p.alive).length}/${j.players.length}명 생존`;
   if (j.counts) label += ` · 🔪 마피아 ${j.counts.mafia}명`;
   $("[data-players-label]").textContent = label;
+
+  // 오른쪽 서랍 토글(FAB) 상태 — 투표/지목할 수 있을 땐 강조
+  const canAct = iCanNight || iCanVote;
+  const fab = $("[data-players-toggle]");
+  fab.classList.toggle("act", canAct);
+  $("[data-fab-dot]").hidden = !canAct;
+  $("[data-fab-label]").textContent = iCanVote ? "투표하기" : iCanNight ? "지목하기" : "참여자";
+  const hint = $("[data-drawer-hint]");
+  if (iCanVote) { hint.hidden = false; hint.textContent = "🗳️ 처형할 사람을 눌러 투표하세요. (다시 누르면 취소)"; }
+  else if (iCanNight) { hint.hidden = false; hint.textContent = "🌙 밤 대상을 눌러 선택하세요."; }
+  else { hint.hidden = true; }
 
   wrap.innerHTML = j.players.map(p => {
     const roleTag = p.role ? `<span class="mf-role ${ROLE[p.role][2]}" style="font-size:10px;padding:1px 6px">${ROLE[p.role][0]}${ROLE[p.role][1]}</span>` : "";
@@ -478,6 +522,18 @@ async function sendChat() {
 }
 $("[data-chat-send]").onclick = sendChat;
 $("[data-chat-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
+
+/* ---------- 참여자 서랍 ---------- */
+function drawer(on) {
+  const d = $("[data-players-drawer]"), bd = $("[data-players-backdrop]"), arw = $("[data-fab-arrow]");
+  const open = on === undefined ? !d.classList.contains("is-open") : on;
+  d.classList.toggle("is-open", open);
+  bd.hidden = !open;
+  arw.textContent = open ? "›" : "‹";
+}
+$("[data-players-toggle]").onclick = () => drawer();
+$("[data-players-close]").onclick = () => drawer(false);
+$("[data-players-backdrop]").onclick = () => drawer(false);
 
 /* ---------- 시작 ---------- */
 if (!App.isAdmin()) {   // 방 생성은 관리자만 — 비관리자는 생성 박스 숨기고 참가만
