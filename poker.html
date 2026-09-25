@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.62">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.62">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.63">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.63">
 <meta property="og:type" content="website">
 <meta property="og:title" content="인디언 포커 · 호랑봇 허브">
 <meta property="og:description" content="상대 카드만 보인다! 5라운드 심리 베팅. 2주 시즌 랭킹.">
 <meta property="og:url" content="https://horangbot.co.kr/poker.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.62"></script>
+<script src="assets/inapp.js?v=20260831.63"></script>
 <title>인디언 포커 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.62">
+<link rel="stylesheet" href="assets/style.css?v=20260831.63">
 <style>
   .ok-wrap { max-width: 640px; }
   .ok-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 15px; margin-bottom: 10px; }
@@ -34,8 +34,8 @@
   .pk-seat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; text-align: center; margin-bottom: 12px; }
   .pk-seat .who { font-size: 13.5px; font-weight: 700; margin-bottom: 8px; }
   .pk-seat .coins { color: var(--accent); font-weight: 800; }
-  .pk-card { width: 84px; height: 116px; margin: 0 auto; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-    font-size: 52px; font-weight: 900; border: 2px solid var(--line); }
+  .pk-card { width: 88px; height: 120px; margin: 0 auto; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    font-size: 46px; font-weight: 900; border: 2px solid var(--line); }
   .pk-card.up { background: #fff; color: #d33; }
   .pk-card.down { background: linear-gradient(135deg,#3a4a6b,#26304a); color: #8fa8d8; font-size: 40px; }
   .pk-pot { text-align: center; font-weight: 800; font-size: 15px; margin: 10px 0; }
@@ -73,7 +73,7 @@
   <div data-noserver hidden class="empty" style="padding:30px"><strong>이 게임은 호랑봇 서버에서만 돌아가요</strong>horangbot.co.kr 에서 접속해주세요.</div>
 
   <section data-login hidden>
-    <p class="page__desc">자소서 <b>닉네임+비밀번호</b>로 로그인! 상대 카드만 보이는 심리 베팅 게임. 카드 1~5 · <b>5라운드</b> · 시작 <b>20코인</b> → 코인 많은 사람 승. 2주마다 시즌 리셋.</p>
+    <p class="page__desc">자소서 <b>닉네임+비밀번호</b>로 로그인! 상대 카드만 보이는 심리 베팅 게임. 카드 1~10 · <b>5라운드</b> · 시작 <b>20코인</b> → 코인 많은 사람 승. 2주마다 시즌 리셋.</p>
     <div class="ok-card">
       <input class="ok-input" data-nick maxlength="16" placeholder="자소서 닉네임">
       <input class="ok-input" data-pw type="password" maxlength="40" placeholder="자소서 비밀번호">
@@ -135,9 +135,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.62"></script>
-<script src="assets/store.js?v=20260831.62"></script>
-<script src="assets/app.js?v=20260831.62"></script>
+<script src="assets/config.js?v=20260831.63"></script>
+<script src="assets/store.js?v=20260831.63"></script>
+<script src="assets/app.js?v=20260831.63"></script>
 <script>
 App.header("game.html");
 const URL_ = ((window.CONFIG && CONFIG.SCRIPT_URL) === "/api/gs") ? "/api/poker" : null;
