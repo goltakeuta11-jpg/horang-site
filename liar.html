@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.77">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.77">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.78">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.78">
 <meta property="og:type" content="website">
 <meta property="og:title" content="라이어 게임 · 호랑봇 허브">
 <meta property="og:description" content="제시어를 모르는 라이어를 찾아라! 웹에서 자동 진행 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/liar.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.77"></script>
+<script src="assets/inapp.js?v=20260831.78"></script>
 <title>라이어 게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.77">
+<link rel="stylesheet" href="assets/style.css?v=20260831.78">
 <style>
   .mf-wrap { max-width: 900px; }
   .mf-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -140,9 +140,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.77"></script>
-<script src="assets/store.js?v=20260831.77"></script>
-<script src="assets/app.js?v=20260831.77"></script>
+<script src="assets/config.js?v=20260831.78"></script>
+<script src="assets/store.js?v=20260831.78"></script>
+<script src="assets/app.js?v=20260831.78"></script>
 <script>
 App.header("game.html");
 
@@ -275,6 +275,9 @@ function renderPlayers(j) {
 
 function renderContext(j) {
   const el = $("[data-context]");
+  // 입력칸이 있는 단계는 "한 번만" 그림 — 폴링마다 innerHTML 갈아엎으면 타이핑이 지워짐. 단계 벗어나면 마커 리셋.
+  if (j.phase !== "lobby") el.dataset.lobby = "";
+  if (j.phase !== "guess") el.dataset.guess = "";
   const hintsHtml = (j.hints && j.hints.length)
     ? `<div class="hints-list">${j.hints.map(h => `<div class="hint-item"><b>${esc(h.nick)}</b> — ${esc(h.text)}</div>`).join("")}</div>` : "";
 
@@ -308,7 +311,6 @@ function renderContext(j) {
     if (sb) { sb.disabled = !canStart; sb.textContent = canStart ? "게임 시작 🎬" : `시작하려면 ${Math.max(0, 3 - n)}명 더 필요`; }
     return;
   }
-  el.dataset.lobby = "";   // 대기실을 벗어나면 리셋(재시작 시 다시 그리도록)
   if (j.phase === "hint") {
     el.innerHTML = `<div style="font-weight:800;margin-bottom:4px">🗣️ 힌트 단계 (${j.round}/${j.maxRounds}라운드)</div>
       <p class="mf-hint">${j.turn && j.turn.isMe ? "<b style='color:var(--accent)'>당신 차례예요!</b> 아래 채팅으로 제시어에 대한 힌트를 한 마디 보내세요. (라이어는 들키지 않게!)" : `지금은 <b>${esc(j.turn ? j.turn.nick : "")}</b>님 차례예요. 힌트를 잘 들어보세요.`}</p>${hintsHtml}`;
@@ -321,12 +323,17 @@ function renderContext(j) {
   }
   if (j.phase === "guess") {
     if (j.me.role === "liar") {
-      el.innerHTML = `<div style="font-weight:800;margin-bottom:4px">🎯 라이어 찬스!</div>
-        <p class="mf-hint">들켰지만 기회가 있어요! <b>제시어를 맞히면 라이어 승리</b>예요.</p>
-        <div class="guess-row"><input data-guess maxlength="30" placeholder="제시어 입력"><button class="btn btn--primary" data-guess-btn>제출</button></div>`;
-      const gi = el.querySelector("[data-guess]"), gb = el.querySelector("[data-guess-btn]");
-      const submit = async () => { const t = gi.value.trim(); if (!t) return; gb.disabled = true; const r = await api("guess", { text: t }); if (!r.ok) { gb.disabled = false; App.toast(r.error); } else poll(); };
-      gb.onclick = submit; gi.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+      // 라이어 정답 입력칸도 한 번만 그림(폴링 초기화 방지)
+      if (el.dataset.guess !== "1") {
+        el.dataset.guess = "1";
+        el.innerHTML = `<div style="font-weight:800;margin-bottom:4px">🎯 라이어 찬스!</div>
+          <p class="mf-hint">들켰지만 기회가 있어요! <b>제시어를 맞히면 라이어 승리</b>예요.</p>
+          <div class="guess-row"><input data-guess maxlength="30" placeholder="제시어 입력" autocomplete="off" spellcheck="false"><button class="btn btn--primary" data-guess-btn>제출</button></div>`;
+        const gi = el.querySelector("[data-guess]"), gb = el.querySelector("[data-guess-btn]");
+        const submit = async () => { const t = gi.value.trim(); if (!t) return; gb.disabled = true; const r = await api("guess", { text: t }); if (!r.ok) { gb.disabled = false; App.toast(r.error); } else poll(); };
+        gb.onclick = submit; gi.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
+        gi.focus();
+      }
     } else {
       el.innerHTML = `<div style="font-weight:800;margin-bottom:4px">🎯 라이어 찬스</div><p class="mf-hint">라이어가 제시어를 맞히는 중이에요… 맞히면 라이어 승, 틀리면 시민 승!</p>${hintsHtml}`;
     }
