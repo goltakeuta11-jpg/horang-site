@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.84">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.84">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.85">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.85">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.84"></script>
+<script src="assets/inapp.js?v=20260831.85"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.84">
+<link rel="stylesheet" href="assets/style.css?v=20260831.85">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -60,6 +60,9 @@
   .pl__sub { font-size: 11.5px; color: var(--text-dim); margin-top: 3px; min-height: 14px; }
   .pl__votes { position: absolute; top: 6px; right: 8px; font-size: 12px; font-weight: 800; color: var(--accent); }
   .pl__x { position: absolute; top: 6px; left: 8px; font-size: 14px; }
+  .pl__host { position: absolute; bottom: 5px; right: 6px; background: rgba(255,196,75,.16); border: 1px solid rgba(255,196,75,.45);
+    color: #FFC24B; border-radius: 7px; font-size: 12px; line-height: 1; padding: 3px 6px; cursor: pointer; }
+  .pl__host:hover { background: rgba(255,196,75,.3); }
   /* 패널 */
   .mf-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 14px; }
   .mf-hint { font-size: 13.5px; color: var(--text-dim); line-height: 1.55; }
@@ -79,9 +82,9 @@
     border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
   .mf-chat__head { padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: 800; font-size: 13.5px; }
   .mf-chat__body { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
-  .msg { font-size: 13.5px; line-height: 1.45; word-break: break-word; }
-  .msg__from { font-weight: 800; }
-  .msg.sys { color: var(--text-dim); text-align: center; font-size: 12.5px; padding: 2px 0; }
+  .msg { font-size: 14px; line-height: 1.5; word-break: break-word; font-weight: 600; }
+  .msg__from { font-weight: 900; }
+  .msg.sys { color: var(--text-dim); text-align: center; font-size: 12.5px; padding: 2px 0; font-weight: 500; }
   .msg.mafia .msg__from { color: #FF6B81; } .msg.mafia { color: #ffb3bf; }
   .msg.ghost .msg__from { color: #C79BFF; } .msg.ghost { color: #d9c2ff; }
   .msg.seduce .msg__from { color: #FF8AD4; } .msg.seduce { color: #ffc2e6; }
@@ -204,9 +207,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.84"></script>
-<script src="assets/store.js?v=20260831.84"></script>
-<script src="assets/app.js?v=20260831.84"></script>
+<script src="assets/config.js?v=20260831.85"></script>
+<script src="assets/store.js?v=20260831.85"></script>
+<script src="assets/app.js?v=20260831.85"></script>
 <script>
 App.header("game.html");
 
@@ -387,10 +390,12 @@ function renderPlayers(j) {
     const votes = (day && j.voteCounts && j.voteCounts[p.pid]) ? `<span class="pl__votes">🗳️${j.voteCounts[p.pid]}</span>` : "";
     const mpick = (night && j.mafiaPicks) ? Object.values(j.mafiaPicks).filter(t => t === p.pid).length : 0;
     const mpickBadge = mpick ? `<span class="pl__votes">🔪${mpick}</span>` : "";
+    const hostBtn = (j.isHost && !p.isMe && j.phase !== "ended") ? `<button class="pl__host" data-makehost="${p.pid}" title="방장 넘기기">👑</button>` : "";
     return `<div class="pl ${p.alive ? "" : "dead"} ${able ? "able" : ""} ${picked ? "picked" : ""}" data-pid="${p.pid}">
       ${!p.alive ? '<span class="pl__x">💀</span>' : ""}${votes || mpickBadge}
       <div class="pl__nick">${esc(p.nick)}${p.role === "mafia" ? " <span style='color:#FF6B81;font-weight:800'>(마피아)</span>" : ""}${p.role === "spy" ? " <span style='color:#C7CAD1;font-weight:800'>(스파이)</span>" : ""}${p.isMe ? " <span style='color:var(--accent)'>(나)</span>" : ""}</div>
       <div class="pl__sub">${sub}</div>
+      ${hostBtn}
     </div>`;
   }).join("");
 
@@ -402,6 +407,13 @@ function renderPlayers(j) {
       const r = await api("vote", { target: same ? null : pid });
       if (!r.ok) App.toast(r.error); else poll();
     }
+  });
+  wrap.querySelectorAll("[data-makehost]").forEach(b => b.onclick = async (e) => {
+    e.stopPropagation();   // 카드 투표/지목 클릭과 겹치지 않게
+    const pid = b.dataset.makehost, tp = j.players.find(x => x.pid === pid);
+    if (!confirm(`${tp ? tp.nick : "이 사람"}님에게 방장을 넘길까요?`)) return;
+    const r = await api("transferhost", { target: pid });
+    if (!r.ok) App.toast(r.error); else { App.toast("👑 방장을 넘겼어요."); poll(); }
   });
 }
 
