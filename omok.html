@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.56">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.56">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.57">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.57">
 <meta property="og:type" content="website">
 <meta property="og:title" content="오목 랭크 · 호랑봇 허브">
 <meta property="og:description" content="1대1 오목으로 MMR·티어를 올려라! 2주 시즌 랭킹.">
 <meta property="og:url" content="https://horangbot.co.kr/omok.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.56"></script>
+<script src="assets/inapp.js?v=20260831.57"></script>
 <title>오목 랭크 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.56">
+<link rel="stylesheet" href="assets/style.css?v=20260831.57">
 <style>
   .ok-wrap { max-width: 720px; }
   .ok-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text);
@@ -43,6 +43,7 @@
   .ok-stone.b { background: radial-gradient(circle at 35% 30%, #555, #000); }
   .ok-stone.w { background: radial-gradient(circle at 35% 30%, #fff, #bbb); }
   .ok-last { position: absolute; inset: 38%; border-radius: 50%; background: #ff4444; }
+  .ok-stone.preview { opacity: .45; box-shadow: 0 0 0 2px var(--accent); }
   .ok-result { text-align: center; padding: 18px; border-radius: var(--radius-sm); margin: 14px 0; font-weight: 800; }
   .res-win { background: rgba(52,211,153,.16); color: #34D399; border: 1px solid #34D399; }
   .res-lose { background: rgba(255,92,122,.16); color: #FF6B81; border: 1px solid #FF6B81; }
@@ -111,6 +112,7 @@
     </div>
     <div data-result hidden></div>
     <div class="ok-board" data-board></div>
+    <button class="btn btn--primary" data-place hidden style="width:100%;margin-top:12px">돌을 놓을 곳을 선택하세요</button>
     <div class="ok-bar" style="margin-top:12px">
       <span class="ok-who" data-mewho></span>
       <button class="btn btn--ghost btn--sm" data-resign style="margin-left:auto">기권</button>
@@ -121,9 +123,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.56"></script>
-<script src="assets/store.js?v=20260831.56"></script>
-<script src="assets/app.js?v=20260831.56"></script>
+<script src="assets/config.js?v=20260831.57"></script>
+<script src="assets/store.js?v=20260831.57"></script>
+<script src="assets/app.js?v=20260831.57"></script>
 <script>
 App.header("game.html");
 
@@ -132,7 +134,7 @@ const $ = s => document.querySelector(s);
 const esc = App.esc;
 let nick = "";
 try { nick = localStorage.getItem("horang.omok.nick") || ""; } catch (e) {}
-let gameId = null, poll = null, timeTimer = null, gDeadline = 0, mode = "";
+let gameId = null, poll = null, timeTimer = null, gDeadline = 0, mode = "", sel = null, lastState = null;
 
 async function api(op, extra) {
   const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 8000);
@@ -206,7 +208,7 @@ async function findMatch() {
 
 /* 게임 */
 function enterGame(j) {
-  stopLoops(); gameId = j.id; show("game");
+  stopLoops(); gameId = j.id; sel = null; show("game");
   $("[data-postgame]").hidden = true;
   renderGame(j);
   poll = setInterval(async () => { const s = await api("state", { id: gameId }); if (s.ok && s.inGame) renderGame(s); }, 1200);
@@ -218,8 +220,12 @@ function renderTime() {
   $("[data-time]").textContent = "⏳ " + rem + "초";
 }
 function renderGame(j) {
+  lastState = j;
+  if (j.over || !j.myTurn) sel = null;   // 내 차례 아니거나 끝나면 선택 해제
+  if (sel && (sel.x < 0 || j.board[sel.y][sel.x] !== 0)) sel = null;   // 이미 채워진 칸이면 해제
   gDeadline = (!j.over && j.deadline) ? Date.now() + (j.deadline - j.now) : 0;
   const oc = j.myColor === 1 ? 2 : 1;
+  const myC = j.myColor === 1 ? "b" : "w";
   $("[data-opp]").innerHTML = `<span class="t">상대</span> ${j.opponent.emoji} ${esc(j.opponent.nick)} <span class="t">(${j.opponent.name} ${j.opponent.mmr})</span> ${oc === 1 ? "⚫" : "⚪"}`;
   $("[data-mewho]").innerHTML = `<span class="t">나</span> ${esc(j.me.nick)} ${j.myColor === 1 ? "⚫" : "⚪"} <span class="t">(${j.me.name} ${j.me.mmr})</span>`;
   $("[data-turn]").textContent = j.over ? "게임 종료" : (j.myTurn ? "🟢 내 차례!" : "상대 차례…");
@@ -229,12 +235,21 @@ function renderGame(j) {
   let html = "";
   for (let y = 0; y < 15; y++) for (let x = 0; x < 15; x++) {
     const v = j.board[y][x];
-    const stone = v ? `<span class="ok-stone ${v === 1 ? "b" : "w"}"></span>` : "";
+    let stone = v ? `<span class="ok-stone ${v === 1 ? "b" : "w"}"></span>` : "";
+    if (!v && sel && sel.x === x && sel.y === y) stone = `<span class="ok-stone ${myC} preview"></span>`;   // 착수 미리보기
     const lastMark = (j.last && j.last.x === x && j.last.y === y) ? `<span class="ok-last"></span>` : "";
     const mine = (!j.over && j.myTurn && v === 0) ? "mine" : "";
     html += `<div class="ok-cell ${mine}" data-x="${x}" data-y="${y}">${stone}${lastMark}</div>`;
   }
   board.innerHTML = html;
+
+  // 착수 버튼
+  const pb = $("[data-place]");
+  if (!j.over && j.myTurn) {
+    pb.hidden = false;
+    pb.disabled = !sel;
+    pb.textContent = sel ? "✓ 여기 착수!" : "돌을 놓을 곳을 선택하세요";
+  } else pb.hidden = true;
 
   // 결과
   const rEl = $("[data-result]");
@@ -248,10 +263,18 @@ function renderGame(j) {
     $("[data-resign]").hidden = true;
   } else { rEl.hidden = true; $("[data-resign]").hidden = false; }
 }
-$("[data-board]").addEventListener("click", async e => {
-  const cell = e.target.closest(".ok-cell.mine"); if (!cell || !gameId) return;
-  const s = await api("move", { id: gameId, x: +cell.dataset.x, y: +cell.dataset.y });
-  if (!s.ok) App.toast(s.error); else renderGame(s);
+// 칸 클릭 = 선택(미리보기), 착수 버튼으로 확정
+$("[data-board]").addEventListener("click", e => {
+  const cell = e.target.closest(".ok-cell.mine"); if (!cell || !gameId || !lastState) return;
+  sel = { x: +cell.dataset.x, y: +cell.dataset.y };
+  renderGame(lastState);
+});
+$("[data-place]").addEventListener("click", async () => {
+  if (!sel || !gameId) return;
+  const mv = sel; sel = null;
+  const s = await api("move", { id: gameId, x: mv.x, y: mv.y });
+  if (!s.ok) { App.toast(s.error); if (lastState) renderGame(lastState); }
+  else renderGame(s);
 });
 $("[data-resign]").onclick = async () => { if (!gameId || !confirm("기권할까요? 패배로 기록돼요.")) return; await api("resign", { id: gameId }); const s = await api("state", { id: gameId }); if (s.ok) renderGame(s); };
 
