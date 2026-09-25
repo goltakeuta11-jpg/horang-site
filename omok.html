@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.58">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.58">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.59">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.59">
 <meta property="og:type" content="website">
 <meta property="og:title" content="오목 랭크 · 호랑봇 허브">
 <meta property="og:description" content="1대1 오목으로 MMR·티어를 올려라! 2주 시즌 랭킹.">
 <meta property="og:url" content="https://horangbot.co.kr/omok.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.58"></script>
+<script src="assets/inapp.js?v=20260831.59"></script>
 <title>오목 랭크 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.58">
+<link rel="stylesheet" href="assets/style.css?v=20260831.59">
 <style>
   .ok-wrap { max-width: 720px; }
   .ok-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text);
@@ -57,6 +57,8 @@
   .lb .rk { width: 34px; font-weight: 800; color: var(--text-dim); }
   .lb .me { background: rgba(255,171,64,.1); }
   .lb-num { font-variant-numeric: tabular-nums; }
+  .lb-btn { border: 0; background: none; cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 6px; opacity: .7; }
+  .lb-btn:hover { opacity: 1; background: rgba(255,92,122,.15); }
 </style>
 </head>
 <body>
@@ -125,9 +127,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.58"></script>
-<script src="assets/store.js?v=20260831.58"></script>
-<script src="assets/app.js?v=20260831.58"></script>
+<script src="assets/config.js?v=20260831.59"></script>
+<script src="assets/store.js?v=20260831.59"></script>
+<script src="assets/app.js?v=20260831.59"></script>
 <script>
 App.header("game.html");
 
@@ -196,10 +198,29 @@ async function loadLeaderboard() {
   if (!j.ok) return;
   $("[data-lbseason]").textContent = seasonText(j) + (j.myRank ? ` · 내 순위 ${j.myRank}위` : " · 아직 순위 없음");
   if (!j.list.length) { $("[data-lb]").innerHTML = `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">아직 이번 시즌 기록이 없어요. 첫 판을 이겨보세요!</p>`; return; }
-  $("[data-lb]").innerHTML = `<table class="lb"><thead><tr><th>#</th><th>닉</th><th>티어</th><th class="lb-num">점수</th><th class="lb-num">전적</th></tr></thead><tbody>${
-    j.list.map(r => `<tr class="${r.nick === nick ? "me" : ""}"><td class="rk">${r.rank <= 3 ? ["🥇","🥈","🥉"][r.rank - 1] : r.rank}</td><td>${esc(r.nick)}</td><td>${r.emoji} ${r.name}</td><td class="lb-num">${r.mmr}</td><td class="lb-num">${r.wins}승 ${r.losses}패</td></tr>`).join("")
+  const admin = App.isAdmin();
+  $("[data-lb]").innerHTML = `<table class="lb"><thead><tr><th>#</th><th>닉</th><th>티어</th><th class="lb-num">점수</th><th class="lb-num">전적</th>${admin ? "<th></th>" : ""}</tr></thead><tbody>${
+    j.list.map(r => `<tr class="${r.nick === nick ? "me" : ""}"><td class="rk">${r.rank <= 3 ? ["🥇","🥈","🥉"][r.rank - 1] : r.rank}</td><td>${esc(r.nick)}</td><td>${r.emoji} ${r.name}</td><td class="lb-num">${r.mmr}</td><td class="lb-num">${r.wins}승 ${r.losses}패</td>${admin ? `<td style="white-space:nowrap"><button class="lb-btn" data-rn="${esc(r.nick)}" title="닉 수정">✏️</button><button class="lb-btn" data-del="${esc(r.nick)}" title="랭킹에서 삭제">🗑️</button></td>` : ""}</tr>`).join("")
   }</tbody></table>`;
 }
+/* 관리자: 랭킹 닉 수정 / 삭제 */
+$("[data-lb]").addEventListener("click", async e => {
+  if (!App.isAdmin()) return;
+  const rn = e.target.closest("[data-rn]"), del = e.target.closest("[data-del]");
+  if (rn) {
+    const cur = rn.dataset.rn;
+    const nn = prompt(`'${cur}' 의 새 닉네임을 입력하세요:`, cur);
+    if (nn === null) return;
+    const v = nn.trim(); if (!v || v === cur) return;
+    const r = await api("adminrename", { target: cur, newNick: v, key: App.key() });
+    if (r.ok) { App.toast("닉 변경 완료"); loadLeaderboard(); } else App.toast(r.error || "실패");
+  } else if (del) {
+    const cur = del.dataset.del;
+    if (!confirm(`'${cur}' 님을 이번 시즌 랭킹에서 삭제할까요?`)) return;
+    const r = await api("admindelete", { target: cur, key: App.key() });
+    if (r.ok) { App.toast("삭제 완료"); loadLeaderboard(); } else App.toast(r.error || "실패");
+  }
+});
 
 /* 매칭 */
 $("[data-find]").onclick = findMatch;
