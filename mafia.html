@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.88">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.88">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.89">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.89">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.88"></script>
+<script src="assets/inapp.js?v=20260831.89"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.88">
+<link rel="stylesheet" href="assets/style.css?v=20260831.89">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -211,9 +211,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.88"></script>
-<script src="assets/store.js?v=20260831.88"></script>
-<script src="assets/app.js?v=20260831.88"></script>
+<script src="assets/config.js?v=20260831.89"></script>
+<script src="assets/store.js?v=20260831.89"></script>
+<script src="assets/app.js?v=20260831.89"></script>
 <script>
 App.header("game.html");
 
@@ -234,7 +234,7 @@ const ROLE_LEGEND = [
   ["🏛️", "정치인", "cit", "시민", "낮 투표에서 <b>표가 2개</b>로 계산돼요. 게다가 <b>투표로는 처형되지 않아요!</b> (밤 습격엔 죽어요)", "8명 이상"],
   ["🕶️", "스파이", "neu", "접선하기 나름", "밤마다 한 명 <b>접선</b>. 마피아면 마피아편+마피아 대화, 경찰·의사면 시민편+야간 대화. 한번 접선하면 고정!", "12명 이상"],
   ["📰", "기자", "cit", "시민", "<b>3일차 밤</b>에 한 명을 취재해 <b>그 사람의 직업을 특종으로 전체 공개</b>해요! (기자 정체는 안 밝혀져요)", "9명 이상"],
-  ["🌈", "게이", "cit", "시민", "밤에 한 명 유혹. <b>마피아</b>를 유혹하면 그 밤 그 마피아의 행동·마피아채팅을 막고 둘만 대화해요. 대신 <b>다음 낮엔 게이가 발언 불가</b>(체력 소모).", "10명 이상"],
+  ["🌈", "게이", "cit", "시민", "밤에 한 명 유혹. <b>마피아</b>를 유혹하면 그 밤 그 마피아의 행동·마피아채팅을 막고 둘만 대화해요. 대신 <b>다음 낮엔 게이가 발언 불가</b>(체력 소모).", "9명 이상"],
   ["🎤", "연설가", "cit", "시민", "살아있으면 낮 시간이 <b>+10초</b>, 그 <b>첫 10초는 연설가만</b> 발언할 수 있어요.", "11명 이상"],
 ];
 (function fillLegend() {
@@ -242,7 +242,7 @@ const ROLE_LEGEND = [
   el.innerHTML = ROLE_LEGEND.map(r => `<div class="lg">${r[0]} <b>${r[1]}</b> <span class="tm tm-${r[2]}">${r[3]}</span> <span class="lg-when">👥 ${r[5]}</span><br>${r[4]}</div>`).join("");
 })();
 function rolePreview(n) {   // 서버 배정 공식과 동일 (대기실 미리보기용)
-  const mafia = n >= 12 ? 3 : 2, doctor = n >= 6 ? 1 : 0, police = n >= 6 ? 1 : 0, politician = n >= 8 ? 1 : 0, spy = n >= 12 ? 1 : 0, gay = n >= 10 ? 1 : 0, orator = n >= 11 ? 1 : 0, reporter = n >= 9 ? 1 : 0, mute = n >= 9 ? 1 : 0;
+  const mafia = n >= 12 ? 3 : 2, doctor = n >= 6 ? 1 : 0, police = n >= 6 ? 1 : 0, politician = n >= 8 ? 1 : 0, spy = n >= 12 ? 1 : 0, gay = n >= 9 ? 1 : 0, orator = n >= 11 ? 1 : 0, reporter = n >= 9 ? 1 : 0, mute = n >= 9 ? 1 : 0;
   return { mafia, doctor, police, politician, spy, gay, orator, reporter, mute, citizen: Math.max(0, n - mafia - doctor - police - politician - spy - gay - orator - reporter - mute) };
 }
 
