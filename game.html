@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.90">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.90">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.90">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.91">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.91">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.91">
 <meta property="og:type" content="website">
 <meta property="og:title" content="게임 · 호랑봇 허브">
 <meta property="og:description" content="이벤트 미니게임 — 마피아">
 <meta property="og:url" content="https://horangbot.co.kr/game.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.90"></script>
+<script src="assets/inapp.js?v=20260831.91"></script>
 <title>게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.90">
+<link rel="stylesheet" href="assets/style.css?v=20260831.91">
 <style>
   .gm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-top: 8px; }
   .gm-card { display: block; text-decoration: none; color: inherit; background: var(--panel); border: 1px solid var(--line);
@@ -38,7 +38,7 @@
 <main class="wrap page">
   <p class="page__eyebrow">게임 로비</p>
   <h1 class="page__title">🎮 게임 로비</h1>
-  <p class="page__desc">언제든 즐기는 오목부터, 이벤트 때 열리는 마피아·라이어까지. 원하는 게임을 골라 입장하세요!</p>
+  <p class="page__desc">언제든 즐기는 오목부터, 이벤트 때 열리는 마피아까지. 원하는 게임을 골라 입장하세요!</p>
 
   <div class="gm-grid">
     <a class="gm-card" href="omok.html">
@@ -53,7 +53,7 @@
   <div class="gm-admin" data-admin hidden>
     <div class="gm-admin__txt">
       이벤트 게임 상태: <b data-state class="gm-off">불러오는 중…</b><br>
-      <span style="color:var(--text-dim)">비활성화하면 마피아·라이어가 일반 이용자에게 안 보여요. (오목은 상시)</span>
+      <span style="color:var(--text-dim)">비활성화하면 마피아가 일반 이용자에게 안 보여요. (오목은 상시)</span>
     </div>
     <button class="btn btn--primary" data-toggle disabled>불러오는 중…</button>
   </div>
@@ -65,22 +65,16 @@
       <div class="gm-card__desc">밤엔 마피아가 시민을 제거하고, 낮엔 토론·투표로 마피아를 찾아내는 심리 게임. 최대 15명.</div>
       <div class="gm-card__meta">방 만들기 · 참가하기 →</div>
     </a>
-    <a class="gm-card" href="liar.html">
-      <div class="gm-card__emoji">🃏</div>
-      <div class="gm-card__title">라이어 게임</div>
-      <div class="gm-card__desc">제시어를 모르는 라이어 한 명을 찾아라! 힌트를 듣고 토론·투표로 라이어를 지목하는 게임. 최대 15명.</div>
-      <div class="gm-card__meta">방 만들기 · 참가하기 →</div>
-    </a>
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.90"></script>
-<script src="assets/store.js?v=20260831.90"></script>
-<script src="assets/app.js?v=20260831.90"></script>
+<script src="assets/config.js?v=20260831.91"></script>
+<script src="assets/store.js?v=20260831.91"></script>
+<script src="assets/app.js?v=20260831.91"></script>
 <script>
 App.header("game.html");
 
-/* 이벤트 게임(마피아·라이어) 노출 제어 + (관리자면) 활성화 토글 */
+/* 이벤트 게임(마피아) 노출 제어 + (관리자면) 활성화 토글 */
 (function () {
   const URL_ = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
   const admin = App.isAdmin();
