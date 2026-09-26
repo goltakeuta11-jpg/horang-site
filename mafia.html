@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.103">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.103">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.104">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.104">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.103"></script>
+<script src="assets/inapp.js?v=20260831.104"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.103">
+<link rel="stylesheet" href="assets/style.css?v=20260831.104">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -216,9 +216,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.103"></script>
-<script src="assets/store.js?v=20260831.103"></script>
-<script src="assets/app.js?v=20260831.103"></script>
+<script src="assets/config.js?v=20260831.104"></script>
+<script src="assets/store.js?v=20260831.104"></script>
+<script src="assets/app.js?v=20260831.104"></script>
 <script>
 App.header("game.html");
 
@@ -409,7 +409,8 @@ function renderPlayers(j) {
     // 표시용 선택 여부
     let picked = false, able = false;
     if (iCanNight && p.alive) {
-      able = (j.me.role === "doctor") ? true : (p.pid !== j.me.pid);   // 의사만 자기자신 가능
+      // 의사만 자기자신 가능 / 빨딱은 우리편(역할 보이는 마피아팀) 제외하고 시민에게만
+      able = (j.me.role === "doctor") ? true : (j.me.role === "mute") ? (p.pid !== j.me.pid && !p.role) : (p.pid !== j.me.pid);
       picked = j.myNightTarget === p.pid;
     } else if (iCanVote && p.alive) { able = true; picked = j.myVote === p.pid; }
     const votes = (day && j.voteCounts && j.voteCounts[p.pid]) ? `<span class="pl__votes">🗳️${j.voteCounts[p.pid]}</span>` : "";
@@ -430,7 +431,7 @@ function renderPlayers(j) {
       // 낙관적 표시: 서버 응답 전에 즉시 선택 하이라이트(연타 방지)
       wrap.querySelectorAll(".pl").forEach(c => c.classList.remove("picked"));
       el.classList.add("picked");
-      const r = await api("action", { target: pid }); if (!r.ok) App.toast(r.error); else { if (r.seduced) App.toast("유혹에 성공하였습니다 💘"); poll(); }
+      const r = await api("action", { target: pid }); if (!r.ok) App.toast(r.error); else poll();   // 유혹 결과는 토스트 대신 보드 '유혹 기록'에 고정 표시
     }
     else if (day) {
       const same = j.myVote === pid;
@@ -527,6 +528,8 @@ function renderContext(j) {
       html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — ${ROLE.gay[0]} ${ROLE.gay[1]}</div>`;
       if (j.seduced) html += `<p class="mf-hint">💘 오늘 밤 유혹을 마쳤어요. <b>마피아</b>를 유혹했다면 그 마피아와 둘만 대화할 수 있고, 대신 <b>다음 낮엔 체력 소모로 발언이 불가</b>해요.</p>`;
       else html += `<p class="mf-hint">밤마다 <b>한 명을 유혹</b>하세요(아래 선택). <b>마피아</b>를 유혹하면 그 마피아는 그 밤 행동·마피아채팅이 막히고 둘만 대화하게 돼요. 대신 <b>다음 낮엔 당신이 발언 불가</b>(체력 소모)! 마피아가 아니면 효과 없어요.</p>`;
+      if ((j.seduceLog || []).length) html += `<div class="mf-invest"><b>💘 유혹 기록</b>` + j.seduceLog.map(x =>
+        `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.result === "mafia" ? "🔪 <b style='color:#FF6B81'>마피아! 행동 차단 성공</b>" : "🙂 시민 (효과 없음)"}</div>`).join("") + `</div>`;
     } else {
       const guide = { mafia: "제거할 사람을 골라요. (마피아끼리 상의 가능)", doctor: "오늘 밤 살릴 사람을 골라요. (자기 자신도 가능)",
         police: "정체를 조사할 사람을 골라요. 결과는 바로 알려드려요.",
