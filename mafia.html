@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.99">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.99">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.100">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.100">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.99"></script>
+<script src="assets/inapp.js?v=20260831.100"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.99">
+<link rel="stylesheet" href="assets/style.css?v=20260831.100">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -216,9 +216,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.99"></script>
-<script src="assets/store.js?v=20260831.99"></script>
-<script src="assets/app.js?v=20260831.99"></script>
+<script src="assets/config.js?v=20260831.100"></script>
+<script src="assets/store.js?v=20260831.100"></script>
+<script src="assets/app.js?v=20260831.100"></script>
 <script>
 App.header("game.html");
 
@@ -230,6 +230,8 @@ const ROLE = { mafia: ["🔪", "마피아", "role-mafia"], citizen: ["🙂", "�
   doctor: ["🩺", "의사", "role-doctor"], police: ["🔎", "경찰", "role-police"],
   spy: ["🕶️", "스파이", "role-spy"], politician: ["🏛️", "정치인", "role-politician"],
   gay: ["🌈", "게이", "role-gay"], orator: ["🎤", "연설가", "role-orator"], reporter: ["📰", "기자", "role-reporter"], mute: ["🚫", "빨딱", "role-mute"], thief: ["🦝", "도둑", "role-thief"] };
+// 서버·클라 버전 불일치 등으로 모르는 역할 키가 와도 render가 throw하지 않도록 폴백
+function RL(k) { return ROLE[k] || ["❓", "(역할?)", "role-citizen"]; }
 const ROLE_LEGEND = [
   ["🔪", "마피아", "maf", "마피아", "밤에 함께 한 명을 지목해 제거해요. 낮엔 시민인 척! <b>마피아 수 ≥ 나머지</b>가 되면 승리.", "항상 등장 (12명↑ 3명)"],
   ["🚫", "빨딱", "maf", "마피아팀", "밤에 한 명에게 <b>빨딱</b>을 선사해요. 빨딱을 받은 사람은 <b>다음 낮 발언·투표가 모두 봉쇄</b>! 마피아와 한편(밤 대화 공유).", "9명 이상"],
@@ -301,20 +303,29 @@ function startGame() { show("game"); startPoll(); }
 function startPoll() { stopPoll(); poll(); pollTimer = setInterval(poll, 1500); tickTimer = setInterval(tick, 250); }
 function stopPoll() { clearInterval(pollTimer); clearInterval(tickTimer); pollTimer = tickTimer = null; }
 let pollFails = 0;
+let disconnected = false;   // 서버 응답 실패로 화면이 멈춘 상태인지
+function setReconnect(on) { const rc = $("[data-reconnect]"); if (rc) rc.hidden = !on; }
 async function poll() {
   if (polling) return;   // 이전 폴링이 아직 안 끝났으면 건너뜀 (타임아웃 8초로 무한대기 방지)
   polling = true;
   let j;
   try { j = await api("state", { since: sinceId }); }
-  catch (e) { pollFails++; if (pollFails >= 2) { const rc = $("[data-reconnect]"); if (rc) rc.hidden = false; } return; }
+  catch (e) { pollFails++; if (pollFails >= 2) { disconnected = true; setReconnect(true); } return; }
   finally { polling = false; }
-  if (pollFails) { pollFails = 0; const rc = $("[data-reconnect]"); if (rc) rc.hidden = true; }   // 복구되면 배너 숨김
+  if (pollFails || disconnected) { pollFails = 0; disconnected = false; setReconnect(false); }   // 복구되면 배너 숨김
   if (!j.ok) { if (j.gone) { clearSess(); stopPoll(); show("setup"); App.toast(j.error || "다시 입장해주세요."); } return; }
   S = j;
   if (j.msgs && j.msgs.length) appendMsgs(j.msgs);
-  render(j);
+  // ★ render 안에서 예외가 나도 폴링·타이머·채팅이 통째로 얼어붙지 않게 격리 (한 판 전체 freeze 방지)
+  try { render(j); }
+  catch (e) {
+    console.error("[mafia] render error:", e);
+    const rc = $("[data-reconnect]");
+    if (rc) { rc.hidden = false; rc.textContent = "⚠️ 화면 표시 오류가 났어요(자동 복구 시도 중). 계속되면 새로고침 해주세요. [" + (e && e.message ? e.message : e) + "]"; }
+  }
 }
 function tick() {
+  if (disconnected) { $("[data-timer]").textContent = "🔌 연결 끊김"; return; }   // 멈춘 게 아니라 재연결 중임을 명확히
   if (!phaseDeadline) { $("[data-timer]").textContent = ""; return; }
   const rem = Math.max(0, Math.ceil((phaseDeadline - Date.now()) / 1000));
   const m = Math.floor(rem / 60), s = rem % 60;
@@ -330,7 +341,7 @@ function render(j) {
   codeEl.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(j.code); App.toast("코드 복사됨: " + j.code); };
 
   const rEl = $("[data-myrole]");
-  if (j.me.role) { const r = ROLE[j.me.role]; rEl.hidden = false; rEl.className = "mf-role " + r[2]; rEl.textContent = r[0] + " " + r[1]; }
+  if (j.me.role) { const r = RL(j.me.role); rEl.hidden = false; rEl.className = "mf-role " + r[2]; rEl.textContent = r[0] + " " + r[1]; }
   else rEl.hidden = true;
 
   // 승리 배너
@@ -389,7 +400,7 @@ function renderPlayers(j) {
   else { hint.hidden = true; }
 
   wrap.innerHTML = j.players.map(p => {
-    const roleTag = p.role ? `<span class="mf-role ${ROLE[p.role][2]}" style="font-size:10px;padding:1px 6px">${ROLE[p.role][0]}${ROLE[p.role][1]}</span>` : "";
+    const roleTag = p.role ? `<span class="mf-role ${RL(p.role)[2]}" style="font-size:10px;padding:1px 6px">${RL(p.role)[0]}${RL(p.role)[1]}</span>` : "";
     let sub = "";
     if (!p.alive) sub = "💀 사망";
     else if (j.me.role === "mafia" && night && p.role === "mafia") sub = roleTag;
@@ -525,7 +536,7 @@ function renderContext(j) {
         mute: "🚫 <b>빨딱</b>을 줄 사람을 골라요(아래 선택). 그 사람은 <b>다음 낮에 발언·투표를 못 해요!</b> 당신은 마피아와 한편이에요.",
         thief: "🦝 밤 능력은 없어요. <b>맨 처음 죽는 사람의 직업을 자동으로 훔쳐</b> 그 역할이 돼요. 첫 사망을 기다려요!",
         citizen: "밤이에요. 마피아의 선택을 기다려요. 아침에 만나요." }[j.me.role] || "밤이에요.";
-      html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — ${ROLE[j.me.role][1]}</div><p class="mf-hint">${guide}</p>`;
+      html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — ${RL(j.me.role)[1]}</div><p class="mf-hint">${guide}</p>`;
       if (j.me.role === "police" && j.investLog.length) {
         html += `<div class="mf-invest"><b>🔎 조사 기록</b>` + j.investLog.map(x =>
           `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.isMafia ? "🔪 <b style='color:#FF6B81'>마피아!</b>" : "🙂 마피아 아님"}</div>`).join("") + `</div>`;
@@ -589,8 +600,14 @@ async function sendChat() {
   const text = inp.value.trim();
   if (!text) return;
   inp.value = "";
-  const r = await api("chat", { text });
-  if (!r.ok) App.toast(r.error); else poll();
+  try {
+    const r = await api("chat", { text });
+    if (!r.ok) { inp.value = text; App.toast(r.error || "전송 실패"); }   // 서버가 거절하면 글 복원
+    else poll();
+  } catch (e) {   // 네트워크/타임아웃이면 글이 사라지지 않게 복원 + 안내
+    inp.value = text;
+    App.toast("전송이 안 됐어요. 연결을 확인하고 다시 눌러주세요.");
+  }
 }
 $("[data-chat-send]").onclick = sendChat;
 $("[data-chat-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
