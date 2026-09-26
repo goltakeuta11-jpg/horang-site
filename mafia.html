@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.94">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.94">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.95">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.95">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.94"></script>
+<script src="assets/inapp.js?v=20260831.95"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.94">
+<link rel="stylesheet" href="assets/style.css?v=20260831.95">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -214,9 +214,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.94"></script>
-<script src="assets/store.js?v=20260831.94"></script>
-<script src="assets/app.js?v=20260831.94"></script>
+<script src="assets/config.js?v=20260831.95"></script>
+<script src="assets/store.js?v=20260831.95"></script>
+<script src="assets/app.js?v=20260831.95"></script>
 <script>
 App.header("game.html");
 
@@ -553,8 +553,13 @@ function renderContext(j) {
 }
 
 /* ---------- 채팅 ---------- */
+// 서버가 매 판 랜덤 배정한 닉 색을 사용(없으면 해시 폴백). S.players에서 닉→색 맵.
 const NICK_COLORS = ["#FF8A80","#FFD54F","#82D8FA","#A5D6A7","#F48FB1","#CE93D8","#80CBC4","#FFAB91","#90CAF9","#C5E1A5","#FFCC80","#B39DDB","#F06292","#4DD0E1","#AED581","#FF8A65"];
-function nickColor(name) { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return NICK_COLORS[h % NICK_COLORS.length]; }
+function hashColor(name) { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return NICK_COLORS[h % NICK_COLORS.length]; }
+function nickColorOf(name) {
+  const p = (S && S.players || []).find(x => x.nick === name);
+  return (p && p.color) ? p.color : hashColor(name);
+}
 function appendMsgs(msgs) {
   const body = $("[data-chat-body]");
   const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
@@ -568,7 +573,7 @@ function appendMsgs(msgs) {
     if (m.sys) { d.className = "msg sys" + (cls === "seduce" ? " seduce" : ""); d.textContent = m.text; }
     else {
       d.className = "msg " + cls;
-      const col = (cls === "all") ? ` style="color:${nickColor(m.from)}"` : "";   // 일반 채팅은 이름별 색상(특수채널은 채널색 유지)
+      const col = (cls === "all") ? ` style="color:${nickColorOf(m.from)}"` : "";   // 일반 채팅은 닉별 색상(특수채널은 채널색 유지)
       d.innerHTML = `<span class="msg__from"${col}>${esc(m.from)}</span> ${esc(m.text)}`;
     }
     body.appendChild(d); added++;
