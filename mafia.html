@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.98">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.98">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.99">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.99">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.98"></script>
+<script src="assets/inapp.js?v=20260831.99"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.98">
+<link rel="stylesheet" href="assets/style.css?v=20260831.99">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -99,6 +99,7 @@
   .mf-chat__foot input:disabled { opacity: .5; }
   .mf-chat__foot [data-chat-send] { flex: 0 0 auto; padding: 10px 18px; font-size: 14px; font-weight: 800; }
   .mf-players-wrap h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; }
+  .mf-reconnect { background: rgba(255,92,122,.16); border: 1px solid #FF6B81; color: #FF6B81; border-radius: 10px; padding: 9px 14px; margin-bottom: 12px; font-size: 13px; font-weight: 700; text-align: center; }
   /* 참여자 서랍 토글 (오른쪽 가장자리) */
   .mf-fab { position: fixed; right: 0; top: 46%; transform: translateY(-50%); z-index: 50;
     display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font: inherit;
@@ -164,6 +165,7 @@
 
   <!-- 게임 -->
   <section data-game hidden>
+    <div class="mf-reconnect" data-reconnect hidden>🔄 서버와 연결이 잠깐 끊겼어요. 다시 연결 중… (업데이트 중이면 잠시 후 자동 복구)</div>
     <div class="mf-bar">
       <span class="mf-phase" data-phase>—</span>
       <span class="mf-code" data-code title="코드 복사"></span>
@@ -214,9 +216,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.98"></script>
-<script src="assets/store.js?v=20260831.98"></script>
-<script src="assets/app.js?v=20260831.98"></script>
+<script src="assets/config.js?v=20260831.99"></script>
+<script src="assets/store.js?v=20260831.99"></script>
+<script src="assets/app.js?v=20260831.99"></script>
 <script>
 App.header("game.html");
 
@@ -298,13 +300,15 @@ $("[data-leave]").onclick = async () => {
 function startGame() { show("game"); startPoll(); }
 function startPoll() { stopPoll(); poll(); pollTimer = setInterval(poll, 1500); tickTimer = setInterval(tick, 250); }
 function stopPoll() { clearInterval(pollTimer); clearInterval(tickTimer); pollTimer = tickTimer = null; }
+let pollFails = 0;
 async function poll() {
   if (polling) return;   // 이전 폴링이 아직 안 끝났으면 건너뜀 (타임아웃 8초로 무한대기 방지)
   polling = true;
   let j;
   try { j = await api("state", { since: sinceId }); }
-  catch (e) { return; }
+  catch (e) { pollFails++; if (pollFails >= 2) { const rc = $("[data-reconnect]"); if (rc) rc.hidden = false; } return; }
   finally { polling = false; }
+  if (pollFails) { pollFails = 0; const rc = $("[data-reconnect]"); if (rc) rc.hidden = true; }   // 복구되면 배너 숨김
   if (!j.ok) { if (j.gone) { clearSess(); stopPoll(); show("setup"); App.toast(j.error || "다시 입장해주세요."); } return; }
   S = j;
   if (j.msgs && j.msgs.length) appendMsgs(j.msgs);
