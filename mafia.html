@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.91">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.91">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.92">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.92">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.91"></script>
+<script src="assets/inapp.js?v=20260831.92"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.91">
+<link rel="stylesheet" href="assets/style.css?v=20260831.92">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -95,6 +95,7 @@
   .mf-chat__foot input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 14px; }
   .mf-chat__foot input:disabled { opacity: .5; }
+  .mf-chat__foot [data-chat-send] { flex: 0 0 auto; padding: 10px 18px; font-size: 14px; font-weight: 800; }
   .mf-players-wrap h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; }
   /* 참여자 서랍 토글 (오른쪽 가장자리) */
   .mf-fab { position: fixed; right: 0; top: 46%; transform: translateY(-50%); z-index: 50;
@@ -114,9 +115,9 @@
   .mf-drawer__head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
   .mf-drawer__head h3 { margin: 0; font-size: 14px; font-weight: 800; flex: 1; color: var(--text); }
   .mf-drawer__close { background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 8px; width: 34px; height: 34px; font-size: 15px; cursor: pointer; flex: 0 0 auto; }
-  .mf-drawer__hint { margin: 12px 16px 0; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 700;
+  .mf-drawer__hint { margin: 12px 16px 0; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; flex: 0 0 auto;
     background: rgba(255,196,75,.15); color: #FFC24B; border: 1px solid rgba(255,196,75,.35); }
-  .mf-drawer .mf-players { padding: 14px 16px 24px; overflow-y: auto; }
+  .mf-drawer .mf-players { padding: 14px 16px 24px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
   .mf-legend { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 16px; }
   .mf-legend summary { cursor: pointer; font-weight: 800; font-size: 13.5px; }
   .mf-legend .lg { font-size: 13px; line-height: 1.5; padding: 7px 0; border-bottom: 1px solid var(--line); }
@@ -211,9 +212,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.91"></script>
-<script src="assets/store.js?v=20260831.91"></script>
-<script src="assets/app.js?v=20260831.91"></script>
+<script src="assets/config.js?v=20260831.92"></script>
+<script src="assets/store.js?v=20260831.92"></script>
+<script src="assets/app.js?v=20260831.92"></script>
 <script>
 App.header("game.html");
 
