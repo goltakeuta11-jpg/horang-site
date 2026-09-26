@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.95">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.95">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.95">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.96">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.96">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.96">
 <meta property="og:type" content="website">
 <meta property="og:title" content="게임 · 호랑봇 허브">
 <meta property="og:description" content="이벤트 미니게임 — 마피아">
 <meta property="og:url" content="https://horangbot.co.kr/game.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.95"></script>
+<script src="assets/inapp.js?v=20260831.96"></script>
 <title>게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.95">
+<link rel="stylesheet" href="assets/style.css?v=20260831.96">
 <style>
   .gm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-top: 8px; }
   .gm-card { display: block; text-decoration: none; color: inherit; background: var(--panel); border: 1px solid var(--line);
@@ -49,7 +49,7 @@
     </a>
   </div>
 
-  <h2 style="font-size:16px;font-weight:800;margin:24px 0 4px">🎪 이벤트 게임</h2>
+  <h2 data-event-h hidden style="font-size:16px;font-weight:800;margin:24px 0 4px">🎪 이벤트 게임</h2>
   <div class="gm-admin" data-admin hidden>
     <div class="gm-admin__txt">
       이벤트 게임 상태: <b data-state class="gm-off">불러오는 중…</b><br>
@@ -68,9 +68,9 @@
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.95"></script>
-<script src="assets/store.js?v=20260831.95"></script>
-<script src="assets/app.js?v=20260831.95"></script>
+<script src="assets/config.js?v=20260831.96"></script>
+<script src="assets/store.js?v=20260831.96"></script>
+<script src="assets/app.js?v=20260831.96"></script>
 <script>
 App.header("game.html");
 
@@ -80,16 +80,18 @@ App.header("game.html");
   const admin = App.isAdmin();
   const grid = document.querySelector("[data-event-grid]");
   const note = document.querySelector("[data-event-note]");
+  const heading = document.querySelector("[data-event-h]");
   const box = document.querySelector("[data-admin]");
   const stateEl = box.querySelector("[data-state]");
   const btn = box.querySelector("[data-toggle]");
   let on = false;
 
   function paint() {
-    // 이벤트 카드: 활성화됐거나 관리자면 보임
+    // 이벤트 섹션(제목·카드): 활성화됐거나 관리자일 때만 노출. 비활성 + 비관리자는 아예 안 보임(오목만)
     const visible = on || admin;
+    heading.hidden = !visible;
     grid.hidden = !visible;
-    note.hidden = visible;
+    note.hidden = true;   // "닫혀있어요" 안내 제거 — 비관리자는 이벤트 섹션 자체가 안 뜸
     if (admin) {
       box.hidden = false;
       stateEl.textContent = on ? "활성화 (모두에게 보임)" : "비활성화 (관리자만 보임)";
