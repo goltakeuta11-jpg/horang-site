@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.100">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.100">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.101">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.101">
 <meta property="og:type" content="website">
 <meta property="og:title" content="오목 랭크 · 호랑봇 허브">
-<meta property="og:description" content="1대1 오목으로 MMR·티어를 올려라! 2주 시즌 랭킹.">
+<meta property="og:description" content="1대1 오목으로 티어를 올려라! 배치고사 5판 + 실력·승패 랭킹.">
 <meta property="og:url" content="https://horangbot.co.kr/omok.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.100"></script>
+<script src="assets/inapp.js?v=20260831.101"></script>
 <title>오목 랭크 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.100">
+<link rel="stylesheet" href="assets/style.css?v=20260831.101">
 <style>
   .ok-wrap { max-width: 720px; }
   .ok-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text);
@@ -73,7 +73,7 @@
 
   <!-- 로그인 -->
   <section data-login hidden>
-    <p class="page__desc">자소서에 등록한 <b>닉네임과 비밀번호</b>로 로그인하세요. (닉·비번이 일치해야 플레이 가능) 1대1 오목으로 MMR·티어를 올려보세요! 2주마다 시즌 리셋.</p>
+    <p class="page__desc">자소서에 등록한 <b>닉네임과 비밀번호</b>로 로그인하세요. (닉·비번이 일치해야 플레이 가능) 1대1 오목으로 <b>티어</b>를 올려보세요! 첫 <b>5판은 배치고사</b>(실력+승패로 티어 결정) · 매 시즌 소프트리셋, 5시즌마다 전체 초기화.</p>
     <div class="ok-card">
       <input class="ok-input" data-nick maxlength="16" placeholder="자소서 닉네임">
       <input class="ok-input" data-pw type="password" maxlength="40" placeholder="자소서 비밀번호">
@@ -128,9 +128,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.100"></script>
-<script src="assets/store.js?v=20260831.100"></script>
-<script src="assets/app.js?v=20260831.100"></script>
+<script src="assets/config.js?v=20260831.101"></script>
+<script src="assets/store.js?v=20260831.101"></script>
+<script src="assets/app.js?v=20260831.101"></script>
 <script>
 App.header("game.html");
 
@@ -188,20 +188,25 @@ async function goHome() {
 }
 function renderProfile(j) {
   const pr = j.profile;
+  // 점수는 비공개 — 티어만. 배치 중이면 진행도(n/N) 표시.
+  const right = pr.placing
+    ? `<div class="ok-prof__mmr"><div class="n">${pr.pgames}/${pr.pneed}</div><div class="l">배치고사</div></div>`
+    : `<div class="ok-prof__mmr"><div class="n" style="font-size:30px">${pr.emoji}</div><div class="l">${pr.name}</div></div>`;
+  const warn = j.hardResetNext ? `<div style="background:rgba(255,92,122,.16);border:1px solid #FF6B81;color:#FF6B81;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:700;margin-top:8px">⚠️ 이번 시즌 종료 후 <b>전체 초기화(하드리셋)</b> — 다음 시즌 전원 재배치돼요</div>` : "";
   $("[data-profile]").innerHTML = `<div class="ok-prof">
-    <div class="ok-prof__tier">${pr.emoji}</div>
-    <div class="ok-prof__info"><b>${esc(pr.nick)}</b><br><span>${pr.emoji} ${pr.name} · ${pr.wins}승 ${pr.losses}패${pr.draws ? " " + pr.draws + "무" : ""}</span></div>
-    <div class="ok-prof__mmr"><div class="n">${pr.mmr}</div><div class="l">점수</div></div>
-  </div><div class="ok-season">${seasonText(j)}</div>`;
+    <div class="ok-prof__tier">${pr.placing ? "🎯" : pr.emoji}</div>
+    <div class="ok-prof__info"><b>${esc(pr.nick)}</b><br><span>${pr.placing ? `🎯 배치고사 진행 중 (${pr.pgames}/${pr.pneed})` : pr.emoji + " " + pr.name} · ${pr.wins}승 ${pr.losses}패${pr.draws ? " " + pr.draws + "무" : ""}</span></div>
+    ${right}
+  </div>${warn}<div class="ok-season">${seasonText(j)}</div>`;
 }
 async function loadLeaderboard() {
   const j = await api("leaderboard");
   if (!j.ok) return;
-  $("[data-lbseason]").textContent = seasonText(j) + (j.myRank ? ` · 내 순위 ${j.myRank}위` : " · 아직 순위 없음");
-  if (!j.list.length) { $("[data-lb]").innerHTML = `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">아직 이번 시즌 기록이 없어요. 첫 판을 이겨보세요!</p>`; return; }
+  $("[data-lbseason]").textContent = seasonText(j) + (j.myRank ? ` · 내 순위 ${j.myRank}위` : " · 아직 순위 없음") + (j.hardResetNext ? " · ⚠️ 시즌 종료 후 전체 초기화" : "");
+  if (!j.list.length) { $("[data-lb]").innerHTML = `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">아직 이번 시즌 배치를 마친 사람이 없어요. 배치고사(5판)를 끝내면 랭킹에 올라요!</p>`; return; }
   const admin = App.isAdmin();
-  $("[data-lb]").innerHTML = `<table class="lb"><thead><tr><th>#</th><th>닉</th><th>티어</th><th class="lb-num">점수</th><th class="lb-num">전적</th>${admin ? "<th></th>" : ""}</tr></thead><tbody>${
-    j.list.map(r => `<tr class="${r.nick === nick ? "me" : ""}"><td class="rk">${r.rank <= 3 ? ["🥇","🥈","🥉"][r.rank - 1] : r.rank}</td><td>${esc(r.nick)}</td><td>${r.emoji} ${r.name}</td><td class="lb-num">${r.mmr}</td><td class="lb-num">${r.wins}승 ${r.losses}패</td>${admin ? `<td style="white-space:nowrap"><button class="lb-btn" data-rn="${esc(r.nick)}" title="닉 수정">✏️</button><button class="lb-btn" data-del="${esc(r.nick)}" title="랭킹에서 삭제">🗑️</button></td>` : ""}</tr>`).join("")
+  $("[data-lb]").innerHTML = `<table class="lb"><thead><tr><th>#</th><th>닉</th><th>티어</th><th class="lb-num">전적</th>${admin ? "<th></th>" : ""}</tr></thead><tbody>${
+    j.list.map(r => `<tr class="${r.nick === nick ? "me" : ""}"><td class="rk">${r.rank <= 3 ? ["🥇","🥈","🥉"][r.rank - 1] : r.rank}</td><td>${esc(r.nick)}</td><td>${r.emoji} ${r.name}</td><td class="lb-num">${r.wins}승 ${r.losses}패</td>${admin ? `<td style="white-space:nowrap"><button class="lb-btn" data-rn="${esc(r.nick)}" title="닉 수정">✏️</button><button class="lb-btn" data-del="${esc(r.nick)}" title="랭킹에서 삭제">🗑️</button></td>` : ""}</tr>`).join("")
   }</tbody></table>`;
 }
 /* 관리자: 랭킹 닉 수정 / 삭제 */
@@ -260,9 +265,9 @@ function renderGame(j) {
   const oc = j.myColor === 1 ? 2 : 1;
   const myC = j.myColor === 1 ? "b" : "w";
   $("[data-opp]").innerHTML = j.opponent.isAI
-    ? `<span class="t">상대</span> 🤖 <b>오목 AI</b> <span class="t">(이기면 +10 · 져도 유지)</span> ${oc === 1 ? "⚫" : "⚪"}`
-    : `<span class="t">상대</span> ${j.opponent.emoji} ${esc(j.opponent.nick)} <span class="t">(${j.opponent.name} ${j.opponent.mmr})</span> ${oc === 1 ? "⚫" : "⚪"}`;
-  $("[data-mewho]").innerHTML = `<span class="t">나</span> ${esc(j.me.nick)} ${j.myColor === 1 ? "⚫" : "⚪"} <span class="t">(${j.me.name} ${j.me.mmr})</span>`;
+    ? `<span class="t">상대</span> 🤖 <b>오목 AI</b> <span class="t">(배치 땐 실력 반영)</span> ${oc === 1 ? "⚫" : "⚪"}`
+    : `<span class="t">상대</span> ${j.opponent.emoji} ${esc(j.opponent.nick)} <span class="t">(${j.opponent.name})</span> ${oc === 1 ? "⚫" : "⚪"}`;
+  $("[data-mewho]").innerHTML = `<span class="t">나</span> ${esc(j.me.nick)} ${j.myColor === 1 ? "⚫" : "⚪"} <span class="t">(${j.me.name})</span>`;
   const afk = (!j.over && j.miss > 0) ? (j.myTurn ? " ⚠️ 시간초과! 이번에도 안 두면 기권패" : ` ⚠️ 상대 응답 없음 (${j.miss}/2, 2회면 기권패)`) : "";
   $("[data-turn]").textContent = (j.over ? "게임 종료" : (j.myTurn ? ("🟢 내 차례!" + (j.myColor === 1 ? " (흑: 쌍삼 금지)" : "")) : "상대 차례…")) + afk;
 
@@ -294,7 +299,12 @@ function renderGame(j) {
     const cls = r.res === "win" ? "res-win" : r.res === "loss" ? "res-lose" : "res-draw";
     const label = r.res === "win" ? "🎉 승리!" : r.res === "loss" ? "😢 패배" : "🤝 무승부";
     rEl.hidden = false; rEl.className = "ok-result " + cls;
-    rEl.innerHTML = `${label}<div class="res-mmr">점수 ${r.before} → <b>${r.after}</b> (${r.delta >= 0 ? "+" + r.delta : r.delta}) · ${r.emoji} ${r.name}</div>`;
+    // 점수 숫자는 비공개 — 티어/배치 진행만 표시
+    let sub;
+    if (r.justPlaced) sub = `🎯 배치고사 완료! 티어 결정 → <b>${r.emoji} ${r.name}</b>`;
+    else if (r.placing) sub = `🎯 배치고사 진행 중 (${r.pgames}/${r.pneed})`;
+    else sub = `${r.emoji} <b>${r.name}</b>${r.tierUp ? " ⬆️ 승급!" : r.tierDown ? " ⬇️ 강등" : ""}`;
+    rEl.innerHTML = `${label}<div class="res-mmr">${sub}</div>`;
     $("[data-postgame]").hidden = false;
     $("[data-resign]").hidden = true;
   } else { rEl.hidden = true; $("[data-resign]").hidden = false; }
