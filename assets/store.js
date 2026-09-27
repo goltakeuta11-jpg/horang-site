@@ -377,6 +377,25 @@
       }).then(function (r) { return r.json(); });
     },
 
+    /* 자소서 삭제(관리자): 로컬 캐시에서 제거 + 서버에 '명시적 삭제'만 전송(한 방).
+       ★ 일반 저장(write)은 이제 합치기(upsert)라 목록에서 빼도 서버가 안 지움 → 삭제는 반드시 이 경로로. */
+    deleteMember(nick) {
+      const key = String(nick == null ? "" : nick).trim();
+      const data = read();
+      data.members = (data.members || []).filter(m => String((m && m.nick) || "").trim() !== key);
+      cache = data; memory = data;
+      if (MODE === "script") {
+        saveCache(data);
+        return fetch(SCRIPT_URL, {
+          method: "POST", redirect: "follow",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ key: adminKey(), deleteMembers: [key] })
+        }).then(r => r.json());
+      }
+      try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+      return Promise.resolve({ ok: true });
+    },
+
     reset() { write(normalize(JSON.parse(JSON.stringify(SEED)))); },
 
     export() {
