@@ -377,6 +377,32 @@
       }).then(function (r) { return r.json(); });
     },
 
+    /* 자소서 등록/수정: ★ 그 사람 행 '하나만' 전송 → 서버가 합치기(upsert). 오래된 캐시여도 다른 사람 데이터 절대 안 건드림(유실·되돌림 방지).
+       로드 전이면 false 반환(차단), 성공이면 서버응답 Promise 반환(fire-and-forget 가능). */
+    upsertMember(m) {
+      if (!canWrite) return false;
+      if (MODE !== "local" && !loaded) {
+        if (window.App) App.toast("데이터를 아직 못 불러왔어요. 새로고침(Ctrl+Shift+R) 후 다시 시도해주세요.", true);
+        return false;
+      }
+      const key = String((m && m.nick) || "").trim();
+      const data = read();
+      const arr = (data.members || []).slice();
+      const idx = arr.findIndex(x => String((x && x.nick) || "").trim() === key);
+      if (idx >= 0) arr[idx] = m; else arr.push(m);
+      data.members = arr; cache = data; memory = data;
+      if (MODE === "script") {
+        saveCache(data);
+        return fetch(SCRIPT_URL, {
+          method: "POST", redirect: "follow",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ key: adminKey(), data: { members: [MAP.members.toRow(m)] } })   // 그 한 행만
+        }).then(r => r.json());
+      }
+      try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+      return Promise.resolve({ ok: true });
+    },
+
     /* 자소서 삭제(관리자): 로컬 캐시에서 제거 + 서버에 '명시적 삭제'만 전송(한 방).
        ★ 일반 저장(write)은 이제 합치기(upsert)라 목록에서 빼도 서버가 안 지움 → 삭제는 반드시 이 경로로. */
     deleteMember(nick) {
