@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.109">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.109">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.110">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.110">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.109"></script>
+<script src="assets/inapp.js?v=20260831.110"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.109">
+<link rel="stylesheet" href="assets/style.css?v=20260831.110">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -221,9 +221,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.109"></script>
-<script src="assets/store.js?v=20260831.109"></script>
-<script src="assets/app.js?v=20260831.109"></script>
+<script src="assets/config.js?v=20260831.110"></script>
+<script src="assets/store.js?v=20260831.110"></script>
+<script src="assets/app.js?v=20260831.110"></script>
 <script>
 App.header("game.html");
 
@@ -239,7 +239,7 @@ const ROLE = { mafia: ["🔪", "마피아", "role-mafia"], citizen: ["🙂", "�
 function RL(k) { return ROLE[k] || ["❓", "(역할?)", "role-citizen"]; }
 const ROLE_LEGEND = [
   ["🔪", "마피아", "maf", "마피아", "밤에 함께 한 명을 지목해 제거해요. 낮엔 시민인 척! <b>마피아 수 ≥ 나머지</b>가 되면 승리.", "항상 등장 (12명↑ 3명)"],
-  ["🚫", "빨딱", "maf", "마피아팀", "밤에 한 명에게 <b>빨딱</b>을 선사해요. 빨딱을 받은 사람은 <b>다음 낮 발언·투표가 모두 봉쇄</b>! 마피아와 한편(밤 대화 공유).", "9명 이상"],
+  ["🚫", "빨딱", "maf", "마피아팀", "밤에 한 명에게 <b>빨딱</b>을 선사해요. 빨딱을 받은 사람은 <b>다음 낮 발언·투표가 모두 봉쇄</b>! 단 <b>어젯밤 준 사람에겐 연속 불가</b>(하루 지나면 다시 가능). 마피아와 한편(밤 대화 공유).", "9명 이상"],
   ["🙂", "시민", "cit", "시민", "특별한 능력은 없지만, 토론·투표로 마피아를 찾아내면 승리해요.", "항상 등장"],
   ["🩺", "의사", "cit", "시민", "밤마다 한 명을 지목해 그날 밤 습격에서 <b>살려요</b> (자기 자신도 가능).", "6명 이상"],
   ["🔎", "경찰", "cit", "시민", "밤마다 한 명을 <b>조사</b>해 마피아인지 아닌지 바로 확인해요.", "6명 이상"],
@@ -421,8 +421,8 @@ function renderPlayers(j) {
     // 표시용 선택 여부
     let picked = false, able = false;
     if (iCanNight && p.alive) {
-      // 의사만 자기자신 가능 / 빨딱은 우리편(역할 보이는 마피아팀) 제외하고 시민에게만
-      able = (j.me.role === "doctor") ? true : (j.me.role === "mute") ? (p.pid !== j.me.pid && !p.role) : (p.pid !== j.me.pid);
+      // 의사만 자기자신 가능 / 빨딱은 우리편(역할 보이는 마피아팀)·어제 준 사람 제외하고 시민에게만
+      able = (j.me.role === "doctor") ? true : (j.me.role === "mute") ? (p.pid !== j.me.pid && !p.role && p.pid !== j.me.muteBlocked) : (p.pid !== j.me.pid);
       picked = j.myNightTarget === p.pid;
     } else if (iCanVote && p.alive) { able = true; picked = j.myVote === p.pid; }
     const votes = (day && j.voteCounts && j.voteCounts[p.pid]) ? `<span class="pl__votes">🗳️${j.voteCounts[p.pid]}</span>` : "";
@@ -548,10 +548,14 @@ function renderContext(j) {
         politician: "밤 행동은 없어요. 하지만 낮 투표에서 <b>당신의 표는 2표</b>예요! 🏛️",
         orator: "밤 행동은 없어요. 낮이 되면 <b>첫 10초간 당신만 발언</b>할 수 있어요! 🎤",
         reporter: j.day === 3 ? (j.me.reporterUsed ? "📰 이미 특종을 냈어요." : "📰 <b>3일차 밤!</b> 취재할 사람을 골라 <b>직업을 특종으로 전체 공개</b>하세요! (당신 정체는 안 밝혀져요)") : "📰 특종은 <b>3일차 밤</b>에만 낼 수 있어요. 그날을 기다려요.",
-        mute: "🚫 <b>빨딱</b>을 줄 사람을 골라요(아래 선택). 그 사람은 <b>다음 낮에 발언·투표를 못 해요!</b> 당신은 마피아와 한편이에요.",
+        mute: "🚫 <b>빨딱</b>을 줄 사람을 골라요(아래 선택). 그 사람은 <b>다음 낮에 발언·투표를 못 해요!</b> 단, <b>어젯밤 준 사람에겐 연속으로 못 줘요</b>(하루 지나면 다시 가능). 당신은 마피아와 한편이에요.",
         thief: "🦝 밤 능력은 없어요. <b>맨 처음 죽는 사람의 직업을 자동으로 훔쳐</b> 그 역할이 돼요. 첫 사망을 기다려요!",
         citizen: "밤이에요. 마피아의 선택을 기다려요. 아침에 만나요." }[j.me.role] || "밤이에요.";
       html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — ${RL(j.me.role)[1]}</div><p class="mf-hint">${guide}</p>`;
+      if (j.me.role === "mute" && j.me.muteBlocked) {   // 오늘 밤 연속 불가 대상 안내
+        const bp = (j.players || []).find(p => p.pid === j.me.muteBlocked);
+        if (bp) html += `<p class="mf-hint" style="color:#FF9E6B">⛔ 어젯밤 <b>${esc(bp.nick)}</b>님에게 빨딱을 줬어요. 오늘 밤은 <b>${esc(bp.nick)}</b>님에게 줄 수 없어요. (다른 사람은 가능)</p>`;
+      }
       if (j.me.role === "police" && j.investLog.length) {
         html += `<div class="mf-invest"><b>🔎 조사 기록</b>` + j.investLog.map(x =>
           `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.isMafia ? "🔪 <b style='color:#FF6B81'>마피아!</b>" : "🙂 마피아 아님"}</div>`).join("") + `</div>`;
