@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.108">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.108">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.109">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.109">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.108"></script>
+<script src="assets/inapp.js?v=20260831.109"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.108">
+<link rel="stylesheet" href="assets/style.css?v=20260831.109">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -31,6 +31,9 @@
   .mf-timer { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 18px; color: var(--accent); }
   .mf-code { font-weight: 800; letter-spacing: 2px; background: var(--bg); border: 1px solid var(--line);
     border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .mf-close { background: rgba(255,92,122,.14); border: 1px solid rgba(255,92,122,.5); color: #FF6B81;
+    border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+  .mf-close:hover { background: rgba(255,92,122,.28); }
   .mf-role { font-weight: 800; padding: 3px 10px; border-radius: 999px; font-size: 13px; }
   .role-mafia { background: rgba(255,92,122,.18); color: #FF6B81; }
   .role-citizen { background: rgba(120,160,255,.16); color: #7FA8FF; }
@@ -172,6 +175,7 @@
       <span class="mf-code" data-code title="코드 복사"></span>
       <span class="mf-role" data-myrole hidden></span>
       <span class="mf-timer" data-timer></span>
+      <button class="mf-close" data-closeroom hidden title="방 폭파(모두 내보내고 게임 종료)">💥 방 폭파</button>
     </div>
 
     <div data-win hidden></div>
@@ -217,9 +221,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.108"></script>
-<script src="assets/store.js?v=20260831.108"></script>
-<script src="assets/app.js?v=20260831.108"></script>
+<script src="assets/config.js?v=20260831.109"></script>
+<script src="assets/store.js?v=20260831.109"></script>
+<script src="assets/app.js?v=20260831.109"></script>
 <script>
 App.header("game.html");
 
@@ -340,6 +344,10 @@ function render(j) {
   $("[data-phase]").textContent = (PHASE_LABEL[j.phase] || j.phase) + (j.day ? " · " + j.day + "일차" : "");
   const codeEl = $("[data-code]"); codeEl.textContent = j.code;
   codeEl.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(j.code); App.toast("코드 복사됨: " + j.code); };
+
+  // 방장 전용: 방 폭파 버튼 (게임 종료 후엔 숨김 — 새 게임/새 방으로 처리)
+  const closeBtn = $("[data-closeroom]");
+  closeBtn.hidden = !(j.isHost && j.phase !== "ended");
 
   const rEl = $("[data-myrole]");
   if (j.me.role) { const r = RL(j.me.role); rEl.hidden = false; rEl.className = "mf-role " + r[2]; rEl.textContent = r[0] + " " + r[1]; }
@@ -651,6 +659,14 @@ async function sendChat() {
 }
 $("[data-chat-send]").onclick = sendChat;
 $("[data-chat-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
+
+/* ---------- 방장: 방 폭파 ---------- */
+$("[data-closeroom]").onclick = async () => {
+  if (!confirm("정말 방을 폭파할까요? 진행 중인 게임이 끝나고 모두 대기 화면으로 나가요. (되돌릴 수 없어요)")) return;
+  const r = await api("closeroom");
+  if (r && !r.ok && !r.gone) { App.toast(r.error || "방을 닫지 못했어요."); return; }
+  clearSess(); stopPoll(); show("setup"); App.toast("💥 방을 폭파했어요.");
+};
 
 /* ---------- 참여자 서랍 ---------- */
 function drawer(on) {
