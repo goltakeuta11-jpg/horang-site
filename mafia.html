@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.106">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.106">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.107">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.107">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.106"></script>
+<script src="assets/inapp.js?v=20260831.107"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.106">
+<link rel="stylesheet" href="assets/style.css?v=20260831.107">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -74,6 +74,7 @@
   .mf-win { text-align: center; padding: 18px; border-radius: var(--radius-sm); font-weight: 800; font-size: 20px; margin-bottom: 14px; }
   .win-mafia { background: rgba(255,92,122,.16); color: #FF6B81; border: 1px solid #FF6B81; }
   .win-citizen { background: rgba(52,211,153,.16); color: #34D399; border: 1px solid #34D399; }
+  .mf-judge-count { margin-top: 10px; padding: 8px 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); font-size: 15px; font-weight: 800; text-align: center; }
   .mf-invest { font-size: 13px; margin-top: 8px; }
   .mf-invest div { padding: 3px 0; }
   .mf-reveal { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
@@ -216,9 +217,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.106"></script>
-<script src="assets/store.js?v=20260831.106"></script>
-<script src="assets/app.js?v=20260831.106"></script>
+<script src="assets/config.js?v=20260831.107"></script>
+<script src="assets/store.js?v=20260831.107"></script>
+<script src="assets/app.js?v=20260831.107"></script>
 <script>
 App.header("game.html");
 
@@ -333,7 +334,7 @@ function tick() {
 }
 
 /* ---------- 렌더 ---------- */
-const PHASE_LABEL = { lobby: "🕗 대기실", night: "🌙 밤", day: "☀️ 낮 (토론·투표)", ended: "🏁 게임 종료" };
+const PHASE_LABEL = { lobby: "🕗 대기실", night: "🌙 밤", day: "☀️ 낮 (토론·투표)", defense: "🗣️ 최후변론", judgment: "⚖️ 찬반 투표", ended: "🏁 게임 종료" };
 function render(j) {
   phaseDeadline = j.deadline ? Date.now() + (j.deadline - j.now) : 0;
   $("[data-phase]").textContent = (PHASE_LABEL[j.phase] || j.phase) + (j.day ? " · " + j.day + "일차" : "");
@@ -361,12 +362,15 @@ function render(j) {
   const nightMafia = night && myMafiaTeam;
   const nightPolice = night && j.canChat && (j.me.role === "police" || spyCh === "police");
   const nightDoctor = night && j.canChat && (j.me.role === "doctor" || spyCh === "doctor");
+  const defense = j.phase === "defense", judgment = j.phase === "judgment";
   const inp = $("[data-chat-input]");
   inp.disabled = !j.canChat;
   inp.placeholder = j.canChat
-    ? (j.me.sedChat ? "💘 유혹 대화 (둘만)…" : nightMafia ? "🔪 마피아 채팅…" : nightPolice ? "🔎 경찰팀 채팅…" : nightDoctor ? "🩺 의사팀 채팅…" : (j.speech ? "🎤 연설 중! 지금은 당신만 발언 가능…" : (!j.me.alive ? "👻 유령 채팅…" : "메시지 입력…")))
-    : (j.me.muted && j.phase === "day" ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.exhausted && j.phase === "day" ? "😵 유혹 성공! 오늘은 체력 소모로 발언 불가…" : night ? "밤에는 대화할 수 없어요 (특수 역할만)" : j.speech ? "🎤 연설가가 발언 중이에요… 곧 말할 수 있어요" : "지금은 채팅할 수 없어요");
+    ? (!j.me.alive ? "👻 유령 채팅…" : defense && j.me.isAccused ? "🗣️ 최후변론 — 지금은 당신만 발언 가능…" : judgment ? "⚖️ 찬반 토론…" : j.me.sedChat ? "💘 유혹 대화 (둘만)…" : nightMafia ? "🔪 마피아 채팅…" : nightPolice ? "🔎 경찰팀 채팅…" : nightDoctor ? "🩺 의사팀 채팅…" : (j.speech ? "🎤 연설 중! 지금은 당신만 발언 가능…" : (!j.me.alive ? "👻 유령 채팅…" : "메시지 입력…")))
+    : (defense ? "🗣️ 지목된 사람의 최후변론을 듣는 중이에요…" : j.me.muted && judgment ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.muted && j.phase === "day" ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.exhausted && (j.phase === "day" || judgment) ? "😵 유혹 성공! 오늘은 체력 소모로 발언 불가…" : night ? "밤에는 대화할 수 없어요 (특수 역할만)" : j.speech ? "🎤 연설가가 발언 중이에요… 곧 말할 수 있어요" : "지금은 채팅할 수 없어요");
   $("[data-chat-head]").textContent = !j.me.alive ? "👻 유령 채팅 (관전)"
+    : defense ? (j.me.isAccused ? "🗣️ 최후변론 (당신 차례)" : "🗣️ 최후변론 (듣는 중)")
+    : judgment ? "⚖️ 찬반 토론"
     : (j.me.muted && j.phase === "day") ? "🚫 발언 불가 (빨딱)"
     : (j.me.exhausted && j.phase === "day") ? "😵 발언 불가 (체력 소모)"
     : j.me.sedChat ? "💘 유혹 대화 (둘만)"
@@ -547,7 +551,7 @@ function renderContext(j) {
     }
   } else if (j.phase === "day") {
     html = `<div style="font-weight:800;margin-bottom:4px">☀️ 낮 — 토론 & 투표</div>
-      <p class="mf-hint">토론하고, 처형할 사람을 눌러 투표하세요. 시간이 끝나면 최다 득표자가 처형돼요. (다시 누르면 취소, 동표면 아무도 안 죽어요)${j.me.role === "politician" ? " <b style='color:#FF9E6B'>🏛️ 당신의 표는 2표!</b>" : ""}</p>`;
+      <p class="mf-hint">토론하고, 처형할 사람을 눌러 투표하세요. 시간이 끝나면 <b>최다 득표자가 최후변론</b> 후 <b>찬반 투표</b>로 처형 여부가 정해져요. (다시 누르면 취소, 동표면 지목 없이 밤)${j.me.role === "politician" ? " <b style='color:#FF9E6B'>🏛️ 당신의 표는 2표!</b>" : ""}</p>`;
     if (j.me.exhausted) html += `<p class="mf-hint" style="color:#FF8AD4">😵 지난밤 마피아 유혹에 성공했어요. 오늘 낮은 <b>체력 소모로 발언할 수 없어요</b> (투표는 가능).</p>`;
     if (j.me.muted) html += `<p class="mf-hint" style="color:#FF6B81">🚫 <b>빨딱을 받았어요!</b> 오늘 낮은 <b>발언도 투표도 할 수 없어요.</b></p>`;
     if (j.me.role === "citizen" && j.me.alive) {   // 시민: 낮 시간 ±30초 (하루 1번)
@@ -563,11 +567,44 @@ function renderContext(j) {
       html += `<div class="mf-invest"><b>🔎 내 조사 기록</b>` + j.investLog.map(x =>
         `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.isMafia ? "🔪 <b style='color:#FF6B81'>마피아!</b>" : "🙂 마피아 아님"}</div>`).join("") + `</div>`;
     }
+  } else if (j.phase === "defense") {   // 🗣️ 최후변론 — 지목된 사람만 발언
+    const nm = esc(j.accusedNick || "");
+    if (j.me.isAccused) {
+      html = `<div style="font-weight:800;margin-bottom:4px">🗣️ 최후변론</div>
+        <p class="mf-hint">당신이 처형 대상으로 지목됐어요. <b>지금은 당신만 발언할 수 있어요.</b> 20초 안에 마지막 변론을 해주세요! (변론 후 다른 사람들이 찬반 투표를 합니다)</p>`;
+    } else {
+      html = `<div style="font-weight:800;margin-bottom:4px">🗣️ 최후변론</div>
+        <p class="mf-hint"><b>${nm}</b>님이 처형 대상으로 지목됐어요. 지금은 <b>${nm}님의 변론을 듣는 시간</b>이에요. 잠시 후 찬반 투표가 시작돼요.</p>`;
+    }
+  } else if (j.phase === "judgment") {   // ⚖️ 찬반 투표
+    const nm = esc(j.accusedNick || "");
+    const jc = j.judgeCounts || { approve: 0, reject: 0 };
+    html = `<div style="font-weight:800;margin-bottom:4px">⚖️ 찬반 투표 — ${nm}님을 처형할까요?</div>
+      <p class="mf-hint">토론하고 투표하세요. <b>찬성(처형)이 반대(생존)보다 많을 때만</b> 처형돼요. (동수·반대 다수는 생존 · 다시 누르면 취소)</p>
+      <div class="mf-judge-count">👍 찬성 <b>${jc.approve}</b> · 👎 반대 <b>${jc.reject}</b></div>`;
+    if (j.me.isAccused) {
+      html += `<p class="mf-hint" style="margin-top:8px">🗣️ 당신은 지목된 본인이라 투표할 수 없어요. 결과를 기다려요.</p>`;
+    } else if (!j.me.alive) {
+      html += `<p class="mf-hint" style="margin-top:8px">👻 유령은 투표할 수 없어요.</p>`;
+    } else if (j.me.muted) {
+      html += `<p class="mf-hint" style="margin-top:8px;color:#FF6B81">🚫 빨딱을 받아 오늘은 투표할 수 없어요.</p>`;
+    } else {
+      html += `<div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn--sm ${j.me.myJudge === "approve" ? "btn--primary" : "btn--ghost"}" data-judge="approve" style="flex:1">👍 찬성 (처형)</button>
+          <button class="btn btn--sm ${j.me.myJudge === "reject" ? "btn--primary" : "btn--ghost"}" data-judge="reject" style="flex:1">👎 반대 (생존)</button>
+        </div>`;
+    }
   }
   el.innerHTML = banner + html;
   const ext = el.querySelector("[data-day-extend]"), sht = el.querySelector("[data-day-shorten]");
   if (ext) ext.onclick = async () => { const r = await api("dayadjust", { dir: "extend" }); if (!r.ok) App.toast(r.error); else { App.toast("⏱️ 낮 시간 +30초"); poll(); } };
   if (sht) sht.onclick = async () => { const r = await api("dayadjust", { dir: "shorten" }); if (!r.ok) App.toast(r.error); else { App.toast("⏱️ 낮 시간 -30초"); poll(); } };
+  el.querySelectorAll("[data-judge]").forEach(b => b.onclick = async () => {   // 찬반 투표(다시 누르면 취소)
+    const v = b.dataset.judge, same = j.me.myJudge === v;
+    b.classList.toggle("btn--primary", !same);   // 즉시 반영
+    const r = await api("judge", { vote: same ? null : v });
+    if (!r.ok) App.toast(r.error); else poll();
+  });
 }
 
 /* ---------- 채팅 ---------- */
