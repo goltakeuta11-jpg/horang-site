@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.107">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.107">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.108">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.108">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.107"></script>
+<script src="assets/inapp.js?v=20260831.108"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.107">
+<link rel="stylesheet" href="assets/style.css?v=20260831.108">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -217,9 +217,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.107"></script>
-<script src="assets/store.js?v=20260831.107"></script>
-<script src="assets/app.js?v=20260831.107"></script>
+<script src="assets/config.js?v=20260831.108"></script>
+<script src="assets/store.js?v=20260831.108"></script>
+<script src="assets/app.js?v=20260831.108"></script>
 <script>
 App.header("game.html");
 
@@ -556,8 +556,8 @@ function renderContext(j) {
     if (j.me.muted) html += `<p class="mf-hint" style="color:#FF6B81">🚫 <b>빨딱을 받았어요!</b> 오늘 낮은 <b>발언도 투표도 할 수 없어요.</b></p>`;
     if (j.me.role === "citizen" && j.me.alive) {   // 시민: 낮 시간 ±30초 (하루 1번)
       html += j.me.dayAdjustUsed
-        ? `<p class="mf-hint" style="color:#7FA8FF">⏱️ 오늘 낮 시간 조절권을 이미 썼어요.</p>`
-        : `<div style="margin-top:8px"><span class="mf-hint">⏱️ 시민 능력 — 낮 시간 조절 (오늘 1번):</span>
+        ? `<p class="mf-hint" style="color:#7FA8FF">⏱️ 오늘은 이미 낮 시간이 조절됐어요. (하루 한 번, 방 전체 공용)</p>`
+        : `<div style="margin-top:8px"><span class="mf-hint">⏱️ 시민 능력 — 낮 시간 조절 (하루 한 번 · 방 전체 공용, 먼저 누른 사람 것만 적용):</span>
              <div style="display:flex;gap:8px;margin-top:6px">
                <button class="btn btn--ghost btn--sm" data-day-extend>➕ 30초 연장</button>
                <button class="btn btn--ghost btn--sm" data-day-shorten>➖ 30초 단축</button>
