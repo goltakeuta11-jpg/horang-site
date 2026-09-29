@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.112">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.112">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.113">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.113">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.112"></script>
+<script src="assets/inapp.js?v=20260831.113"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.112">
+<link rel="stylesheet" href="assets/style.css?v=20260831.113">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -97,6 +97,7 @@
   .msg.mafia .msg__from { color: #FF6B81; } .msg.mafia { color: #ffb3bf; }
   .msg.ghost .msg__from { color: #C79BFF; } .msg.ghost { color: #d9c2ff; }
   .msg.seduce .msg__from { color: #FF8AD4; } .msg.seduce { color: #ffc2e6; }
+  .msg.spec .msg__from { color: #4DD0E1; } .msg.spec { color: #A7E8F0; }   /* 관전자 채팅 */
   .mf-chat__foot { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
   .mf-chat__foot input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 14px; }
@@ -227,9 +228,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.112"></script>
-<script src="assets/store.js?v=20260831.112"></script>
-<script src="assets/app.js?v=20260831.112"></script>
+<script src="assets/config.js?v=20260831.113"></script>
+<script src="assets/store.js?v=20260831.113"></script>
+<script src="assets/app.js?v=20260831.113"></script>
 <script>
 App.header("game.html");
 
@@ -389,12 +390,12 @@ function render(j) {
   const nightDoctor = night && j.canChat && (j.me.role === "doctor" || spyCh === "doctor");
   const defense = j.phase === "defense", judgment = j.phase === "judgment";
   const inp = $("[data-chat-input]");
-  inp.disabled = spec || !j.canChat;
-  inp.placeholder = spec ? "👀 관전 모드 — 채팅할 수 없어요"
+  inp.disabled = spec ? false : !j.canChat;   // 관전자는 관전자끼리 대화 가능
+  inp.placeholder = spec ? "👀 관전자끼리 대화… (플레이어에겐 안 보여요)"
     : j.canChat
     ? (!j.me.alive ? "👻 유령 채팅…" : defense && j.me.isAccused ? "🗣️ 최후변론 — 지금은 당신만 발언 가능…" : judgment ? "⚖️ 찬반 토론…" : j.me.sedChat ? "💘 유혹 대화 (둘만)…" : nightMafia ? "🔪 마피아 채팅…" : nightPolice ? "🔎 경찰팀 채팅…" : nightDoctor ? "🩺 의사팀 채팅…" : (j.speech ? "🎤 연설 중! 지금은 당신만 발언 가능…" : (!j.me.alive ? "👻 유령 채팅…" : "메시지 입력…")))
     : (defense ? "🗣️ 지목된 사람의 최후변론을 듣는 중이에요…" : j.me.muted && judgment ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.muted && j.phase === "day" ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.exhausted && (j.phase === "day" || judgment) ? "😵 유혹 성공! 오늘은 체력 소모로 발언 불가…" : night ? "밤에는 대화할 수 없어요 (특수 역할만)" : j.speech ? "🎤 연설가가 발언 중이에요… 곧 말할 수 있어요" : "지금은 채팅할 수 없어요");
-  $("[data-chat-head]").textContent = spec ? "👀 관전 (모든 대화·밤 채팅까지 보임)"
+  $("[data-chat-head]").textContent = spec ? "👀 관전 (모든 대화 열람 · 관전자끼리 대화)"
     : !j.me.alive ? "👻 유령 채팅 (관전)"
     : defense ? (j.me.isAccused ? "🗣️ 최후변론 (당신 차례)" : "🗣️ 최후변론 (듣는 중)")
     : judgment ? "⚖️ 찬반 토론"
@@ -484,8 +485,9 @@ function renderPlayers(j) {
 
 function renderContext(j) {
   const el = $("[data-context]");
-  if (j.spectator || (j.me && j.me.spectator)) {   // 관전 모드 안내(행동 없음)
-    const phaseTxt = { lobby: "대기실이에요. 방장이 시작하길 기다리는 중.", night: "🌙 밤 — 특수 역할들이 행동 중이에요.", day: "☀️ 낮 — 토론하고 처형할 사람을 투표해요.", defense: "🗣️ 최후변론 — 지목된 사람이 변론 중.", judgment: "⚖️ 찬반 투표 — 처형할지 정하는 중.", ended: "🏁 게임이 끝났어요." }[j.phase] || "";
+  const isSpec = !!(j.spectator || (j.me && j.me.spectator));
+  if (isSpec && j.phase !== "ended") {   // 관전 모드 안내(행동 없음) — 종료 시엔 아래 결과화면으로
+    const phaseTxt = { lobby: "대기실이에요. 방장이 시작하길 기다리는 중.", night: "🌙 밤 — 특수 역할들이 행동 중이에요.", day: "☀️ 낮 — 토론하고 처형할 사람을 투표해요.", defense: "🗣️ 최후변론 — 지목된 사람이 변론 중.", judgment: "⚖️ 찬반 투표 — 처형할지 정하는 중." }[j.phase] || "";
     let extra = "";
     if ((j.phase === "defense" || j.phase === "judgment") && j.accusedNick) extra += `<p class="mf-hint">🎯 지목: <b>${esc(j.accusedNick)}</b></p>`;
     if (j.phase === "judgment" && j.judgeCounts) extra += `<div class="mf-judge-count">👍 찬성 <b>${j.judgeCounts.approve}</b> · 👎 반대 <b>${j.judgeCounts.reject}</b></div>`;
@@ -533,7 +535,12 @@ function renderContext(j) {
       ${c.thief ? `<div class="rv rv-thief">🦝 도둑 <b>${thieves}</b></div>` : ""}
       <div class="rv rv-citizen">🙂 시민 <b>${by("citizen")}</b></div>
     </div>`;
-    if (j.isHost) {
+    const winTxt = j.winner === "mafia" ? "🔪 마피아팀 승리!" : j.winner === "citizen" ? "🎉 시민팀 승리!" : "";
+    if (isSpec) {   // 관전자: 결과+역할 공개만(참여 버튼 없음)
+      el.innerHTML = `<div style="font-weight:800;font-size:16px;margin-bottom:6px">👀 관전 — 게임 종료</div>
+        <p class="mf-hint">${winTxt} 최종 역할을 공개할게요.</p>${reveal}
+        <p class="mf-hint" style="margin-top:10px">방장이 새 게임을 시작하면 대기실이 다시 보여요. 관전을 마치려면 "나가기"를 눌러요.</p>`;
+    } else if (j.isHost) {
       el.innerHTML = `<p class="mf-hint">게임 끝! 역할을 공개할게요.</p>${reveal}
         <button class="btn btn--primary" data-again style="margin-top:12px">🔄 새 게임 (같은 방)</button>
         <button class="btn btn--ghost btn--sm" data-newroom style="margin-top:12px;margin-left:8px">새 방 만들기</button>`;
@@ -672,7 +679,8 @@ function appendMsgs(msgs) {
     else {
       d.className = "msg " + cls;
       const col = (cls === "all") ? ` style="color:${nickColorOf(m.from)}"` : "";   // 일반 채팅은 닉별 색상(특수채널은 채널색 유지)
-      d.innerHTML = `<span class="msg__from"${col}>${esc(m.from)}</span> ${esc(m.text)}`;
+      const tag = cls === "spec" ? "👀 " : "";   // 관전자 채팅 표시
+      d.innerHTML = `<span class="msg__from"${col}>${tag}${esc(m.from)}</span> ${esc(m.text)}`;
     }
     body.appendChild(d); added++;
   });
@@ -683,8 +691,9 @@ async function sendChat() {
   const text = inp.value.trim();
   if (!text) return;
   inp.value = "";
+  const specOp = (sess && sess.spectator) || (S && S.me && S.me.spectator);   // 관전자는 관전자 전용 채널로
   try {
-    const r = await api("chat", { text });
+    const r = await api(specOp ? "specchat" : "chat", { text });
     if (!r.ok) { inp.value = text; App.toast(r.error || "전송 실패"); }   // 서버가 거절하면 글 복원
     else poll();
   } catch (e) {   // 네트워크/타임아웃이면 글이 사라지지 않게 복원 + 안내
