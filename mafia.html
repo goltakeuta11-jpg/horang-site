@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.113">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.113">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.114">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.114">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.113"></script>
+<script src="assets/inapp.js?v=20260831.114"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.113">
+<link rel="stylesheet" href="assets/style.css?v=20260831.114">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -228,9 +228,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.113"></script>
-<script src="assets/store.js?v=20260831.113"></script>
-<script src="assets/app.js?v=20260831.113"></script>
+<script src="assets/config.js?v=20260831.114"></script>
+<script src="assets/store.js?v=20260831.114"></script>
+<script src="assets/app.js?v=20260831.114"></script>
 <script>
 App.header("game.html");
 
@@ -390,12 +390,12 @@ function render(j) {
   const nightDoctor = night && j.canChat && (j.me.role === "doctor" || spyCh === "doctor");
   const defense = j.phase === "defense", judgment = j.phase === "judgment";
   const inp = $("[data-chat-input]");
-  inp.disabled = spec ? false : !j.canChat;   // 관전자는 관전자끼리 대화 가능
-  inp.placeholder = spec ? "👀 관전자끼리 대화… (플레이어에겐 안 보여요)"
+  inp.disabled = spec || !j.canChat;   // 관전자는 채팅 불가(구경만)
+  inp.placeholder = spec ? "👀 관전 모드 — 채팅할 수 없어요 (구경만 가능)"
     : j.canChat
     ? (!j.me.alive ? "👻 유령 채팅…" : defense && j.me.isAccused ? "🗣️ 최후변론 — 지금은 당신만 발언 가능…" : judgment ? "⚖️ 찬반 토론…" : j.me.sedChat ? "💘 유혹 대화 (둘만)…" : nightMafia ? "🔪 마피아 채팅…" : nightPolice ? "🔎 경찰팀 채팅…" : nightDoctor ? "🩺 의사팀 채팅…" : (j.speech ? "🎤 연설 중! 지금은 당신만 발언 가능…" : (!j.me.alive ? "👻 유령 채팅…" : "메시지 입력…")))
     : (defense ? "🗣️ 지목된 사람의 최후변론을 듣는 중이에요…" : j.me.muted && judgment ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.muted && j.phase === "day" ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.exhausted && (j.phase === "day" || judgment) ? "😵 유혹 성공! 오늘은 체력 소모로 발언 불가…" : night ? "밤에는 대화할 수 없어요 (특수 역할만)" : j.speech ? "🎤 연설가가 발언 중이에요… 곧 말할 수 있어요" : "지금은 채팅할 수 없어요");
-  $("[data-chat-head]").textContent = spec ? "👀 관전 (모든 대화 열람 · 관전자끼리 대화)"
+  $("[data-chat-head]").textContent = spec ? "👀 관전 (모든 대화 열람만)"
     : !j.me.alive ? "👻 유령 채팅 (관전)"
     : defense ? (j.me.isAccused ? "🗣️ 최후변론 (당신 차례)" : "🗣️ 최후변론 (듣는 중)")
     : judgment ? "⚖️ 찬반 토론"
@@ -691,9 +691,8 @@ async function sendChat() {
   const text = inp.value.trim();
   if (!text) return;
   inp.value = "";
-  const specOp = (sess && sess.spectator) || (S && S.me && S.me.spectator);   // 관전자는 관전자 전용 채널로
   try {
-    const r = await api(specOp ? "specchat" : "chat", { text });
+    const r = await api("chat", { text });
     if (!r.ok) { inp.value = text; App.toast(r.error || "전송 실패"); }   // 서버가 거절하면 글 복원
     else poll();
   } catch (e) {   // 네트워크/타임아웃이면 글이 사라지지 않게 복원 + 안내
