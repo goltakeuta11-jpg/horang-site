@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.110">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.110">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.111">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.111">
 <meta property="og:type" content="website">
 <meta property="og:title" content="마피아 · 호랑봇 허브">
 <meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
 <meta property="og:url" content="https://horangbot.co.kr/mafia.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.110"></script>
+<script src="assets/inapp.js?v=20260831.111"></script>
 <title>마피아 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.110">
+<link rel="stylesheet" href="assets/style.css?v=20260831.111">
 <style>
   .mf-wrap { max-width: 900px; }
   /* 셋업 */
@@ -164,6 +164,12 @@
         <input class="mf-input" data-join-nick maxlength="16" placeholder="내 닉네임">
         <button class="btn btn--primary" data-join style="width:100%">참가하기</button>
       </div>
+      <div class="mf-box">
+        <h2>👀 관전하기</h2>
+        <p class="mf-hint" style="margin:-4px 0 10px;font-size:12.5px">진행 중인 게임을 구경만 해요. <b>모든 사람의 역할이 다 보이고</b>, 채팅·투표는 할 수 없어요.</p>
+        <input class="mf-input" data-spec-code maxlength="4" placeholder="방 코드 (4자리)" style="text-transform:uppercase">
+        <button class="btn btn--ghost" data-spectate style="width:100%">관전 입장</button>
+      </div>
     </div>
   </section>
 
@@ -221,9 +227,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.110"></script>
-<script src="assets/store.js?v=20260831.110"></script>
-<script src="assets/app.js?v=20260831.110"></script>
+<script src="assets/config.js?v=20260831.111"></script>
+<script src="assets/store.js?v=20260831.111"></script>
+<script src="assets/app.js?v=20260831.111"></script>
 <script>
 App.header("game.html");
 
@@ -297,8 +303,16 @@ $("[data-join]").onclick = async () => {
   if (!j.ok) return App.toast(j.error || "참가 실패");
   saveSess({ code: j.code, pid: j.pid }); sinceId = 0; startGame();
 };
+$("[data-spectate]").onclick = async () => {
+  const code = $("[data-spec-code]").value.trim().toUpperCase();
+  if (!code) return App.toast("방 코드를 입력해주세요.");
+  const j = await api("spectate", { code });
+  if (!j.ok) return App.toast(j.error || "관전 입장 실패");
+  saveSess({ code: j.code, pid: j.pid, spectator: true }); sinceId = 0; startGame();
+};
 $("[data-leave]").onclick = async () => {
-  if (S && S.phase !== "lobby" && S.phase !== "ended" && !confirm("게임 도중 나가면 다시 못 들어와요. 나갈까요?")) return;
+  const isSpec = sess && sess.spectator;
+  if (!isSpec && S && S.phase !== "lobby" && S.phase !== "ended" && !confirm("게임 도중 나가면 다시 못 들어와요. 나갈까요?")) return;
   try { if (sess) await api("leave"); } catch (e) {}
   clearSess(); stopPoll(); location.href = "game.html";
 };
@@ -345,12 +359,15 @@ function render(j) {
   const codeEl = $("[data-code]"); codeEl.textContent = j.code;
   codeEl.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(j.code); App.toast("코드 복사됨: " + j.code); };
 
-  // 방장 전용: 방 폭파 버튼 (게임 종료 후엔 숨김 — 새 게임/새 방으로 처리)
+  const spec = !!(j.spectator || (j.me && j.me.spectator));   // 관전 모드
+
+  // 방장 전용: 방 폭파 버튼 (게임 종료 후엔 숨김 · 관전자에겐 숨김)
   const closeBtn = $("[data-closeroom]");
   closeBtn.hidden = !(j.isHost && j.phase !== "ended");
 
   const rEl = $("[data-myrole]");
-  if (j.me.role) { const r = RL(j.me.role); rEl.hidden = false; rEl.className = "mf-role " + r[2]; rEl.textContent = r[0] + " " + r[1]; }
+  if (spec) { rEl.hidden = false; rEl.className = "mf-role role-spy"; rEl.textContent = "👀 관전 모드"; }
+  else if (j.me.role) { const r = RL(j.me.role); rEl.hidden = false; rEl.className = "mf-role " + r[2]; rEl.textContent = r[0] + " " + r[1]; }
   else rEl.hidden = true;
 
   // 승리 배너
@@ -372,11 +389,13 @@ function render(j) {
   const nightDoctor = night && j.canChat && (j.me.role === "doctor" || spyCh === "doctor");
   const defense = j.phase === "defense", judgment = j.phase === "judgment";
   const inp = $("[data-chat-input]");
-  inp.disabled = !j.canChat;
-  inp.placeholder = j.canChat
+  inp.disabled = spec || !j.canChat;
+  inp.placeholder = spec ? "👀 관전 모드 — 채팅할 수 없어요"
+    : j.canChat
     ? (!j.me.alive ? "👻 유령 채팅…" : defense && j.me.isAccused ? "🗣️ 최후변론 — 지금은 당신만 발언 가능…" : judgment ? "⚖️ 찬반 토론…" : j.me.sedChat ? "💘 유혹 대화 (둘만)…" : nightMafia ? "🔪 마피아 채팅…" : nightPolice ? "🔎 경찰팀 채팅…" : nightDoctor ? "🩺 의사팀 채팅…" : (j.speech ? "🎤 연설 중! 지금은 당신만 발언 가능…" : (!j.me.alive ? "👻 유령 채팅…" : "메시지 입력…")))
     : (defense ? "🗣️ 지목된 사람의 최후변론을 듣는 중이에요…" : j.me.muted && judgment ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.muted && j.phase === "day" ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.exhausted && (j.phase === "day" || judgment) ? "😵 유혹 성공! 오늘은 체력 소모로 발언 불가…" : night ? "밤에는 대화할 수 없어요 (특수 역할만)" : j.speech ? "🎤 연설가가 발언 중이에요… 곧 말할 수 있어요" : "지금은 채팅할 수 없어요");
-  $("[data-chat-head]").textContent = !j.me.alive ? "👻 유령 채팅 (관전)"
+  $("[data-chat-head]").textContent = spec ? "👀 관전 (공개 대화만 보임)"
+    : !j.me.alive ? "👻 유령 채팅 (관전)"
     : defense ? (j.me.isAccused ? "🗣️ 최후변론 (당신 차례)" : "🗣️ 최후변론 (듣는 중)")
     : judgment ? "⚖️ 찬반 토론"
     : (j.me.muted && j.phase === "day") ? "🚫 발언 불가 (빨딱)"
@@ -391,11 +410,12 @@ function render(j) {
 
 function renderPlayers(j) {
   const wrap = $("[data-players]");
+  const spec = !!(j.spectator || (j.me && j.me.spectator));   // 관전자는 행동 불가·전원 역할 공개
   const night = j.phase === "night", day = j.phase === "day";
-  const canSeduce = j.me.role === "gay" && !j.seduced;
-  const canReport = j.me.role === "reporter" && j.day === 3 && !j.me.reporterUsed;
-  const iCanNight = night && j.me.alive && !j.me.blocked && (["mafia", "doctor", "police", "mute"].includes(j.me.role) || (j.me.role === "spy" && !j.me.spyContact) || canSeduce || canReport);
-  const iCanVote = day && j.me.alive && !j.me.muted;   // 빨딱 맞으면 투표 불가
+  const canSeduce = !spec && j.me.role === "gay" && !j.seduced;
+  const canReport = !spec && j.me.role === "reporter" && j.day === 3 && !j.me.reporterUsed;
+  const iCanNight = !spec && night && j.me.alive && !j.me.blocked && (["mafia", "doctor", "police", "mute"].includes(j.me.role) || (j.me.role === "spy" && !j.me.spyContact) || canSeduce || canReport);
+  const iCanVote = !spec && day && j.me.alive && !j.me.muted;   // 빨딱 맞으면 투표 불가
   let label = `참가자 ${j.players.filter(p => p.alive).length}/${j.players.length}명 생존`;
   if (j.counts) label += ` · 🔪 마피아 ${j.counts.mafia}명`;
   $("[data-players-label]").textContent = label;
@@ -414,7 +434,8 @@ function renderPlayers(j) {
   wrap.innerHTML = j.players.map(p => {
     const roleTag = p.role ? `<span class="mf-role ${RL(p.role)[2]}" style="font-size:10px;padding:1px 6px">${RL(p.role)[0]}${RL(p.role)[1]}</span>` : "";
     let sub = "";
-    if (!p.alive) sub = "💀 사망";
+    if (spec) sub = (p.role ? roleTag : "") + (p.alive ? "" : " 💀");   // 관전: 전원 역할 상시 공개
+    else if (!p.alive) sub = "💀 사망";
     else if (j.me.role === "mafia" && night && p.role === "mafia") sub = roleTag;
     else if (p.role && (j.phase === "ended")) sub = roleTag;
     else if (p.host && j.phase === "lobby") sub = "👑 방장";
@@ -463,6 +484,16 @@ function renderPlayers(j) {
 
 function renderContext(j) {
   const el = $("[data-context]");
+  if (j.spectator || (j.me && j.me.spectator)) {   // 관전 모드 안내(행동 없음)
+    const phaseTxt = { lobby: "대기실이에요. 방장이 시작하길 기다리는 중.", night: "🌙 밤 — 특수 역할들이 행동 중이에요.", day: "☀️ 낮 — 토론하고 처형할 사람을 투표해요.", defense: "🗣️ 최후변론 — 지목된 사람이 변론 중.", judgment: "⚖️ 찬반 투표 — 처형할지 정하는 중.", ended: "🏁 게임이 끝났어요." }[j.phase] || "";
+    let extra = "";
+    if ((j.phase === "defense" || j.phase === "judgment") && j.accusedNick) extra += `<p class="mf-hint">🎯 지목: <b>${esc(j.accusedNick)}</b></p>`;
+    if (j.phase === "judgment" && j.judgeCounts) extra += `<div class="mf-judge-count">👍 찬성 <b>${j.judgeCounts.approve}</b> · 👎 반대 <b>${j.judgeCounts.reject}</b></div>`;
+    el.innerHTML = `<div style="font-weight:800;font-size:16px;margin-bottom:6px">👀 관전 모드</div>
+      <p class="mf-hint">모든 사람의 <b>역할이 오른쪽 참여자 목록에 다 보여요.</b> 채팅·투표는 할 수 없고 구경만 가능해요.</p>
+      <p class="mf-hint" style="margin-top:8px">${phaseTxt}</p>${extra}`;
+    return;
+  }
   if (j.phase === "lobby") {
     const n = j.players.length;
     const canStart = j.isHost && n >= 4;
