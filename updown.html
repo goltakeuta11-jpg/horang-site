@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.120">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.120">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.121">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.121">
 <meta property="og:type" content="website">
 <meta property="og:title" content="진실게임 · 호랑봇 허브">
 <meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.120"></script>
+<script src="assets/inapp.js?v=20260831.121"></script>
 <title>진실게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.120">
+<link rel="stylesheet" href="assets/style.css?v=20260831.121">
 <style>
   .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -225,9 +225,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.120"></script>
-<script src="assets/store.js?v=20260831.120"></script>
-<script src="assets/app.js?v=20260831.120"></script>
+<script src="assets/config.js?v=20260831.121"></script>
+<script src="assets/store.js?v=20260831.121"></script>
+<script src="assets/app.js?v=20260831.121"></script>
 <script>
 App.header("game.html");
 
@@ -404,7 +404,7 @@ function renderStage(j) {
     // 답변
     if (j.qDone) {
       if (!j.aDone && amTarget) {
-        h += `<div class="ud-qa"><label>A. 답변 (당신이 지목됨)</label><textarea data-a maxlength="500" placeholder="솔직하게 답해봐요 😌"></textarea>
+        h += `<div class="ud-qa"><label>A. 답변 (당신이 지목됨)</label><textarea data-a maxlength="500" placeholder="답변시 짧막한 이유를 덧붙여서 답변하시면 소소한 웃음 포인트가 될 수 있습니다!"></textarea>
           <div class="ud-qa__row"><button class="btn btn--primary btn--sm" data-a-save style="flex:1">답변 확정</button></div></div>`;
       } else if (j.aDone) {
         h += `<div class="ud-qa"><label>A. 답변</label><div class="ud-qa__show">${esc(j.answer)}</div></div>`;
