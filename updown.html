@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.128">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.128">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.129">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.129">
 <meta property="og:type" content="website">
 <meta property="og:title" content="진실게임 · 호랑봇 허브">
 <meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.128"></script>
+<script src="assets/inapp.js?v=20260831.129"></script>
 <title>진실게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.128">
+<link rel="stylesheet" href="assets/style.css?v=20260831.129">
 <style>
   .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -254,9 +254,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.128"></script>
-<script src="assets/store.js?v=20260831.128"></script>
-<script src="assets/app.js?v=20260831.128"></script>
+<script src="assets/config.js?v=20260831.129"></script>
+<script src="assets/store.js?v=20260831.129"></script>
+<script src="assets/app.js?v=20260831.129"></script>
 <script>
 App.header("game.html");
 
@@ -416,15 +416,19 @@ function renderStage(j) {
   if (qaTyping && j.phase === "qa") return;
   if (j.phase === "ask") {
     st.hidden = false;
+    const amMC2 = !!(j.isMC || j.isHost);
+    const skipBtn = amMC2 ? `<div class="ud-qa__row" style="margin-top:10px"><button class="btn btn--ghost btn--sm" data-next style="flex:1">⏭️ 질문할 사람 없으면 다음 사람으로</button></div>` : "";
     if (j.canAsk) {
-      st.innerHTML = `<div class="ud-stage__head">😵 ${esc(j.targetNick)}님이 5번 틀렸어요!</div>
+      st.innerHTML = `<div class="ud-stage__head">😵 ${esc(j.targetNick)}님이 ${j.missLimit}번 틀렸어요!</div>
         <p class="mf-hint" style="margin-bottom:10px">먼저 <b>질문</b> 버튼을 누른 사람이 ${esc(j.targetNick)}님에게 진실게임 질문을 할 수 있어요!</p>
-        <button class="btn btn--primary ud-ask-btn" data-ask>🙋 질문하기!</button>`;
+        <button class="btn btn--primary ud-ask-btn" data-ask>🙋 질문하기!</button>${skipBtn}`;
       st.querySelector("[data-ask]").onclick = async () => { const r = await api("ask"); if (!r.ok) App.toast(r.error); else poll(); };
     } else {
-      st.innerHTML = `<div class="ud-stage__head">😵 ${esc(j.targetNick)}님이 5번 틀렸어요!</div>
-        <p class="mf-hint">당신이 지목됐어요. 누군가 질문을 할 거예요. 잠시 기다려주세요 😬</p>`;
+      st.innerHTML = `<div class="ud-stage__head">😵 ${esc(j.targetNick)}님이 ${j.missLimit}번 틀렸어요!</div>
+        <p class="mf-hint">당신이 지목됐어요. 누군가 질문을 할 거예요. 잠시 기다려주세요 😬</p>${skipBtn}`;
     }
+    const nx0 = st.querySelector("[data-next]");
+    if (nx0) nx0.onclick = async () => { if (!confirm("질문 없이 다음 사람으로 넘길까요?")) return; const r = await api("next"); if (!r.ok) App.toast(r.error); else poll(); };
     return;
   }
   if (j.phase === "qa") {
