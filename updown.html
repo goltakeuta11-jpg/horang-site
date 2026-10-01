@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.115">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.115">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.116">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.116">
 <meta property="og:type" content="website">
 <meta property="og:title" content="업다운 · 호랑봇 허브">
-<meta property="og:description" content="1~100 숨은 숫자를 맞히는 업다운 게임">
+<meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.115"></script>
+<script src="assets/inapp.js?v=20260831.116"></script>
 <title>업다운 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.115">
+<link rel="stylesheet" href="assets/style.css?v=20260831.116">
 <style>
-  .ud-wrap { max-width: 720px; }
+  .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
   @media (max-width: 620px) { .ud-setup { grid-template-columns: 1fr; } }
   .ud-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px; }
@@ -24,40 +24,65 @@
     color: var(--text); border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 15px; margin-bottom: 10px; }
   .ud-input:focus { outline: none; border-color: var(--accent); }
   /* 상태바 */
-  .ud-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--panel);
-    border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 14px; }
-  .ud-phase { font-size: 17px; font-weight: 800; }
-  .ud-code { font-weight: 800; letter-spacing: 2px; background: var(--bg); border: 1px solid var(--line);
-    border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .ud-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--panel);
+    border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; }
+  .ud-bar .t { font-weight: 800; font-size: 15px; }
+  .ud-code { font-weight: 800; letter-spacing: 2px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px 9px; cursor: pointer; font-size: 13px; }
   .ud-close { margin-left: auto; background: rgba(255,92,122,.14); border: 1px solid rgba(255,92,122,.5); color: #FF6B81;
-    border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
-  .ud-close:hover { background: rgba(255,92,122,.28); }
-  /* 범위 힌트 */
-  .ud-range { text-align: center; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 14px; }
-  .ud-range__big { font-size: 15px; color: var(--text-dim); }
-  .ud-range__nums { font-size: 30px; font-weight: 900; margin-top: 6px; font-variant-numeric: tabular-nums; }
+    border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+  /* 순서 바 */
+  .ud-order { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; }
+  .ud-order__h { font-size: 12.5px; color: var(--text-dim); font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ud-order__list { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ud-turn { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 700; }
+  .ud-turn.cur { background: var(--accent); color: #10131a; border-color: var(--accent); }
+  .ud-turn__n { opacity: .6; font-size: 11px; }
+  .ud-turn button { background: none; border: 0; color: inherit; cursor: pointer; font-size: 11px; padding: 0 1px; opacity: .7; }
+  /* 2열 레이아웃 */
+  .ud-cols { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
+  @media (max-width: 760px) { .ud-cols { grid-template-columns: 1fr; } }
+  .ud-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; }
+  .ud-panel h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; }
+  /* 공지 */
+  .ud-notice { font-size: 14px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+  .ud-notice.empty { color: var(--text-dim); }
+  /* 채팅 */
+  .ud-chat { display: flex; flex-direction: column; height: 300px; }
+  .ud-chat__body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+  .ud-msg { font-size: 13.5px; line-height: 1.45; word-break: break-word; }
+  .ud-msg__from { font-weight: 800; }
+  .ud-msg.sys { color: var(--text-dim); font-size: 12px; }
+  .ud-chat__foot { display: flex; gap: 6px; }
+  .ud-chat__foot input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13.5px; }
+  /* 게임 영역 */
+  .ud-range { text-align: center; padding: 16px; }
+  .ud-range__cur { font-size: 14px; color: var(--accent); font-weight: 800; margin-bottom: 8px; }
+  .ud-range__nums { font-size: 32px; font-weight: 900; font-variant-numeric: tabular-nums; }
   .ud-range__nums b { color: var(--accent); }
-  .ud-range__tries { font-size: 12.5px; color: var(--text-dim); margin-top: 6px; }
-  /* 입력 */
-  .ud-guess { display: flex; gap: 8px; margin-bottom: 14px; }
+  .ud-miss { margin-top: 10px; font-size: 18px; letter-spacing: 3px; }
+  .ud-guess { display: flex; gap: 8px; margin-top: 12px; }
   .ud-guess input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text);
     border-radius: 10px; padding: 12px 14px; font: inherit; font-size: 18px; font-weight: 800; text-align: center; }
   .ud-guess input:disabled { opacity: .5; }
-  /* 결과 */
-  .ud-win { text-align: center; padding: 18px; border-radius: var(--radius-sm); font-weight: 800; font-size: 20px; margin-bottom: 14px;
-    background: rgba(52,211,153,.16); color: #34D399; border: 1px solid #34D399; }
-  /* 기록 */
-  .ud-hist { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; max-height: 300px; overflow-y: auto; }
-  .ud-hist h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 2px 0 8px; }
-  .ud-g { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .ud-hist { max-height: 160px; overflow-y: auto; }
+  .ud-g { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
   .ud-g:last-child { border-bottom: 0; }
-  .ud-g__num { font-weight: 900; font-variant-numeric: tabular-nums; min-width: 42px; }
-  .ud-g__nick { color: var(--text-dim); font-size: 12.5px; }
+  .ud-g__num { font-weight: 900; font-variant-numeric: tabular-nums; min-width: 38px; }
+  .ud-g__nick { color: var(--text-dim); font-size: 12px; }
   .ud-g__tag { margin-left: auto; font-weight: 800; font-size: 13px; }
   .ud-up { color: #FF9E6B; } .ud-down { color: #7FA8FF; } .ud-hit { color: #34D399; }
-  /* 점수판 */
-  .ud-score { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-  .ud-score span { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; font-weight: 700; }
+  /* 질문/답변 무대 */
+  .ud-stage { background: linear-gradient(180deg, rgba(255,171,64,.08), var(--panel)); border: 1.5px solid var(--accent); }
+  .ud-stage__head { font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+  .ud-ask-btn { width: 100%; font-size: 17px; font-weight: 900; padding: 16px; animation: udpulse 1.2s ease-in-out infinite; }
+  @keyframes udpulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+  .ud-qa { margin-top: 10px; }
+  .ud-qa label { font-size: 12.5px; color: var(--text-dim); font-weight: 700; display: block; margin: 8px 0 4px; }
+  .ud-qa textarea { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical; min-height: 54px; }
+  .ud-qa__show { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .ud-qa__row { display: flex; gap: 8px; margin-top: 6px; }
   .ud-reconnect { background: rgba(255,92,122,.16); border: 1px solid #FF6B81; color: #FF6B81; border-radius: 10px; padding: 9px 14px; margin-bottom: 12px; font-size: 13px; font-weight: 700; text-align: center; }
 </style>
 </head>
@@ -67,17 +92,17 @@
 
 <main class="wrap page ud-wrap">
   <p class="page__eyebrow"><a href="game.html" style="color:inherit;text-decoration:none">🎮 게임</a> › 업다운</p>
-  <h1 class="page__title">🔢 업다운</h1>
+  <h1 class="page__title">🔢 업다운 <span style="font-size:13px;color:var(--text-dim)">+ 진실게임</span></h1>
 
   <div data-noserver hidden class="empty" style="padding:30px"><strong>이 게임은 호랑봇 서버에서만 돌아가요</strong>horangbot.co.kr 에서 접속해주세요.</div>
 
   <!-- 셋업 -->
   <section data-setup hidden>
-    <p class="page__desc">1~100 중 숨은 숫자를 맞혀요! 부른 숫자가 높으면 ⬇️ 다운, 낮으면 ⬆️ 업. 먼저 맞히는 사람이 승리!</p>
-    <p class="mf-hint" data-create-note hidden style="margin:-4px 0 12px;color:var(--text-dim)">💡 방 생성은 관리자만 할 수 있어요. 관리자가 만든 방 코드를 받아 참가해주세요.</p>
+    <p class="page__desc">진행자가 순서를 정하고, 순서대로 1~99 숨은 숫자를 맞혀요. 틀리면 업/다운 힌트! <b>5번 틀리면 질문</b>을 받아요(진실게임). 먼저 맞히면 다음 사람으로.</p>
+    <p class="mf-hint" data-create-note hidden style="margin:-4px 0 12px;color:var(--text-dim)">💡 방 생성은 진행자(관리자)만 할 수 있어요. 받은 코드로 참가해주세요.</p>
     <div class="ud-setup">
       <div class="ud-box" data-create-box>
-        <h2>➕ 방 만들기</h2>
+        <h2>➕ 방 만들기 (진행자)</h2>
         <input class="ud-input" data-create-nick maxlength="16" placeholder="내 닉네임">
         <button class="btn btn--primary" data-create style="width:100%">방 만들기</button>
       </div>
@@ -94,40 +119,70 @@
   <section data-game hidden>
     <div class="ud-reconnect" data-reconnect hidden>🔄 서버와 연결이 잠깐 끊겼어요. 다시 연결 중…</div>
     <div class="ud-bar">
-      <span class="ud-phase" data-phase>—</span>
+      <span class="t" data-phase>🔢 업다운</span>
       <span class="ud-code" data-code title="코드 복사"></span>
-      <button class="ud-close" data-closeroom hidden title="방 닫기">💥 방 닫기</button>
+      <button class="ud-close" data-closeroom hidden>💥 방 닫기</button>
     </div>
 
-    <div class="ud-win" data-win hidden></div>
-
-    <div class="ud-score" data-score></div>
-
-    <div class="ud-range">
-      <div class="ud-range__big" data-range-label>이 사이에 숨어있어요</div>
-      <div class="ud-range__nums" data-range></div>
-      <div class="ud-range__tries" data-tries></div>
+    <!-- 순서 바 -->
+    <div class="ud-order">
+      <div class="ud-order__h">
+        <span>🎯 순서 <span style="font-weight:400">(진행자가 정해요)</span></span>
+        <button class="btn btn--ghost btn--sm" data-shuffle hidden style="padding:2px 10px;font-size:12px">🔀 섞기</button>
+      </div>
+      <div class="ud-order__list" data-order></div>
     </div>
 
-    <div class="ud-guess">
-      <input data-guess-input type="number" min="1" max="100" inputmode="numeric" placeholder="1~100 숫자 입력">
-      <button class="btn btn--primary" data-guess-btn>입력</button>
-    </div>
+    <div class="ud-cols">
+      <!-- 왼쪽: 공지 + 일반채팅 -->
+      <div>
+        <div class="ud-panel">
+          <h3>📢 공지</h3>
+          <div class="ud-notice" data-notice></div>
+          <div data-notice-edit hidden style="margin-top:8px">
+            <textarea class="ud-input" data-notice-input maxlength="500" style="min-height:48px;margin-bottom:6px" placeholder="진행자 공지를 적어요"></textarea>
+            <button class="btn btn--ghost btn--sm" data-notice-save style="width:100%">공지 저장</button>
+          </div>
+        </div>
+        <div class="ud-panel ud-chat">
+          <h3>💬 일반 채팅</h3>
+          <div class="ud-chat__body" data-chat></div>
+          <div class="ud-chat__foot">
+            <input data-chat-input maxlength="300" placeholder="메시지…">
+            <button class="btn btn--primary btn--sm" data-chat-send>전송</button>
+          </div>
+        </div>
+      </div>
 
-    <div data-restart-wrap hidden style="text-align:center;margin-bottom:14px">
-      <button class="btn btn--primary" data-restart>🔄 새 라운드 (같은 방)</button>
-    </div>
+      <!-- 오른쪽: 게임 + 질문/답변 무대 -->
+      <div>
+        <div class="ud-panel">
+          <div class="ud-range">
+            <div class="ud-range__cur" data-cur></div>
+            <div class="ud-range__nums" data-range></div>
+            <div class="ud-miss" data-miss></div>
+          </div>
+          <div class="ud-guess">
+            <input data-guess-input type="number" min="1" max="99" inputmode="numeric" placeholder="1~99">
+            <button class="btn btn--primary" data-guess-btn>입력</button>
+          </div>
+        </div>
 
-    <div class="ud-hist">
-      <h3>📜 추측 기록</h3>
-      <div data-hist></div>
+        <!-- 질문/답변 무대 (5번 틀렸을 때) -->
+        <div class="ud-panel ud-stage" data-stage hidden></div>
+
+        <div class="ud-panel">
+          <h3>📜 추측 기록</h3>
+          <div class="ud-hist" data-hist></div>
+        </div>
+      </div>
     </div>
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.115"></script>
-<script src="assets/store.js?v=20260831.115"></script>
-<script src="assets/app.js?v=20260831.115"></script>
+<script src="assets/config.js?v=20260831.116"></script>
+<script src="assets/store.js?v=20260831.116"></script>
+<script src="assets/app.js?v=20260831.116"></script>
 <script>
 App.header("game.html");
 
@@ -137,6 +192,7 @@ const $ = s => document.querySelector(s);
 const esc = (App && App.esc) ? App.esc : (s => ("" + s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])));
 
 let sess = null, sinceId = 0, pollTimer = null, polling = false, S = null;
+let noticeEditing = false, qaTyping = false;   // 입력 중엔 폴링이 안 덮게
 try { sess = JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) {}
 function saveSess(s) { sess = s; try { localStorage.setItem(LS, JSON.stringify(s)); } catch (e) {} }
 function clearSess() { sess = null; try { localStorage.removeItem(LS); } catch (e) {} }
@@ -188,63 +244,171 @@ async function poll() {
   if (pollFails) { pollFails = 0; const rc = $("[data-reconnect]"); if (rc) rc.hidden = true; }
   if (!j.ok) { if (j.gone) { clearSess(); stopPoll(); show("setup"); App.toast(j.error || "다시 입장해주세요."); } return; }
   S = j;
-  if (j.msgs) for (const m of j.msgs) if (m.id > sinceId) sinceId = m.id;
+  if (j.msgs) { appendChat(j.msgs); for (const m of j.msgs) if (m.id > sinceId) sinceId = m.id; }
   try { render(j); } catch (e) { console.error("[updown] render error:", e); }
+}
+
+/* 채팅 append */
+const seenMsg = new Set();
+function appendChat(msgs) {
+  const body = $("[data-chat]");
+  const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 50;
+  let added = 0;
+  for (const m of msgs) {
+    if (seenMsg.has(m.id)) continue; seenMsg.add(m.id);
+    const d = document.createElement("div");
+    if (m.sys) { d.className = "ud-msg sys"; d.textContent = m.text; }
+    else { d.className = "ud-msg"; d.innerHTML = `<span class="ud-msg__from">${esc(m.from)}</span> ${esc(m.text)}`; }
+    body.appendChild(d); added++;
+  }
+  if (added && atBottom) body.scrollTop = body.scrollHeight;
 }
 
 /* 렌더 */
 function render(j) {
-  $("[data-phase]").textContent = (j.over ? "🏁 라운드 종료" : "🔢 진행 중") + (j.round ? " · " + j.round + "라운드" : "");
+  const phaseTxt = j.phase === "ask" ? "❓ 질문 대기" : j.phase === "qa" ? "🎤 질문/답변" : "🔢 추측 중";
+  $("[data-phase]").textContent = phaseTxt + (j.round ? " · " + j.round + "턴" : "");
   const codeEl = $("[data-code]"); codeEl.textContent = j.code;
   codeEl.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(j.code); App.toast("코드 복사됨: " + j.code); };
   $("[data-closeroom]").hidden = !j.isHost;
+  $("[data-shuffle]").hidden = !j.isHost;
 
-  // 승리 배너
-  const winEl = $("[data-win]");
-  if (j.over && j.winner) { winEl.hidden = false; winEl.innerHTML = `🎯 <b>${esc(j.winner)}</b>님 정답! (숨은 숫자: <b>${j.secret}</b>)`; }
-  else winEl.hidden = true;
+  // 순서 바
+  $("[data-order]").innerHTML = (j.turnOrder || []).map((p, i) => {
+    const cur = p.pid === j.curPid;
+    const arrows = j.isHost ? `<button data-mv="${p.pid}" data-dir="-1" title="앞으로">◀</button><button data-mv="${p.pid}" data-dir="1" title="뒤로">▶</button>` : "";
+    return `<span class="ud-turn ${cur ? "cur" : ""}"><span class="ud-turn__n">${i + 1}</span>${esc(p.nick)}${arrows}</span>`;
+  }).join("") || `<span class="ud-turn">아직 없음</span>`;
 
-  // 점수판
-  $("[data-score]").innerHTML = (j.players || []).slice().sort((a, b) => b.score - a.score)
-    .map(p => `<span>${p.isMe ? "⭐ " : ""}${esc(p.nick)} ${p.score}점${p.host ? " 👑" : ""}</span>`).join("");
+  // 공지
+  const nEl = $("[data-notice]");
+  if (j.notice) { nEl.className = "ud-notice"; nEl.textContent = j.notice; }
+  else { nEl.className = "ud-notice empty"; nEl.textContent = j.isHost ? "공지가 없어요. 아래에서 적어보세요." : "공지가 없어요."; }
+  $("[data-notice-edit]").hidden = !j.isHost;
+  if (j.isHost && !noticeEditing) $("[data-notice-input]").value = j.notice || "";
 
-  // 범위
-  const rangeEl = $("[data-range]"), rlabel = $("[data-range-label]");
-  if (j.over) { rlabel.textContent = "정답은"; rangeEl.innerHTML = `<b>${j.secret}</b>`; }
-  else { rlabel.textContent = "이 사이에 숨어있어요"; rangeEl.innerHTML = `<b>${j.lo}</b> ~ <b>${j.hi}</b>`; }
-  $("[data-tries]").textContent = "지금까지 " + (j.tries || 0) + "번 추측";
+  // 범위 + 현재 차례 + 미스
+  $("[data-cur]").textContent = j.curNick ? (j.isMyTurn ? "🟢 내 차례! 숫자를 맞혀봐요" : `지금 ${j.curNick}님 차례`) : "";
+  $("[data-range]").innerHTML = (j.phase === "ask" || j.phase === "qa")
+    ? `정답은 <b>${j.secret}</b> 였어요`
+    : `<b>${j.lo}</b> ~ <b>${j.hi}</b>`;
+  let miss = "";
+  for (let i = 0; i < j.missLimit; i++) miss += i < j.misses ? "❌" : "⚪";
+  $("[data-miss]").innerHTML = miss + ` <span style="font-size:12px;color:var(--text-dim)">${j.misses}/${j.missLimit}</span>`;
 
-  // 입력/재시작
+  // 추측 입력
   const inp = $("[data-guess-input]"), gbtn = $("[data-guess-btn]");
-  inp.disabled = j.over; gbtn.disabled = j.over;
-  $("[data-restart-wrap]").hidden = !(j.over && j.isHost);
+  inp.disabled = !j.isMyTurn; gbtn.disabled = !j.isMyTurn;
+  inp.placeholder = j.isMyTurn ? "1~99 입력!" : (j.curNick ? j.curNick + "님 차례…" : "대기 중");
+
+  // 질문/답변 무대
+  renderStage(j);
 
   // 기록
   $("[data-hist]").innerHTML = (j.guesses || []).slice().reverse().map(g => {
-    const tag = g.hint === "hit" ? `<span class="ud-g__tag ud-hit">🎯 정답!</span>`
+    const tag = g.hint === "hit" ? `<span class="ud-g__tag ud-hit">🎯 정답</span>`
       : g.hint === "down" ? `<span class="ud-g__tag ud-down">⬇️ 다운</span>`
       : `<span class="ud-g__tag ud-up">⬆️ 업</span>`;
     return `<div class="ud-g"><span class="ud-g__num">${g.num}</span><span class="ud-g__nick">${esc(g.nick)}</span>${tag}</div>`;
-  }).join("") || `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">아직 추측이 없어요. 숫자를 입력해보세요!</p>`;
+  }).join("") || `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">이번 턴 추측이 아직 없어요.</p>`;
+}
+
+function renderStage(j) {
+  const st = $("[data-stage]");
+  if (j.phase === "ask") {
+    st.hidden = false;
+    if (j.canAsk) {
+      st.innerHTML = `<div class="ud-stage__head">😵 ${esc(j.targetNick)}님이 5번 틀렸어요!</div>
+        <p class="mf-hint" style="margin-bottom:10px">먼저 <b>질문</b> 버튼을 누른 사람이 ${esc(j.targetNick)}님에게 진실게임 질문을 할 수 있어요!</p>
+        <button class="btn btn--primary ud-ask-btn" data-ask>🙋 질문하기!</button>`;
+      st.querySelector("[data-ask]").onclick = async () => { const r = await api("ask"); if (!r.ok) App.toast(r.error); else poll(); };
+    } else {
+      st.innerHTML = `<div class="ud-stage__head">😵 ${esc(j.targetNick)}님이 5번 틀렸어요!</div>
+        <p class="mf-hint">당신이 지목됐어요. 누군가 질문을 할 거예요. 잠시 기다려주세요 😬</p>`;
+    }
+    return;
+  }
+  if (j.phase === "qa") {
+    st.hidden = false;
+    const amAsker = j.me.pid === j.asker, amTarget = j.me.pid === j.target;
+    let h = `<div class="ud-stage__head">🎤 ${esc(j.askerNick)} → ${esc(j.targetNick)} 진실게임</div>`;
+    // 질문
+    if (!j.qDone && amAsker) {
+      h += `<div class="ud-qa"><label>Q. 질문 (당신이 질문자)</label><textarea data-q maxlength="300" placeholder="${esc(j.targetNick)}님에게 물어볼 질문">${qaTyping ? "" : ""}</textarea>
+        <div class="ud-qa__row"><button class="btn btn--primary btn--sm" data-q-save style="flex:1">질문 확정</button></div></div>`;
+    } else if (j.qDone) {
+      h += `<div class="ud-qa"><label>Q. 질문</label><div class="ud-qa__show">${esc(j.question)}</div></div>`;
+    } else {
+      h += `<div class="ud-qa"><label>Q. 질문</label><div class="ud-qa__show" style="color:var(--text-dim)">${esc(j.askerNick)}님이 질문을 작성 중…</div></div>`;
+    }
+    // 답변
+    if (j.qDone) {
+      if (!j.aDone && amTarget) {
+        h += `<div class="ud-qa"><label>A. 답변 (당신이 지목됨)</label><textarea data-a maxlength="500" placeholder="솔직하게 답해봐요 😌"></textarea>
+          <div class="ud-qa__row"><button class="btn btn--primary btn--sm" data-a-save style="flex:1">답변 확정</button></div></div>`;
+      } else if (j.aDone) {
+        h += `<div class="ud-qa"><label>A. 답변</label><div class="ud-qa__show">${esc(j.answer)}</div></div>`;
+      } else {
+        h += `<div class="ud-qa"><label>A. 답변</label><div class="ud-qa__show" style="color:var(--text-dim)">${esc(j.targetNick)}님이 답변 중…</div></div>`;
+      }
+    }
+    // 진행자: 다음으로
+    if (j.isHost) h += `<div class="ud-qa__row" style="margin-top:10px"><button class="btn btn--ghost btn--sm" data-next style="flex:1">▶️ 다음 사람으로</button></div>`;
+    st.innerHTML = h;
+    const qs = st.querySelector("[data-q-save]"), as = st.querySelector("[data-a-save]"), nx = st.querySelector("[data-next]");
+    const qt = st.querySelector("[data-q]"), at = st.querySelector("[data-a]");
+    if (qt) { qt.onfocus = () => qaTyping = true; qt.onblur = () => qaTyping = false; }
+    if (at) { at.onfocus = () => qaTyping = true; at.onblur = () => qaTyping = false; }
+    if (qs) qs.onclick = async () => { const v = qt.value.trim(); if (!v) return App.toast("질문을 입력해주세요."); qaTyping = false; const r = await api("question", { text: v }); if (!r.ok) App.toast(r.error); else poll(); };
+    if (as) as.onclick = async () => { const v = at.value.trim(); if (!v) return App.toast("답변을 입력해주세요."); qaTyping = false; const r = await api("answer", { text: v }); if (!r.ok) App.toast(r.error); else poll(); };
+    if (nx) nx.onclick = async () => { const r = await api("next"); if (!r.ok) App.toast(r.error); else poll(); };
+    return;
+  }
+  st.hidden = true;
 }
 
 /* 추측 */
 async function doGuess() {
   const inp = $("[data-guess-input]");
   const n = parseInt(inp.value, 10);
-  if (!(n >= 1 && n <= 100)) return App.toast("1~100 사이 숫자를 입력해주세요.");
+  if (!(n >= 1 && n <= 99)) return App.toast("1~99 사이 숫자를 입력해주세요.");
   inp.value = "";
   const r = await api("guess", { num: n });
   if (!r.ok) { App.toast(r.error || "입력 실패"); return; }
-  if (r.hint === "hit") App.toast("🎯 정답!");
-  else App.toast(r.hint === "down" ? "⬇️ 다운! 더 낮게" : "⬆️ 업! 더 높게");
-  poll();
-  inp.focus();
+  if (r.hint === "hit") App.toast("🎯 정답! 다음 사람으로");
+  else App.toast(r.hint === "down" ? "⬇️ 다운!" : "⬆️ 업!");
+  poll(); inp.focus();
 }
 $("[data-guess-btn]").onclick = doGuess;
 $("[data-guess-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doGuess(); } });
 
-$("[data-restart]").onclick = async () => { const r = await api("restart"); if (!r.ok) App.toast(r.error); else poll(); };
+/* 채팅 */
+async function sendChat() {
+  const inp = $("[data-chat-input]"); const t = inp.value.trim(); if (!t) return;
+  inp.value = "";
+  try { const r = await api("chat", { text: t }); if (!r.ok) { inp.value = t; App.toast(r.error); } else poll(); }
+  catch (e) { inp.value = t; App.toast("전송이 안 됐어요."); }
+}
+$("[data-chat-send]").onclick = sendChat;
+$("[data-chat-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
+
+/* 공지 */
+$("[data-notice-input]").onfocus = () => noticeEditing = true;
+$("[data-notice-input]").onblur = () => noticeEditing = false;
+$("[data-notice-save]").onclick = async () => { noticeEditing = false; const r = await api("notice", { text: $("[data-notice-input]").value }); if (!r.ok) App.toast(r.error); else { App.toast("공지 저장됨"); poll(); } };
+
+/* 순서 섞기 + 이동 */
+$("[data-shuffle]").onclick = async () => { const r = await api("shuffle"); if (!r.ok) App.toast(r.error); else poll(); };
+$("[data-order]").addEventListener("click", async e => {
+  const b = e.target.closest("[data-mv]"); if (!b || !S || !S.isHost) return;
+  const pid = b.dataset.mv, dir = parseInt(b.dataset.dir, 10);
+  const order = (S.turnOrder || []).map(p => p.pid);
+  const i = order.indexOf(pid), ni = i + dir;
+  if (i < 0 || ni < 0 || ni >= order.length) return;
+  order.splice(ni, 0, order.splice(i, 1)[0]);
+  const r = await api("setorder", { order }); if (!r.ok) App.toast(r.error); else poll();
+});
+
 $("[data-closeroom]").onclick = async () => {
   if (!confirm("방을 닫을까요? 모두 나가집니다.")) return;
   const r = await api("closeroom");
@@ -253,7 +417,7 @@ $("[data-closeroom]").onclick = async () => {
 };
 
 /* 시작 */
-if (!App.isAdmin()) {   // 방 생성은 관리자만
+if (!App.isAdmin()) {
   const cb = $("[data-create-box]"), note = $("[data-create-note]");
   if (cb) cb.hidden = true;
   if (note) note.hidden = false;
