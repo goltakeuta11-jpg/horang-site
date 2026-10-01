@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.122">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.122">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.123">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.123">
 <meta property="og:type" content="website">
 <meta property="og:title" content="진실게임 · 호랑봇 허브">
 <meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.122"></script>
+<script src="assets/inapp.js?v=20260831.123"></script>
 <title>진실게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.122">
+<link rel="stylesheet" href="assets/style.css?v=20260831.123">
 <style>
   .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -233,9 +233,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.122"></script>
-<script src="assets/store.js?v=20260831.122"></script>
-<script src="assets/app.js?v=20260831.122"></script>
+<script src="assets/config.js?v=20260831.123"></script>
+<script src="assets/store.js?v=20260831.123"></script>
+<script src="assets/app.js?v=20260831.123"></script>
 <script>
 App.header("game.html");
 
@@ -420,15 +420,23 @@ function renderStage(j) {
         h += `<div class="ud-qa"><label>A. 답변</label><div class="ud-qa__show" style="color:var(--text-dim)">${esc(j.targetNick)}님이 답변 중…</div></div>`;
       }
     }
-    // 진행자: 다음으로
-    if (j.isMC || j.isHost) h += `<div class="ud-qa__row" style="margin-top:10px"><button class="btn btn--ghost btn--sm" data-next style="flex:1">▶️ 다음 사람으로</button></div>`;
+    // 진행자/방장: 다시받기 + 다음으로
+    if (j.isMC || j.isHost) {
+      h += `<div class="ud-qa__row" style="margin-top:10px">`;
+      if (j.qDone) h += `<button class="btn btn--ghost btn--sm" data-redoq style="flex:1">🔁 질문 다시받기</button>`;   // 질문자 유지, 질문만 다시
+      if (j.aDone) h += `<button class="btn btn--ghost btn--sm" data-redoa style="flex:1">🔁 답변 다시받기</button>`;   // 답변자 유지, 답변만 다시
+      h += `</div><div class="ud-qa__row" style="margin-top:6px"><button class="btn btn--ghost btn--sm" data-next style="flex:1">▶️ 다음 사람으로</button></div>`;
+    }
     st.innerHTML = h;
     const qs = st.querySelector("[data-q-save]"), as = st.querySelector("[data-a-save]"), nx = st.querySelector("[data-next]");
     const qt = st.querySelector("[data-q]"), at = st.querySelector("[data-a]");
+    const rq = st.querySelector("[data-redoq]"), ra = st.querySelector("[data-redoa]");
     if (qt) { qt.onfocus = () => qaTyping = true; qt.onblur = () => qaTyping = false; }
     if (at) { at.onfocus = () => qaTyping = true; at.onblur = () => qaTyping = false; }
     if (qs) qs.onclick = async () => { const v = qt.value.trim(); if (!v) return App.toast("질문을 입력해주세요."); qaTyping = false; const r = await api("question", { text: v }); if (!r.ok) App.toast(r.error); else poll(); };
     if (as) as.onclick = async () => { const v = at.value.trim(); if (!v) return App.toast("답변을 입력해주세요."); qaTyping = false; const r = await api("answer", { text: v }); if (!r.ok) App.toast(r.error); else poll(); };
+    if (rq) rq.onclick = async () => { if (!confirm("질문을 다시 받을까요? (질문자는 그대로, 질문·답변 초기화)")) return; const r = await api("redoq"); if (!r.ok) App.toast(r.error); else { App.toast("🔁 질문 다시받기"); poll(); } };
+    if (ra) ra.onclick = async () => { if (!confirm("답변을 다시 받을까요? (답변자는 그대로, 답변만 초기화)")) return; const r = await api("redoa"); if (!r.ok) App.toast(r.error); else { App.toast("🔁 답변 다시받기"); poll(); } };
     if (nx) nx.onclick = async () => { const r = await api("next"); if (!r.ok) App.toast(r.error); else poll(); };
     return;
   }
