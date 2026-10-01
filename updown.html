@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.129">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.129">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.130">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.130">
 <meta property="og:type" content="website">
 <meta property="og:title" content="진실게임 · 호랑봇 허브">
 <meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.129"></script>
+<script src="assets/inapp.js?v=20260831.130"></script>
 <title>진실게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.129">
+<link rel="stylesheet" href="assets/style.css?v=20260831.130">
 <style>
   .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -254,9 +254,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.129"></script>
-<script src="assets/store.js?v=20260831.129"></script>
-<script src="assets/app.js?v=20260831.129"></script>
+<script src="assets/config.js?v=20260831.130"></script>
+<script src="assets/store.js?v=20260831.130"></script>
+<script src="assets/app.js?v=20260831.130"></script>
 <script>
 App.header("game.html");
 
@@ -612,10 +612,10 @@ else show("setup");
 /* 질문/답변 카운트다운 (폴링과 독립 — 답변 타이핑 중에도 계속 돌아감) */
 setInterval(() => {
   const el = $("[data-qa-timer]"); if (!el) return;
-  if (S && S.phase === "qa" && S.qaDeadline) {
+  if (S && S.phase === "qa" && S.aDone && S.qaDeadline) {   // 답변 확정 후 자동 넘김 카운트다운만(답변 제한시간 없음)
     const s = Math.max(0, Math.ceil((S.qaDeadline - Date.now()) / 1000));
     el.hidden = false;
-    el.textContent = S.aDone ? `⏭ ${s}초 뒤 다음` : `⏱ 답변 ${s}초`;
+    el.textContent = `⏭ ${s}초 뒤 다음`;
     el.style.color = s <= 5 ? "#FF5C7A" : "var(--accent)";
   } else { el.hidden = true; }
 }, 500);
