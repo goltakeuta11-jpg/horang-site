@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.118">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.118">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.119">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.119">
 <meta property="og:type" content="website">
 <meta property="og:title" content="업다운 · 호랑봇 허브">
 <meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.118"></script>
+<script src="assets/inapp.js?v=20260831.119"></script>
 <title>업다운 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.118">
+<link rel="stylesheet" href="assets/style.css?v=20260831.119">
 <style>
   .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -88,6 +88,8 @@
   .ud-roster { display: flex; flex-wrap: wrap; gap: 7px; }
   .ud-roster span { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
   .ud-roster span.cur { background: var(--accent); color: #10131a; border-color: var(--accent); }
+  .ud-mc-btn { background: none; border: 0; cursor: pointer; font-size: 13px; padding: 0 0 0 4px; opacity: .35; filter: grayscale(1); }
+  .ud-mc-btn.on { opacity: 1; filter: none; }
   /* 질문·답변 기록 서랍 (오른쪽 슬라이드) */
   .ud-fab { position: fixed; right: 0; top: 46%; transform: translateY(-50%); z-index: 50;
     display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font: inherit;
@@ -226,9 +228,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.118"></script>
-<script src="assets/store.js?v=20260831.118"></script>
-<script src="assets/app.js?v=20260831.118"></script>
+<script src="assets/config.js?v=20260831.119"></script>
+<script src="assets/store.js?v=20260831.119"></script>
+<script src="assets/app.js?v=20260831.119"></script>
 <script>
 App.header("game.html");
 
@@ -316,22 +318,23 @@ function render(j) {
   $("[data-phase]").textContent = phaseTxt + (j.round ? " · " + j.round + "턴" : "");
   const codeEl = $("[data-code]"); codeEl.textContent = j.code;
   codeEl.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(j.code); App.toast("코드 복사됨: " + j.code); };
+  const amMC = !!(j.isMC || j.isHost);   // 진행자 권한(순서·공지·다음)
   $("[data-closeroom]").hidden = !j.isHost;
-  $("[data-shuffle]").hidden = !j.isHost;
+  $("[data-shuffle]").hidden = !amMC;
 
   // 순서 바
   $("[data-order]").innerHTML = (j.turnOrder || []).map((p, i) => {
     const cur = p.pid === j.curPid;
-    const arrows = j.isHost ? `<button data-mv="${p.pid}" data-dir="-1" title="앞으로">◀</button><button data-mv="${p.pid}" data-dir="1" title="뒤로">▶</button>` : "";
+    const arrows = amMC ? `<button data-mv="${p.pid}" data-dir="-1" title="앞으로">◀</button><button data-mv="${p.pid}" data-dir="1" title="뒤로">▶</button>` : "";
     return `<span class="ud-turn ${cur ? "cur" : ""}"><span class="ud-turn__n">${i + 1}</span>${esc(p.nick)}${arrows}</span>`;
   }).join("") || `<span class="ud-turn">아직 없음</span>`;
 
   // 공지
   const nEl = $("[data-notice]");
   if (j.notice) { nEl.className = "ud-notice"; nEl.textContent = j.notice; }
-  else { nEl.className = "ud-notice empty"; nEl.textContent = j.isHost ? "공지가 없어요. 아래에서 적어보세요." : "공지가 없어요."; }
-  $("[data-notice-edit]").hidden = !j.isHost;
-  if (j.isHost && !noticeEditing) $("[data-notice-input]").value = j.notice || "";
+  else { nEl.className = "ud-notice empty"; nEl.textContent = amMC ? "공지가 없어요. 아래에서 적어보세요." : "공지가 없어요."; }
+  $("[data-notice-edit]").hidden = !amMC;
+  if (amMC && !noticeEditing) $("[data-notice-input]").value = j.notice || "";
 
   // 범위 + 현재 차례 + 미스
   $("[data-cur]").textContent = j.curNick ? (j.isMyTurn ? "🟢 내 차례! 숫자를 맞혀봐요" : `지금 ${j.curNick}님 차례`) : "";
@@ -351,10 +354,13 @@ function render(j) {
   renderStage(j);
   renderRecords(j);
 
-  // 하단 참여자 명단
-  $("[data-roster-h]").textContent = `👥 현재 참여자 (${(j.players || []).length}명)`;
-  $("[data-roster]").innerHTML = (j.players || []).map(p =>
-    `<span class="${p.pid === j.curPid ? "cur" : ""}">${p.pid === j.curPid ? "🎯 " : ""}${esc(p.nick)}${p.host ? " 👑" : ""}${p.isMe ? " (나)" : ""}</span>`).join("");
+  // 하단 참여자 명단 (방장은 진행자 지정 토글)
+  $("[data-roster-h]").textContent = `👥 현재 참여자 (${(j.players || []).length}명)` + (j.isHost ? "  —  🎙️ 버튼으로 진행자 지정/해제" : "");
+  $("[data-roster]").innerHTML = (j.players || []).map(p => {
+    const mcBadge = p.mc && !p.host ? " 🎙️" : "";   // 방장(👑) 외 진행자만 🎙️
+    const toggle = (j.isHost && !p.host) ? `<button class="ud-mc-btn ${p.mc ? "on" : ""}" data-mc="${p.pid}" data-on="${p.mc ? "0" : "1"}" title="진행자 지정/해제">🎙️</button>` : "";
+    return `<span class="${p.pid === j.curPid ? "cur" : ""}">${p.pid === j.curPid ? "🎯 " : ""}${esc(p.nick)}${p.host ? " 👑" : ""}${mcBadge}${p.isMe ? " (나)" : ""}${toggle}</span>`;
+  }).join("");
 
   // 기록
   $("[data-hist]").innerHTML = (j.guesses || []).slice().reverse().map(g => {
@@ -405,7 +411,7 @@ function renderStage(j) {
       }
     }
     // 진행자: 다음으로
-    if (j.isHost) h += `<div class="ud-qa__row" style="margin-top:10px"><button class="btn btn--ghost btn--sm" data-next style="flex:1">▶️ 다음 사람으로</button></div>`;
+    if (j.isMC || j.isHost) h += `<div class="ud-qa__row" style="margin-top:10px"><button class="btn btn--ghost btn--sm" data-next style="flex:1">▶️ 다음 사람으로</button></div>`;
     st.innerHTML = h;
     const qs = st.querySelector("[data-q-save]"), as = st.querySelector("[data-a-save]"), nx = st.querySelector("[data-next]");
     const qt = st.querySelector("[data-q]"), at = st.querySelector("[data-a]");
@@ -480,8 +486,13 @@ $("[data-notice-save]").onclick = async () => { noticeEditing = false; const r =
 
 /* 순서 섞기 + 이동 */
 $("[data-shuffle]").onclick = async () => { const r = await api("shuffle"); if (!r.ok) App.toast(r.error); else poll(); };
+$("[data-roster]").addEventListener("click", async e => {
+  const b = e.target.closest("[data-mc]"); if (!b || !S || !S.isHost) return;
+  const r = await api("setmc", { target: b.dataset.mc, on: b.dataset.on === "1" });
+  if (!r.ok) App.toast(r.error); else poll();
+});
 $("[data-order]").addEventListener("click", async e => {
-  const b = e.target.closest("[data-mv]"); if (!b || !S || !S.isHost) return;
+  const b = e.target.closest("[data-mv]"); if (!b || !S || !(S.isMC || S.isHost)) return;
   const pid = b.dataset.mv, dir = parseInt(b.dataset.dir, 10);
   const order = (S.turnOrder || []).map(p => p.pid);
   const i = order.indexOf(pid), ni = i + dir;
