@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.126">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.126">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.127">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.127">
 <meta property="og:type" content="website">
 <meta property="og:title" content="진실게임 · 호랑봇 허브">
 <meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.126"></script>
+<script src="assets/inapp.js?v=20260831.127"></script>
 <title>진실게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.126">
+<link rel="stylesheet" href="assets/style.css?v=20260831.127">
 <style>
   .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -108,6 +108,10 @@
   .ud-mc-btn.on { opacity: 1; filter: none; }
   .ud-kick-btn { background: none; border: 0; cursor: pointer; font-size: 12px; padding: 0 0 0 4px; color: #FF6B81; opacity: .55; }
   .ud-kick-btn:hover { opacity: 1; }
+  /* 현재 차례(핑크 배경) 칩에선 ✖이 핑크끼리 묻혀 안 보임 → 진한 색+굵게로 대비 */
+  .ud-roster span.cur .ud-kick-btn { color: #4A0410; font-weight: 900; opacity: .85; }
+  .ud-roster span.cur .ud-kick-btn:hover { opacity: 1; }
+  .ud-roster span.cur .ud-mc-btn { filter: none; }
   /* 질문·답변 기록 서랍 (오른쪽 슬라이드) */
   .ud-fab { position: fixed; right: 0; top: 46%; transform: translateY(-50%); z-index: 50;
     display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font: inherit;
@@ -249,9 +253,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.126"></script>
-<script src="assets/store.js?v=20260831.126"></script>
-<script src="assets/app.js?v=20260831.126"></script>
+<script src="assets/config.js?v=20260831.127"></script>
+<script src="assets/store.js?v=20260831.127"></script>
+<script src="assets/app.js?v=20260831.127"></script>
 <script>
 App.header("game.html");
 
