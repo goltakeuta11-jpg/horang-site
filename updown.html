@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.119">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.119">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.120">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.120">
 <meta property="og:type" content="website">
-<meta property="og:title" content="업다운 · 호랑봇 허브">
+<meta property="og:title" content="진실게임 · 호랑봇 허브">
 <meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.119"></script>
-<title>업다운 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.119">
+<script src="assets/inapp.js?v=20260831.120"></script>
+<title>진실게임 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.120">
 <style>
   .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -119,8 +119,8 @@
 <header class="header"><div class="header__inner" data-header></div></header>
 
 <main class="wrap page ud-wrap">
-  <p class="page__eyebrow"><a href="game.html" style="color:inherit;text-decoration:none">🎮 게임</a> › 업다운</p>
-  <h1 class="page__title">🔢 업다운 <span style="font-size:13px;color:var(--text-dim)">+ 진실게임</span></h1>
+  <p class="page__eyebrow"><a href="game.html" style="color:inherit;text-decoration:none">🎮 게임</a> › 진실게임</p>
+  <h1 class="page__title">🎯 진실게임 <span style="font-size:13px;color:var(--text-dim)">업다운</span></h1>
 
   <div data-noserver hidden class="empty" style="padding:30px"><strong>이 게임은 호랑봇 서버에서만 돌아가요</strong>horangbot.co.kr 에서 접속해주세요.</div>
 
@@ -198,16 +198,13 @@
 
         <!-- 질문/답변 무대 (5번 틀렸을 때) -->
         <div class="ud-panel ud-stage" data-stage hidden></div>
-
-        <div class="ud-panel">
-          <h3>📜 추측 기록</h3>
-          <div class="ud-hist" data-hist></div>
-        </div>
       </div>
     </div>
 
-    <!-- 하단: 현재 게임 참여자 명단 -->
+    <!-- 하단: 진행자 + 현재 게임 참여자 명단 -->
     <div class="ud-panel">
+      <h3 data-mcs-h>🎙️ 진행자</h3>
+      <div class="ud-roster" data-mcs style="margin-bottom:12px"></div>
       <h3 data-roster-h>👥 현재 참여자</h3>
       <div class="ud-roster" data-roster></div>
     </div>
@@ -228,9 +225,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.119"></script>
-<script src="assets/store.js?v=20260831.119"></script>
-<script src="assets/app.js?v=20260831.119"></script>
+<script src="assets/config.js?v=20260831.120"></script>
+<script src="assets/store.js?v=20260831.120"></script>
+<script src="assets/app.js?v=20260831.120"></script>
 <script>
 App.header("game.html");
 
@@ -306,7 +303,11 @@ function appendChat(msgs) {
     if (seenMsg.has(m.id)) continue; seenMsg.add(m.id);
     const d = document.createElement("div");
     if (m.sys) { d.className = "ud-msg sys"; d.textContent = m.text; }
-    else { d.className = "ud-msg"; d.innerHTML = `<span class="ud-msg__from">${esc(m.from)}</span> ${esc(m.text)}`; }
+    else {
+      d.className = "ud-msg";
+      const col = (S && S.colors && S.colors[m.from]) ? ` style="color:${S.colors[m.from]}"` : "";   // 닉별 색상
+      d.innerHTML = `<span class="ud-msg__from"${col}>${esc(m.from)}</span> ${esc(m.text)}`;
+    }
     body.appendChild(d); added++;
   }
   if (added && atBottom) body.scrollTop = body.scrollHeight;
@@ -354,25 +355,26 @@ function render(j) {
   renderStage(j);
   renderRecords(j);
 
-  // 하단 참여자 명단 (방장은 진행자 지정 토글)
-  $("[data-roster-h]").textContent = `👥 현재 참여자 (${(j.players || []).length}명)` + (j.isHost ? "  —  🎙️ 버튼으로 진행자 지정/해제" : "");
-  $("[data-roster]").innerHTML = (j.players || []).map(p => {
-    const mcBadge = p.mc && !p.host ? " 🎙️" : "";   // 방장(👑) 외 진행자만 🎙️
-    const toggle = (j.isHost && !p.host) ? `<button class="ud-mc-btn ${p.mc ? "on" : ""}" data-mc="${p.pid}" data-on="${p.mc ? "0" : "1"}" title="진행자 지정/해제">🎙️</button>` : "";
-    return `<span class="${p.pid === j.curPid ? "cur" : ""}">${p.pid === j.curPid ? "🎯 " : ""}${esc(p.nick)}${p.host ? " 👑" : ""}${mcBadge}${p.isMe ? " (나)" : ""}${toggle}</span>`;
-  }).join("");
+  // 진행자 목록 (방장은 🎙️로 해제)
+  $("[data-mcs]").innerHTML = (j.mcs || []).map(m => {
+    const toggle = (j.isHost && !m.host) ? `<button class="ud-mc-btn on" data-mc="${m.pid}" data-on="0" title="진행자 해제">🎙️</button>` : "";
+    return `<span>🎙️ ${esc(m.nick)}${m.host ? " 👑" : ""}${m.isMe ? " (나)" : ""}${toggle}</span>`;
+  }).join("") || `<span style="color:var(--text-dim);background:none;border:0;padding:0">없음</span>`;
 
-  // 기록
-  $("[data-hist]").innerHTML = (j.guesses || []).slice().reverse().map(g => {
-    const tag = g.hint === "hit" ? `<span class="ud-g__tag ud-hit">🎯 정답</span>`
-      : g.hint === "down" ? `<span class="ud-g__tag ud-down">⬇️ 다운</span>`
-      : `<span class="ud-g__tag ud-up">⬆️ 업</span>`;
-    return `<div class="ud-g"><span class="ud-g__num">${g.num}</span><span class="ud-g__nick">${esc(g.nick)}</span>${tag}</div>`;
-  }).join("") || `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">이번 턴 추측이 아직 없어요.</p>`;
+  // 참여자 명단 (진행자 제외, 닉 색상). 방장은 🎙️로 진행자 지정.
+  $("[data-roster-h]").textContent = `👥 현재 참여자 (${(j.players || []).length}명)` + (j.isHost ? "  —  🎙️ 눌러 진행자 지정" : "");
+  $("[data-roster]").innerHTML = (j.players || []).map(p => {
+    const cur = p.pid === j.curPid;
+    const col = (!cur && p.color) ? ` style="color:${p.color}"` : "";
+    const toggle = j.isHost ? `<button class="ud-mc-btn" data-mc="${p.pid}" data-on="1" title="진행자로 지정">🎙️</button>` : "";
+    return `<span class="${cur ? "cur" : ""}">${cur ? "🎯 " : ""}<b${col}>${esc(p.nick)}</b>${p.isMe ? " (나)" : ""}${toggle}</span>`;
+  }).join("") || `<span style="color:var(--text-dim);background:none;border:0;padding:0">아직 참가자가 없어요</span>`;
 }
 
 function renderStage(j) {
   const st = $("[data-stage]");
+  // 질문/답변 타이핑 중엔 무대를 다시 그리지 않음(입력창 리셋 방지). 단계(qa)가 유지되는 동안만.
+  if (qaTyping && j.phase === "qa") return;
   if (j.phase === "ask") {
     st.hidden = false;
     if (j.canAsk) {
@@ -486,11 +488,13 @@ $("[data-notice-save]").onclick = async () => { noticeEditing = false; const r =
 
 /* 순서 섞기 + 이동 */
 $("[data-shuffle]").onclick = async () => { const r = await api("shuffle"); if (!r.ok) App.toast(r.error); else poll(); };
-$("[data-roster]").addEventListener("click", async e => {
+async function onMcClick(e) {
   const b = e.target.closest("[data-mc]"); if (!b || !S || !S.isHost) return;
   const r = await api("setmc", { target: b.dataset.mc, on: b.dataset.on === "1" });
   if (!r.ok) App.toast(r.error); else poll();
-});
+}
+$("[data-roster]").addEventListener("click", onMcClick);
+$("[data-mcs]").addEventListener("click", onMcClick);
 $("[data-order]").addEventListener("click", async e => {
   const b = e.target.closest("[data-mv]"); if (!b || !S || !(S.isMC || S.isHost)) return;
   const pid = b.dataset.mv, dir = parseInt(b.dataset.dir, 10);
