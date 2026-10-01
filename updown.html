@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.117">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.117">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.118">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.118">
 <meta property="og:type" content="website">
 <meta property="og:title" content="업다운 · 호랑봇 허브">
 <meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.117"></script>
+<script src="assets/inapp.js?v=20260831.118"></script>
 <title>업다운 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.117">
+<link rel="stylesheet" href="assets/style.css?v=20260831.118">
 <style>
   .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -84,6 +84,10 @@
   .ud-qa__show { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
   .ud-qa__row { display: flex; gap: 8px; margin-top: 6px; }
   .ud-reconnect { background: rgba(255,92,122,.16); border: 1px solid #FF6B81; color: #FF6B81; border-radius: 10px; padding: 9px 14px; margin-bottom: 12px; font-size: 13px; font-weight: 700; text-align: center; }
+  /* 참여자 명단 */
+  .ud-roster { display: flex; flex-wrap: wrap; gap: 7px; }
+  .ud-roster span { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
+  .ud-roster span.cur { background: var(--accent); color: #10131a; border-color: var(--accent); }
   /* 질문·답변 기록 서랍 (오른쪽 슬라이드) */
   .ud-fab { position: fixed; right: 0; top: 46%; transform: translateY(-50%); z-index: 50;
     display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font: inherit;
@@ -200,6 +204,12 @@
       </div>
     </div>
 
+    <!-- 하단: 현재 게임 참여자 명단 -->
+    <div class="ud-panel">
+      <h3 data-roster-h>👥 현재 참여자</h3>
+      <div class="ud-roster" data-roster></div>
+    </div>
+
     <!-- 질문·답변 기록 서랍 (오른쪽 슬라이드) -->
     <button class="ud-fab" data-rec-toggle aria-label="질문 기록 열기">
       <span class="ud-fab__arrow" data-rec-arrow>‹</span>
@@ -216,9 +226,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.117"></script>
-<script src="assets/store.js?v=20260831.117"></script>
-<script src="assets/app.js?v=20260831.117"></script>
+<script src="assets/config.js?v=20260831.118"></script>
+<script src="assets/store.js?v=20260831.118"></script>
+<script src="assets/app.js?v=20260831.118"></script>
 <script>
 App.header("game.html");
 
@@ -340,6 +350,11 @@ function render(j) {
   // 질문/답변 무대
   renderStage(j);
   renderRecords(j);
+
+  // 하단 참여자 명단
+  $("[data-roster-h]").textContent = `👥 현재 참여자 (${(j.players || []).length}명)`;
+  $("[data-roster]").innerHTML = (j.players || []).map(p =>
+    `<span class="${p.pid === j.curPid ? "cur" : ""}">${p.pid === j.curPid ? "🎯 " : ""}${esc(p.nick)}${p.host ? " 👑" : ""}${p.isMe ? " (나)" : ""}</span>`).join("");
 
   // 기록
   $("[data-hist]").innerHTML = (j.guesses || []).slice().reverse().map(g => {
