@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.125">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.125">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.126">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.126">
 <meta property="og:type" content="website">
 <meta property="og:title" content="진실게임 · 호랑봇 허브">
 <meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.125"></script>
+<script src="assets/inapp.js?v=20260831.126"></script>
 <title>진실게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.125">
+<link rel="stylesheet" href="assets/style.css?v=20260831.126">
 <style>
   .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -46,27 +46,29 @@
   @media (max-width: 760px) { .ud-cols { grid-template-columns: 1fr; } }
   .ud-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; }
   .ud-panel h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; }
-  /* 공지 */
-  .ud-notice { font-size: 14px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
-  .ud-notice.empty { color: var(--text-dim); }
-  /* 채팅 (공지 배너 + 스크롤 영역 + 입력) */
+  /* 채팅 (고정 배너 + 스크롤 영역 + 입력) */
   .ud-chat { display: flex; flex-direction: column; height: 460px; padding: 0; overflow: hidden; }
   .ud-chat__body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; padding: 12px 14px; }
-  /* 카톡식 상단 고정 공지 */
+  /* 카톡식 상단 고정 메시지 */
   .ud-pin { flex: 0 0 auto; background: rgba(255,171,64,.12); border-bottom: 1px solid var(--line); padding: 9px 12px; }
   .ud-pin__row { display: flex; align-items: flex-start; gap: 8px; }
   .ud-pin__ico { font-size: 15px; line-height: 1.5; }
   .ud-pin__text { flex: 1; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; max-height: 3em; overflow: hidden; }
   .ud-pin.open .ud-pin__text { max-height: none; }
-  .ud-pin__text.empty { color: var(--text-dim); }
+  .ud-pin__text .ud-msg__from { font-weight: 800; margin-right: 4px; }
   .ud-pin__btn { background: none; border: 0; color: var(--text-dim); cursor: pointer; font-size: 13px; padding: 0 2px; line-height: 1.4; flex: 0 0 auto; }
   .ud-pin__btn:hover { color: var(--text); }
-  .ud-pin.open .ud-pin__toggle, .ud-pin [data-pin-toggle] { transition: transform .15s; }
+  .ud-pin [data-pin-toggle] { transition: transform .15s; }
   .ud-pin.open [data-pin-toggle] { transform: rotate(180deg); }
-  .ud-pin__edit { margin-top: 8px; }
-  .ud-msg { font-size: 13.5px; line-height: 1.45; word-break: break-word; }
-  .ud-msg__from { font-weight: 800; }
-  .ud-msg.sys { color: var(--text-dim); font-size: 12px; }
+  .ud-msg { font-size: 13.5px; line-height: 1.45; word-break: break-word; display: flex; align-items: baseline; gap: 4px; }
+  .ud-msg__from { font-weight: 800; flex: 0 0 auto; }
+  .ud-msg__t { flex: 1; min-width: 0; }
+  .ud-msg.sys { color: var(--text-dim); font-size: 12px; display: block; }
+  /* 메시지 고정 버튼 (진행자에게만 보임) */
+  .ud-msg__pin { display: none; background: none; border: 0; cursor: pointer; font-size: 12px; padding: 0 2px; opacity: .4; flex: 0 0 auto; }
+  .ud-msg__pin:hover { opacity: 1; }
+  .ud-chat.is-mc .ud-msg:not(.sys):hover .ud-msg__pin, .ud-chat.is-mc .ud-msg__pin.on { display: inline; }
+  .ud-msg__pin.on { opacity: 1; }
   .ud-chat__foot { display: flex; gap: 6px; flex: 0 0 auto; padding: 10px 12px; border-top: 1px solid var(--line); }
   .ud-chat__foot input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13.5px; }
   /* 게임 영역 */
@@ -184,20 +186,16 @@
     </div>
 
     <div class="ud-cols">
-      <!-- 왼쪽: 채팅 (공지는 맨 위 고정 배너) -->
+      <!-- 왼쪽: 채팅 (진행자가 고정한 메시지는 맨 위 배너로) -->
       <div>
         <div class="ud-panel ud-chat">
-          <!-- 카톡식 상단 고정 공지 배너 -->
+          <!-- 카톡식 상단 고정 메시지 (진행자가 채팅 하나를 고정, 최대 1건) -->
           <div class="ud-pin" data-pin hidden>
             <div class="ud-pin__row">
-              <span class="ud-pin__ico">📢</span>
+              <span class="ud-pin__ico">📌</span>
               <div class="ud-pin__text" data-pin-text></div>
-              <button class="ud-pin__btn" data-pin-edit hidden title="공지 수정">✏️</button>
               <button class="ud-pin__btn" data-pin-toggle title="접기/펼치기">▾</button>
-            </div>
-            <div class="ud-pin__edit" data-notice-edit hidden>
-              <textarea class="ud-input" data-notice-input maxlength="500" style="min-height:44px;margin-bottom:6px" placeholder="진행자 공지를 적어요"></textarea>
-              <button class="btn btn--primary btn--sm" data-notice-save style="width:100%">공지 저장</button>
+              <button class="ud-pin__btn" data-pin-unpin hidden title="고정 해제">✖</button>
             </div>
           </div>
           <div class="ud-chat__body" data-chat></div>
@@ -251,9 +249,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.125"></script>
-<script src="assets/store.js?v=20260831.125"></script>
-<script src="assets/app.js?v=20260831.125"></script>
+<script src="assets/config.js?v=20260831.126"></script>
+<script src="assets/store.js?v=20260831.126"></script>
+<script src="assets/app.js?v=20260831.126"></script>
 <script>
 App.header("game.html");
 
@@ -263,7 +261,7 @@ const $ = s => document.querySelector(s);
 const esc = (App && App.esc) ? App.esc : (s => ("" + s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])));
 
 let sess = null, sinceId = 0, pollTimer = null, polling = false, S = null;
-let noticeEditing = false, qaTyping = false;   // 입력 중엔 폴링이 안 덮게
+let qaTyping = false;   // 입력 중엔 폴링이 안 덮게
 try { sess = JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) {}
 function saveSess(s) { sess = s; try { localStorage.setItem(LS, JSON.stringify(s)); } catch (e) {} }
 function clearSess() { sess = null; try { localStorage.removeItem(LS); } catch (e) {} }
@@ -332,7 +330,7 @@ function appendChat(msgs) {
     else {
       d.className = "ud-msg";
       const col = (S && S.colors && S.colors[m.from]) ? ` style="color:${S.colors[m.from]}"` : "";   // 닉별 색상
-      d.innerHTML = `<span class="ud-msg__from"${col}>${esc(m.from)}</span> ${esc(m.text)}`;
+      d.innerHTML = `<span class="ud-msg__from"${col}>${esc(m.from)}</span><span class="ud-msg__t">${esc(m.text)}</span><button class="ud-msg__pin" data-pinmsg="${m.id}" title="상단 고정">📌</button>`;
     }
     body.appendChild(d); added++;
   }
@@ -356,16 +354,21 @@ function render(j) {
     return `<span class="ud-turn ${cur ? "cur" : ""}"><span class="ud-turn__n">${i + 1}</span>${esc(p.nick)}${arrows}</span>`;
   }).join("") || `<span class="ud-turn">아직 없음</span>`;
 
-  // 공지 배너 (카톡식 상단 고정) — 공지 있거나 진행자면 표시
+  // 상단 고정 메시지 (진행자가 채팅 하나를 고정) — 고정된 게 있을 때만 표시
   const pin = $("[data-pin]"), pt = $("[data-pin-text]");
-  const showPin = !!j.notice || amMC;
-  pin.hidden = !showPin;
-  if (showPin) {
-    if (j.notice) { pt.className = "ud-pin__text"; pt.textContent = j.notice; }
-    else { pt.className = "ud-pin__text empty"; pt.textContent = amMC ? "공지를 추가해보세요 (진행자) — ✏️" : ""; }
-    $("[data-pin-edit]").hidden = !amMC;
-    if (amMC && !noticeEditing) $("[data-notice-input]").value = j.notice || "";
+  if (j.pinned) {
+    pin.hidden = false;
+    const col = (j.colors && j.colors[j.pinned.from]) ? ` style="color:${j.colors[j.pinned.from]}"` : "";
+    pt.innerHTML = `<span class="ud-msg__from"${col}>${esc(j.pinned.from)}</span>${esc(j.pinned.text)}`;
+    $("[data-pin-unpin]").hidden = !amMC;
+  } else {
+    pin.hidden = true;
   }
+  // 채팅박스에 진행자 표시(메시지 고정 버튼 노출) + 현재 고정된 메시지 버튼 강조
+  const chatBox = document.querySelector(".ud-chat");
+  if (chatBox) chatBox.classList.toggle("is-mc", amMC);
+  document.querySelectorAll(".ud-msg__pin.on").forEach(b => b.classList.remove("on"));
+  if (j.pinned) { const pb = document.querySelector(`[data-pinmsg="${j.pinned.id}"]`); if (pb) pb.classList.add("on"); }
 
   // 범위 + 현재 차례 + 미스
   $("[data-cur]").textContent = j.curNick ? (j.isMyTurn ? "🟢 내 차례! 숫자를 맞혀봐요" : `지금 ${j.curNick}님 차례`) : "";
@@ -530,12 +533,20 @@ async function sendChat() {
 $("[data-chat-send]").onclick = sendChat;
 $("[data-chat-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
 
-/* 공지 */
-$("[data-notice-input]").onfocus = () => noticeEditing = true;
-$("[data-notice-input]").onblur = () => noticeEditing = false;
-$("[data-pin-edit]").onclick = () => { const e = $("[data-notice-edit]"); e.hidden = !e.hidden; if (!e.hidden) { $("[data-pin]").classList.add("open"); $("[data-notice-input]").focus(); } };
-$("[data-pin-toggle]").onclick = () => { $("[data-pin]").classList.toggle("open"); };   // 공지 접기/펼치기
-$("[data-notice-save]").onclick = async () => { noticeEditing = false; const r = await api("notice", { text: $("[data-notice-input]").value }); if (!r.ok) App.toast(r.error); else { App.toast("공지 저장됨"); $("[data-notice-edit]").hidden = true; poll(); } };
+/* 상단 고정 메시지 */
+$("[data-pin-toggle]").onclick = () => { $("[data-pin]").classList.toggle("open"); };   // 고정 메시지 접기/펼치기
+$("[data-pin-unpin]").onclick = async () => { const r = await api("pin", { off: true }); if (!r.ok) App.toast(r.error); else { App.toast("📌 고정을 해제했어요."); poll(); } };
+// 채팅 메시지의 📌 버튼 → 그 메시지를 상단 고정 (진행자만)
+$("[data-chat]").addEventListener("click", async e => {
+  const b = e.target.closest("[data-pinmsg]"); if (!b) return;
+  if (!S || !(S.isMC || S.isHost)) return;
+  if (S.pinned && S.pinned.id === Number(b.dataset.pinmsg)) {   // 이미 고정된 걸 또 누르면 해제
+    const r = await api("pin", { off: true }); if (!r.ok) App.toast(r.error); else { App.toast("📌 고정을 해제했어요."); poll(); }
+    return;
+  }
+  const r = await api("pin", { msgId: Number(b.dataset.pinmsg) });
+  if (!r.ok) App.toast(r.error); else { App.toast("📌 메시지를 상단에 고정했어요."); poll(); }
+});
 
 /* 순서 섞기 + 이동 */
 $("[data-shuffle]").onclick = async () => { const r = await api("shuffle"); if (!r.ok) App.toast(r.error); else poll(); };
