@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.127">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.127">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.128">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.128">
 <meta property="og:type" content="website">
 <meta property="og:title" content="진실게임 · 호랑봇 허브">
 <meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
 <meta property="og:url" content="https://horangbot.co.kr/updown.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.127"></script>
+<script src="assets/inapp.js?v=20260831.128"></script>
 <title>진실게임 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.127">
+<link rel="stylesheet" href="assets/style.css?v=20260831.128">
 <style>
   .ud-wrap { max-width: 980px; }
   .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -153,7 +153,7 @@
 
   <!-- 셋업 -->
   <section data-setup hidden>
-    <p class="page__desc">진행자가 순서를 정하고, 순서대로 1~99 숨은 숫자를 맞혀요. 틀리면 업/다운 힌트! <b>5번 틀리면 질문</b>을 받아요(진실게임). 먼저 맞히면 다음 사람으로.</p>
+    <p class="page__desc">진행자가 순서를 정하고, 순서대로 1~99 숨은 숫자를 맞혀요. 틀리면 업/다운 힌트! <b>4번 틀리면 질문</b>을 받아요(진실게임). 먼저 맞히면 다음 사람으로.</p>
     <p class="mf-hint" data-create-note hidden style="margin:-4px 0 12px;color:var(--text-dim)">💡 방 생성은 진행자(관리자)만 할 수 있어요. 받은 코드로 참가해주세요.</p>
     <div class="ud-setup">
       <div class="ud-box" data-create-box>
@@ -175,6 +175,7 @@
     <div class="ud-reconnect" data-reconnect hidden>🔄 서버와 연결이 잠깐 끊겼어요. 다시 연결 중…</div>
     <div class="ud-bar">
       <span class="t" data-phase>🔢 업다운</span>
+      <span class="t" data-qa-timer hidden style="color:var(--accent)"></span>
       <span class="ud-code" data-code title="코드 복사"></span>
       <button class="ud-leave" data-leave style="margin-left:auto">🚪 나가기</button>
       <button class="ud-close" data-closeroom hidden>💥 방 닫기</button>
@@ -253,9 +254,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.127"></script>
-<script src="assets/store.js?v=20260831.127"></script>
-<script src="assets/app.js?v=20260831.127"></script>
+<script src="assets/config.js?v=20260831.128"></script>
+<script src="assets/store.js?v=20260831.128"></script>
+<script src="assets/app.js?v=20260831.128"></script>
 <script>
 App.header("game.html");
 
@@ -345,6 +346,7 @@ function appendChat(msgs) {
 function render(j) {
   const phaseTxt = j.phase === "ask" ? "❓ 질문 대기" : j.phase === "qa" ? "🎤 질문/답변" : "🔢 추측 중";
   $("[data-phase]").textContent = phaseTxt + (j.round ? " · " + j.round + "턴" : "");
+  if (j.phase !== "qa") qaTyping = false;   // qa 벗어나면 타이핑 가드 해제(자동 넘김 등으로 단계가 바뀌어도 다음 qa 렌더 안 막히게)
   const codeEl = $("[data-code]"); codeEl.textContent = j.code;
   codeEl.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(j.code); App.toast("코드 복사됨: " + j.code); };
   const amMC = !!(j.isMC || j.isHost);   // 진행자 권한(순서·공지·다음)
@@ -603,6 +605,17 @@ if (!App.isAdmin()) {
 if (!UD_URL) show("noserver");
 else if (sess) startGame();
 else show("setup");
+/* 질문/답변 카운트다운 (폴링과 독립 — 답변 타이핑 중에도 계속 돌아감) */
+setInterval(() => {
+  const el = $("[data-qa-timer]"); if (!el) return;
+  if (S && S.phase === "qa" && S.qaDeadline) {
+    const s = Math.max(0, Math.ceil((S.qaDeadline - Date.now()) / 1000));
+    el.hidden = false;
+    el.textContent = S.aDone ? `⏭ ${s}초 뒤 다음` : `⏱ 답변 ${s}초`;
+    el.style.color = s <= 5 ? "#FF5C7A" : "var(--accent)";
+  } else { el.hidden = true; }
+}, 500);
+
 window.addEventListener("beforeunload", stopPoll);
 </script>
 </body>
