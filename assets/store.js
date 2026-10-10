@@ -379,24 +379,28 @@
 
     /* 자소서 등록/수정: ★ 그 사람 행 '하나만' 전송 → 서버가 합치기(upsert). 오래된 캐시여도 다른 사람 데이터 절대 안 건드림(유실·되돌림 방지).
        로드 전이면 false 반환(차단), 성공이면 서버응답 Promise 반환(fire-and-forget 가능). */
-    upsertMember(m) {
+    upsertMember(m, renameFrom) {
       if (!canWrite) return false;
       if (MODE !== "local" && !loaded) {
         if (window.App) App.toast("데이터를 아직 못 불러왔어요. 새로고침(Ctrl+Shift+R) 후 다시 시도해주세요.", true);
         return false;
       }
       const key = String((m && m.nick) || "").trim();
+      const from = String(renameFrom || "").trim();   // 개명: 옛 닉 (닉 바꿔 수정한 경우)
       const data = read();
-      const arr = (data.members || []).slice();
+      let arr = (data.members || []).slice();
+      if (from && from !== key) arr = arr.filter(x => String((x && x.nick) || "").trim() !== from);   // 옛 닉 행 제거(로컬)
       const idx = arr.findIndex(x => String((x && x.nick) || "").trim() === key);
       if (idx >= 0) arr[idx] = m; else arr.push(m);
       data.members = arr; cache = data; memory = data;
       if (MODE === "script") {
         saveCache(data);
+        const payload = { key: adminKey(), data: { members: [MAP.members.toRow(m)] } };   // 그 한 행만
+        if (from && from !== key) payload.renameFrom = from;   // 서버도 옛 닉 행 제거
         return fetch(SCRIPT_URL, {
           method: "POST", redirect: "follow",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ key: adminKey(), data: { members: [MAP.members.toRow(m)] } })   // 그 한 행만
+          body: JSON.stringify(payload)
         }).then(r => r.json());
       }
       try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
