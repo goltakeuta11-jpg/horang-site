@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.148">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.148">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.149">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.149">
 <meta property="og:type" content="website">
 <meta property="og:title" content="끝말잇기 · 호랑봇 허브">
 <meta property="og:description" content="국어사전 실시간 검증 끝말잇기 (턴제·탈락전)">
 <meta property="og:url" content="https://horangbot.co.kr/wordchain.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.148"></script>
+<script src="assets/inapp.js?v=20260831.149"></script>
 <title>끝말잇기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.148">
+<link rel="stylesheet" href="assets/style.css?v=20260831.149">
 <style>
   [hidden] { display: none !important; }   /* ★ hidden 속성이 .wc-facemodal/.wc-faceview의 display:flex에 밀려 안 먹던 버그 수정 */
   .wc-wrap { max-width: 860px; }
@@ -63,6 +63,11 @@
   .wc-roster span { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
   .wc-roster span.cur { background: var(--accent); color: #10131a; border-color: var(--accent); }
   .wc-roster span.dead { opacity: .45; text-decoration: line-through; }
+  .wc-rbtn { background: none; border: 0; cursor: pointer; font-size: 12px; padding: 0 1px 0 4px; opacity: .55; }
+  .wc-rbtn:hover { opacity: 1; }
+  .wc-rbtn--kick { color: #FF6B81; }
+  .wc-roster span.cur .wc-rbtn { opacity: .9; filter: none; }
+  .wc-roster span.cur .wc-rbtn--kick { color: #4A0410; font-weight: 900; }
   /* 채팅 */
   .wc-chat { display: flex; flex-direction: column; height: 240px; padding: 0; overflow: hidden; }
   .wc-chat__body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; }
@@ -171,9 +176,9 @@
   <input type="file" accept="image/*" data-face-file hidden>
 </main>
 
-<script src="assets/config.js?v=20260831.148"></script>
-<script src="assets/store.js?v=20260831.148"></script>
-<script src="assets/app.js?v=20260831.148"></script>
+<script src="assets/config.js?v=20260831.149"></script>
+<script src="assets/store.js?v=20260831.149"></script>
+<script src="assets/app.js?v=20260831.149"></script>
 <script>
 App.header("game.html");
 
@@ -258,11 +263,12 @@ function render(j) {
   $("[data-phase]").textContent = phaseTxt + (j.phase === "play" ? ` · 생존 ${j.aliveCount}명` : "");
 
   // 참여자
-  $("[data-roster-h]").textContent = `👥 참여자 (${j.players.length}명` + (j.phase === "play" ? ` · 생존 ${j.aliveCount}` : "") + `)`;
+  $("[data-roster-h]").textContent = `👥 참여자 (${j.players.length}명` + (j.phase === "play" ? ` · 생존 ${j.aliveCount}` : "") + `)` + (j.isHost ? "  —  👑 넘기기 · ✖ 강퇴" : "");
   $("[data-roster]").innerHTML = j.players.map(p => {
     const cls = [p.isCur && j.phase === "play" ? "cur" : "", !p.alive ? "dead" : ""].filter(Boolean).join(" ");
     const col = (p.alive && !p.isCur && p.color) ? ` style="color:${p.color}"` : "";
-    return `<span class="${cls}">${p.isCur && j.phase === "play" ? "▶ " : ""}<b${col}>${esc(p.nick)}</b>${p.isHost ? " 👑" : ""}${p.isMe ? " (나)" : ""}${!p.alive ? " 💀" : ""}</span>`;
+    const hostBtns = (j.isHost && !p.isMe) ? `<button class="wc-rbtn" data-sethost="${esc(p.nick)}" title="방장 넘기기">👑</button><button class="wc-rbtn wc-rbtn--kick" data-kick="${esc(p.nick)}" title="강퇴">✖</button>` : "";
+    return `<span class="${cls}">${p.isCur && j.phase === "play" ? "▶ " : ""}<b${col}>${esc(p.nick)}</b>${p.isHost ? " 👑" : ""}${p.isMe ? " (나)" : ""}${!p.alive ? " 💀" : ""}${hostBtns}</span>`;
   }).join("");
 
   renderStage(j);
@@ -397,6 +403,24 @@ async function sendChat() {
 }
 $("[data-chat-send]").onclick = sendChat;
 $("[data-chat-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
+
+/* 방장: 방장 넘기기 / 강퇴 (참여자 명단 버튼, 위임) */
+$("[data-roster]").addEventListener("click", async e => {
+  if (!S || !S.isHost) return;
+  const sh = e.target.closest("[data-sethost]");
+  if (sh) {
+    if (!confirm(`'${sh.dataset.sethost}'님에게 방장을 넘길까요?`)) return;
+    const r = await api("sethost", { target: sh.dataset.sethost });
+    if (!r.ok) App.toast(r.error); else { App.toast("👑 방장을 넘겼어요."); poll(); }
+    return;
+  }
+  const k = e.target.closest("[data-kick]");
+  if (k) {
+    if (!confirm(`'${k.dataset.kick}'님을 강퇴할까요?`)) return;
+    const r = await api("kick", { target: k.dataset.kick });
+    if (!r.ok) App.toast(r.error); else { App.toast("🚪 강퇴했어요."); poll(); }
+  }
+});
 
 $("[data-leave]").onclick = async () => {
   if (!confirm("방에서 나갈까요?")) return;
