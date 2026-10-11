@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.152">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.152">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.153">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.153">
 <meta property="og:type" content="website">
 <meta property="og:title" content="끝말잇기 · 호랑봇 허브">
 <meta property="og:description" content="국어사전 실시간 검증 끝말잇기 (턴제·탈락전)">
 <meta property="og:url" content="https://horangbot.co.kr/wordchain.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.152"></script>
+<script src="assets/inapp.js?v=20260831.153"></script>
 <title>끝말잇기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.152">
+<link rel="stylesheet" href="assets/style.css?v=20260831.153">
 <style>
   [hidden] { display: none !important; }   /* ★ hidden 속성이 .wc-facemodal/.wc-faceview의 display:flex에 밀려 안 먹던 버그 수정 */
   .wc-wrap { max-width: 860px; }
@@ -148,7 +148,7 @@
             <p>· <b>10초</b> 안에 못 내면 탈락</p>
             <p>· <b>중복 단어·사전에 없는 단어</b>를 제출하면 바로 탈락 ⚠️</p>
             <p>· <b>마지막 1명이 우승!</b></p>
-            <p class="wc-gamerules__face">💀 탈락하면 <b>얼공(얼굴 공개)</b>! 갤러리에서 얼굴 사진을 올리면 모두에게 <b>잠깐 공개된 뒤 3초 후 서버에서 자동 삭제</b>돼요. (건너뛰기 없음)</p>
+            <p class="wc-gamerules__face">💀 탈락하면 <b>얼공(얼굴 공개)</b>! 갤러리에서 얼굴 사진을 올리면 모두에게 <b>잠깐 공개된 뒤 2초 후 서버에서 자동 삭제</b>돼요. (건너뛰기 없음)</p>
           </div>
         </div>
       </div>
@@ -168,7 +168,7 @@
     </div>
   </section>
 
-  <!-- 얼공 공개 오버레이 (전원에게 3초) -->
+  <!-- 얼공 공개 오버레이 (전원에게 2초) -->
   <div class="wc-faceview" data-face hidden>
     <img data-face-img alt="얼공">
     <div class="wc-faceview__cap" data-face-cap></div>
@@ -178,9 +178,9 @@
   <input type="file" accept="image/*" data-face-file hidden>
 </main>
 
-<script src="assets/config.js?v=20260831.152"></script>
-<script src="assets/store.js?v=20260831.152"></script>
-<script src="assets/app.js?v=20260831.152"></script>
+<script src="assets/config.js?v=20260831.153"></script>
+<script src="assets/store.js?v=20260831.153"></script>
+<script src="assets/app.js?v=20260831.153"></script>
 <script>
 App.header("game.html");
 
@@ -320,7 +320,7 @@ function renderStage(j) {
   // 내가 탈락 → 얼공 업로드(무대 안에서. 전체화면 안 덮어서 채팅은 그대로 가능)
   if (j.me && j.me.faceDue) {
     st.innerHTML = `<div class="wc-turn">📸 ${esc(j.me.nick)}님의 얼공 차례!</div>
-      <div class="wc-waitmsg">탈락했어요 😵 <b style="color:var(--text)">얼굴 사진</b>을 올려야 게임이 이어져요.<br>갤러리에서 선택 · 최대 30MB · 올리면 3초만 공개 후 자동 삭제 · 건너뛰기 없음</div>
+      <div class="wc-waitmsg">탈락했어요 😵 <b style="color:var(--text)">얼굴 사진</b>을 올려야 게임이 이어져요.<br>갤러리에서 선택 · 최대 30MB · 올리면 2초만 공개 후 자동 삭제 · 건너뛰기 없음</div>
       <button class="btn btn--primary" data-face-pick style="margin-top:14px;width:100%;font-size:15px;font-weight:900;padding:13px">🖼️ 갤러리에서 얼굴 사진 고르기</button>`;
     const pk = st.querySelector("[data-face-pick]"); if (pk) pk.onclick = () => $("[data-face-file]").click();
     return;
