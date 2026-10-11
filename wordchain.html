@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.135">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.135">
+<meta property="og:type" content="website">
+<meta property="og:title" content="끝말잇기 · 호랑봇 허브">
+<meta property="og:description" content="국어사전 실시간 검증 끝말잇기 (턴제·탈락전)">
+<meta property="og:url" content="https://horangbot.co.kr/wordchain.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.135"></script>
+<title>끝말잇기 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.135">
+<style>
+  .wc-wrap { max-width: 860px; }
+  .wc-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
+  @media (max-width: 620px) { .wc-setup { grid-template-columns: 1fr; } }
+  .wc-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px; }
+  .wc-box h2 { font-size: 16px; font-weight: 800; margin: 0 0 12px; }
+  .wc-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line);
+    color: var(--text); border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 15px; margin-bottom: 10px; }
+  .wc-input:focus { outline: none; border-color: var(--accent); }
+  .wc-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--panel);
+    border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; }
+  .wc-bar .t { font-weight: 800; font-size: 15px; }
+  .wc-code { font-weight: 800; letter-spacing: 2px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px 9px; cursor: pointer; font-size: 13px; }
+  .wc-timer { margin-left: auto; font-weight: 900; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .wc-leave { background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+  .wc-close { background: rgba(255,92,122,.14); border: 1px solid rgba(255,92,122,.5); color: #FF6B81; border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+  .wc-cols { display: grid; grid-template-columns: 1fr 300px; gap: 14px; align-items: start; }
+  @media (max-width: 760px) { .wc-cols { grid-template-columns: 1fr; } }
+  .wc-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; }
+  .wc-panel h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; }
+  /* 무대 */
+  .wc-stage { background: linear-gradient(180deg, rgba(255,171,64,.08), var(--panel)); border: 1.5px solid var(--accent); text-align: center; padding: 20px 16px; }
+  .wc-turn { font-size: 14px; color: var(--accent); font-weight: 800; margin-bottom: 6px; }
+  .wc-last { font-size: 15px; color: var(--text-dim); }
+  .wc-last b { color: var(--text); font-size: 30px; font-weight: 900; display: block; margin: 6px 0; }
+  .wc-need { font-size: 15px; margin-top: 6px; }
+  .wc-need b { color: var(--accent); font-weight: 900; font-size: 20px; }
+  .wc-play { display: flex; gap: 8px; margin-top: 14px; }
+  .wc-play input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 13px 14px; font: inherit; font-size: 20px; font-weight: 800; text-align: center; }
+  .wc-play input:disabled { opacity: .5; }
+  .wc-waitmsg { color: var(--text-dim); font-size: 14px; margin-top: 12px; }
+  /* 체인 */
+  .wc-chain { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+  .wc-link { display: flex; align-items: baseline; gap: 8px; font-size: 14px; padding: 4px 6px; border-radius: 6px; background: var(--bg); }
+  .wc-link__n { font-size: 11px; color: var(--text-dim); min-width: 22px; }
+  .wc-link__who { font-weight: 700; font-size: 12px; }
+  .wc-link__w { font-weight: 800; }
+  /* 참여자 */
+  .wc-roster { display: flex; flex-wrap: wrap; gap: 7px; }
+  .wc-roster span { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
+  .wc-roster span.cur { background: var(--accent); color: #10131a; border-color: var(--accent); }
+  .wc-roster span.dead { opacity: .45; text-decoration: line-through; }
+  /* 채팅 */
+  .wc-chat { display: flex; flex-direction: column; height: 240px; padding: 0; overflow: hidden; }
+  .wc-chat__body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; }
+  .wc-msg { font-size: 13px; line-height: 1.4; word-break: break-word; }
+  .wc-msg__from { font-weight: 800; }
+  .wc-msg.sys { color: var(--text-dim); font-size: 12px; }
+  .wc-chat__foot { display: flex; gap: 6px; flex: 0 0 auto; padding: 9px 11px; border-top: 1px solid var(--line); }
+  .wc-chat__foot input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13px; }
+  .wc-win { text-align: center; padding: 24px 16px; }
+  .wc-win__t { font-size: 24px; font-weight: 900; }
+  .wc-win__s { color: var(--text-dim); margin-top: 8px; }
+  .wc-reconnect { background: rgba(255,92,122,.16); border: 1px solid #FF6B81; color: #FF6B81; border-radius: 10px; padding: 9px 14px; margin-bottom: 12px; font-size: 13px; font-weight: 700; text-align: center; }
+  .wc-rules { color: var(--text-dim); font-size: 13px; line-height: 1.6; }
+  .wc-rules b { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page wc-wrap">
+  <p class="page__eyebrow"><a href="game.html" style="color:inherit;text-decoration:none">🎮 게임</a> › 끝말잇기</p>
+  <h1 class="page__title">🔗 끝말잇기</h1>
+
+  <div data-noserver hidden class="empty" style="padding:30px"><strong>이 게임은 호랑봇 서버에서만 돌아가요</strong>horangbot.co.kr 에서 접속해주세요.</div>
+
+  <!-- 셋업 -->
+  <section data-setup hidden>
+    <div class="wc-panel wc-rules" style="margin-bottom:14px">
+      순서대로 단어를 이어가요. <b>국어사전(표준국어대사전)에 등록된 명사</b>만 인정! · <b>두음법칙 적용</b> · <b>2글자 이상</b> · 원소 이름·이미 나온 단어 불가.
+      제한시간 <b>30초</b> 넘기면 탈락, <b>마지막 1명이 우승</b>해요. (최소 3명 · 최대 15명)
+    </div>
+    <p class="mf-hint" data-create-note hidden style="margin:-4px 0 12px;color:var(--text-dim)">💡 방 생성은 관리자만 할 수 있어요. 받은 코드로 참가해주세요.</p>
+    <div class="wc-setup">
+      <div class="wc-box" data-create-box>
+        <h2>➕ 방 만들기 (관리자)</h2>
+        <input class="wc-input" data-create-nick maxlength="16" placeholder="내 닉네임">
+        <button class="btn btn--primary" data-create style="width:100%">방 만들기</button>
+      </div>
+      <div class="wc-box">
+        <h2>🚪 방 참가</h2>
+        <input class="wc-input" data-join-code maxlength="4" placeholder="방 코드 (4자리)" style="text-transform:uppercase">
+        <input class="wc-input" data-join-nick maxlength="16" placeholder="내 닉네임">
+        <button class="btn btn--primary" data-join style="width:100%">참가하기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 게임 -->
+  <section data-game hidden>
+    <div class="wc-reconnect" data-reconnect hidden>🔄 서버와 연결이 잠깐 끊겼어요. 다시 연결 중…</div>
+    <div class="wc-bar">
+      <span class="t" data-phase>🔗 끝말잇기</span>
+      <span class="wc-code" data-code title="코드 복사"></span>
+      <span class="wc-timer" data-timer hidden></span>
+      <button class="wc-leave" data-leave>🚪 나가기</button>
+      <button class="wc-close" data-closeroom hidden>💥 방 닫기</button>
+    </div>
+
+    <div class="wc-cols">
+      <!-- 왼쪽: 무대 + 체인 -->
+      <div>
+        <div class="wc-panel wc-stage" data-stage></div>
+        <div class="wc-panel">
+          <h3>🔗 이어진 단어</h3>
+          <div class="wc-chain" data-chain></div>
+        </div>
+      </div>
+      <!-- 오른쪽: 참여자 + 채팅 -->
+      <div>
+        <div class="wc-panel">
+          <h3 data-roster-h>👥 참여자</h3>
+          <div class="wc-roster" data-roster></div>
+        </div>
+        <div class="wc-panel wc-chat">
+          <div class="wc-chat__body" data-chatbox></div>
+          <div class="wc-chat__foot">
+            <input data-chat-input maxlength="200" placeholder="잡담…">
+            <button class="btn btn--primary btn--sm" data-chat-send>전송</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="assets/config.js?v=20260831.135"></script>
+<script src="assets/store.js?v=20260831.135"></script>
+<script src="assets/app.js?v=20260831.135"></script>
+<script>
+App.header("game.html");
+
+const WC_URL = ((window.CONFIG && CONFIG.SCRIPT_URL) === "/api/gs") ? "/api/wordchain" : null;
+const LS = "horang.wordchain";
+const $ = s => document.querySelector(s);
+const esc = (App && App.esc) ? App.esc : (s => ("" + s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])));
+
+let sess = null, sinceId = 0, pollTimer = null, polling = false, S = null, typing = false;
+try { sess = JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) {}
+function saveSess(s) { sess = s; try { localStorage.setItem(LS, JSON.stringify(s)); } catch (e) {} }
+function clearSess() { sess = null; try { localStorage.removeItem(LS); } catch (e) {} }
+
+async function api(op, extra) {
+  const body = Object.assign({ op }, sess ? { code: sess.code, pid: sess.pid } : {}, extra || {});
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 9000);
+  try {
+    const r = await fetch(WC_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body), signal: ctrl.signal });
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+function show(which) {
+  $("[data-noserver]").hidden = which !== "noserver";
+  $("[data-setup]").hidden = which !== "setup";
+  $("[data-game]").hidden = which !== "game";
+}
+
+$("[data-create]").onclick = async () => {
+  const nick = $("[data-create-nick]").value.trim();
+  if (!nick) return App.toast("닉네임을 입력해주세요.");
+  const j = await api("create", { nick, key: App.key() });
+  if (!j.ok) return App.toast(j.error || "방 생성 실패");
+  saveSess({ code: j.code, pid: j.pid }); sinceId = 0; startGame();
+};
+$("[data-join]").onclick = async () => {
+  const code = $("[data-join-code]").value.trim().toUpperCase();
+  const nick = $("[data-join-nick]").value.trim();
+  if (!code || !nick) return App.toast("코드와 닉네임을 입력해주세요.");
+  const j = await api("join", { code, nick });
+  if (!j.ok) return App.toast(j.error || "참가 실패");
+  saveSess({ code: j.code, pid: j.pid }); sinceId = 0; startGame();
+};
+
+function startGame() { show("game"); startPoll(); }
+function startPoll() { stopPoll(); poll(); pollTimer = setInterval(poll, 1500); }
+function stopPoll() { clearInterval(pollTimer); pollTimer = null; }
+let pollFails = 0;
+async function poll() {
+  if (polling) return; polling = true;
+  let j;
+  try { j = await api("state", { since: sinceId }); }
+  catch (e) { pollFails++; if (pollFails >= 2) { const rc = $("[data-reconnect]"); if (rc) rc.hidden = false; } return; }
+  finally { polling = false; }
+  if (pollFails) { pollFails = 0; const rc = $("[data-reconnect]"); if (rc) rc.hidden = true; }
+  if (!j.ok) { if (j.gone) { clearSess(); stopPoll(); show("setup"); App.toast(j.error || "다시 입장해주세요."); } return; }
+  S = j;
+  if (j.msgs) { appendChat(j.msgs); for (const m of j.msgs) if (m.id > sinceId) sinceId = m.id; }
+  try { render(j); } catch (e) { console.error("[wordchain] render error:", e); }
+}
+
+const seenMsg = new Set();
+function appendChat(msgs) {
+  const body = $("[data-chatbox]");
+  const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 50;
+  let added = 0;
+  for (const m of msgs) {
+    if (seenMsg.has(m.id)) continue; seenMsg.add(m.id);
+    const d = document.createElement("div");
+    if (m.sys) { d.className = "wc-msg sys"; d.textContent = m.text; }
+    else { d.className = "wc-msg"; const col = (S && S.colors && S.colors[m.from]) ? ` style="color:${S.colors[m.from]}"` : ""; d.innerHTML = `<span class="wc-msg__from"${col}>${esc(m.from)}</span> ${esc(m.text)}`; }
+    body.appendChild(d); added++;
+  }
+  if (added && atBottom) body.scrollTop = body.scrollHeight;
+}
+
+function render(j) {
+  const codeEl = $("[data-code]"); codeEl.textContent = j.code;
+  codeEl.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(j.code); App.toast("코드 복사됨: " + j.code); };
+  $("[data-closeroom]").hidden = !j.isHost;
+  const phaseTxt = j.phase === "lobby" ? "⏳ 대기 중" : j.phase === "ended" ? "🏁 게임 종료" : "🔗 진행 중";
+  $("[data-phase]").textContent = phaseTxt + (j.phase === "play" ? ` · 생존 ${j.aliveCount}명` : "");
+
+  // 참여자
+  $("[data-roster-h]").textContent = `👥 참여자 (${j.players.length}명` + (j.phase === "play" ? ` · 생존 ${j.aliveCount}` : "") + `)`;
+  $("[data-roster]").innerHTML = j.players.map(p => {
+    const cls = [p.isCur && j.phase === "play" ? "cur" : "", !p.alive ? "dead" : ""].filter(Boolean).join(" ");
+    const col = (p.alive && !p.isCur && p.color) ? ` style="color:${p.color}"` : "";
+    return `<span class="${cls}">${p.isCur && j.phase === "play" ? "▶ " : ""}<b${col}>${esc(p.nick)}</b>${p.isHost ? " 👑" : ""}${p.isMe ? " (나)" : ""}${!p.alive ? " 💀" : ""}</span>`;
+  }).join("");
+
+  renderStage(j);
+  renderChain(j);
+}
+
+function renderStage(j) {
+  const st = $("[data-stage]");
+  if (j.phase === "lobby") {
+    const enough = j.players.length >= j.minPlayers;
+    st.innerHTML = `<div class="wc-turn">⏳ 참가자 대기 중</div>
+      <div class="wc-last">현재 <b style="font-size:30px">${j.players.length}</b>명 / 최소 ${j.minPlayers}명</div>
+      ${j.isHost
+        ? `<button class="btn btn--primary" data-start style="margin-top:14px;width:100%;font-size:16px;font-weight:900;padding:14px"${enough ? "" : " disabled"}>${enough ? "🔗 게임 시작!" : `${j.minPlayers}명 모이면 시작`}</button>`
+        : `<div class="wc-waitmsg">방장이 시작하면 바로 시작돼요! 😊</div>`}`;
+    const sb = st.querySelector("[data-start]");
+    if (sb) sb.onclick = async () => { const r = await api("start"); if (!r.ok) App.toast(r.error); else poll(); };
+    return;
+  }
+  if (j.phase === "ended") {
+    st.innerHTML = `<div class="wc-win"><div class="wc-win__t">🏆 ${esc(j.winner || "무승부")}</div>
+      <div class="wc-win__s">${j.winner ? "최후의 1인! 축하해요 🎉" : "승자 없이 끝났어요"}</div>
+      ${j.isHost ? `<button class="btn btn--primary" data-again style="margin-top:16px">🔄 한 판 더 (새 방)</button>` : ""}
+      </div>`;
+    const ag = st.querySelector("[data-again]");
+    if (ag) ag.onclick = async () => { const nick = (S.me && S.me.nick) || ""; const j2 = await api("create", { nick, key: App.key() }); if (!j2.ok) return App.toast(j2.error || "실패"); saveSess({ code: j2.code, pid: j2.pid }); sinceId = 0; seenMsg.clear(); $("[data-chatbox]").innerHTML = ""; poll(); };
+    return;
+  }
+  // play
+  const need = (j.nextStarts && j.nextStarts.length) ? j.nextStarts : null;
+  const mine = j.isMyTurn;
+  const amDead = j.me && !j.me.alive;
+  st.innerHTML = `
+    <div class="wc-turn">${mine ? "🟢 내 차례!" : (amDead ? "💀 당신은 탈락 (구경 중)" : `지금 ${esc(j.curNick)}님 차례`)}</div>
+    ${j.lastWord
+      ? `<div class="wc-last">직전 단어<b>${esc(j.lastWord)}</b></div><div class="wc-need">${need ? `<b>${need.map(esc).join("</b> 또는 <b>")}</b> (으)로 시작!` : ""}</div>`
+      : `<div class="wc-last" style="font-size:16px">첫 단어! <b style="font-size:20px;display:inline">아무 명사</b>나 외쳐요</div>`}
+    <div class="wc-play">
+      <input data-word maxlength="20" inputmode="text" placeholder="${mine ? "단어 입력!" : (amDead ? "탈락했어요" : j.curNick + "님 차례…")}"${mine ? "" : " disabled"}>
+      <button class="btn btn--primary" data-submit${mine ? "" : " disabled"}>제출</button>
+    </div>`;
+  const inp = st.querySelector("[data-word]"), btn = st.querySelector("[data-submit]");
+  if (inp) {
+    inp.onfocus = () => typing = true; inp.onblur = () => typing = false;
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doPlay(); } });
+  }
+  if (btn) btn.onclick = doPlay;
+}
+
+async function doPlay() {
+  const inp = $("[data-word]"); if (!inp) return;
+  const w = inp.value.trim(); if (!w) return;
+  const btn = $("[data-submit]"); if (btn) btn.disabled = true;
+  try {
+    const r = await api("play", { word: w });
+    if (!r.ok) { App.toast(r.error || "낼 수 없어요."); if (btn) btn.disabled = false; return; }  // 거부 시 입력 유지
+    inp.value = ""; typing = false; App.toast("🔗 " + (r.accepted || w) + "!"); poll();
+  } catch (e) { App.toast("전송이 안 됐어요. 다시."); if (btn) btn.disabled = false; }
+}
+
+function renderChain(j) {
+  const box = $("[data-chain]");
+  const c = j.chain || [];
+  if (!c.length) { box.innerHTML = `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">아직 나온 단어가 없어요. 첫 단어를 기다려요!</p>`; return; }
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+  box.innerHTML = c.map((h, i) => {
+    const col = (j.colors && j.colors[h.nick]) ? ` style="color:${j.colors[h.nick]}"` : "";
+    return `<div class="wc-link"><span class="wc-link__n">${(c.length > 40 ? "" : (i + 1) + ".")}</span><span class="wc-link__who"${col}>${esc(h.nick)}</span><span class="wc-link__w">${esc(h.word)}</span></div>`;
+  }).join("");
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+
+/* 제한시간 카운트다운 (폴링과 독립) */
+setInterval(() => {
+  const el = $("[data-timer]"); if (!el) return;
+  if (S && S.phase === "play" && S.turnDeadline) {
+    const s = Math.max(0, Math.ceil((S.turnDeadline - Date.now()) / 1000));
+    el.hidden = false; el.textContent = "⏱ " + s + "초";
+    el.style.color = s <= 5 ? "#FF5C7A" : (S.isMyTurn ? "#34D399" : "var(--accent)");
+  } else el.hidden = true;
+}, 300);
+
+/* 채팅 */
+async function sendChat() {
+  const inp = $("[data-chat-input]"); const t = inp.value.trim(); if (!t) return;
+  inp.value = "";
+  try { const r = await api("chat", { text: t }); if (!r.ok) { inp.value = t; App.toast(r.error); } else poll(); }
+  catch (e) { inp.value = t; App.toast("전송이 안 됐어요."); }
+}
+$("[data-chat-send]").onclick = sendChat;
+$("[data-chat-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
+
+$("[data-leave]").onclick = async () => {
+  if (!confirm("방에서 나갈까요?")) return;
+  try { if (sess) await api("leave"); } catch (e) {}
+  clearSess(); stopPoll(); location.href = "game.html";
+};
+$("[data-closeroom]").onclick = async () => {
+  if (!confirm("방을 닫을까요? 모두 나가집니다.")) return;
+  const r = await api("closeroom");
+  if (r && !r.ok && !r.gone) { App.toast(r.error || "방을 닫지 못했어요."); return; }
+  clearSess(); stopPoll(); show("setup"); App.toast("💥 방을 닫았어요.");
+};
+
+/* 시작 */
+if (!App.isAdmin()) {
+  const cb = $("[data-create-box]"), note = $("[data-create-note]");
+  if (cb) cb.hidden = true;
+  if (note) note.hidden = false;
+  const setup = document.querySelector(".wc-setup");
+  if (setup) setup.style.gridTemplateColumns = "1fr";
+}
+if (!WC_URL) show("noserver");
+else if (sess) startGame();
+else show("setup");
+window.addEventListener("beforeunload", stopPoll);
+</script>
+</body>
+</html>
