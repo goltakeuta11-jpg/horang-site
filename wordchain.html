@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.139">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.139">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.140">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.140">
 <meta property="og:type" content="website">
 <meta property="og:title" content="끝말잇기 · 호랑봇 허브">
 <meta property="og:description" content="국어사전 실시간 검증 끝말잇기 (턴제·탈락전)">
 <meta property="og:url" content="https://horangbot.co.kr/wordchain.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.139"></script>
+<script src="assets/inapp.js?v=20260831.140"></script>
 <title>끝말잇기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.139">
+<link rel="stylesheet" href="assets/style.css?v=20260831.140">
 <style>
   .wc-wrap { max-width: 860px; }
   .wc-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -70,6 +70,14 @@
   .wc-reconnect { background: rgba(255,92,122,.16); border: 1px solid #FF6B81; color: #FF6B81; border-radius: 10px; padding: 9px 14px; margin-bottom: 12px; font-size: 13px; font-weight: 700; text-align: center; }
   .wc-rules { color: var(--text-dim); font-size: 13px; line-height: 1.6; }
   .wc-rules b { color: var(--text); }
+  /* 얼공 공개 오버레이 (입력 안 막게 pointer-events:none) */
+  .wc-faceview { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.72); pointer-events: none; gap: 12px; padding: 20px; }
+  .wc-faceview img { max-width: min(90vw, 460px); max-height: 70vh; border-radius: 14px; border: 3px solid var(--accent); box-shadow: 0 10px 40px rgba(0,0,0,.6); object-fit: contain; }
+  .wc-faceview__cap { font-size: 22px; font-weight: 900; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.7); }
+  /* 얼공 업로드 모달 (스킵 불가 — 닫기 버튼 없음) */
+  .wc-facemodal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.75); padding: 20px; }
+  .wc-facemodal__box { background: var(--panel); border: 1.5px solid var(--accent); border-radius: 16px; padding: 24px; max-width: 360px; width: 100%; text-align: center; }
 </style>
 </head>
 <body>
@@ -140,11 +148,29 @@
       </div>
     </div>
   </section>
+
+  <!-- 얼공 공개 오버레이 (전원에게 3초) -->
+  <div class="wc-faceview" data-face hidden>
+    <img data-face-img alt="얼공">
+    <div class="wc-faceview__cap" data-face-cap></div>
+  </div>
+
+  <!-- 얼공 업로드 모달 (탈락 당사자 전용, 스킵 불가) -->
+  <div class="wc-facemodal" data-facemodal hidden>
+    <div class="wc-facemodal__box">
+      <div style="font-size:40px">📸</div>
+      <h2 style="font-size:19px;font-weight:900;margin:8px 0 4px"><span data-facemodal-nick></span>님의 얼공 차례입니다!</h2>
+      <p style="color:var(--text-dim);font-size:13.5px;line-height:1.6;margin:0 0 14px">탈락했어요 😵 벌칙으로 <b style="color:var(--text)">얼굴 사진</b>을 올려주세요!<br>올리면 <b style="color:var(--text)">3초만</b> 공개되고 서버에서 자동 삭제돼요. (최대 30MB)</p>
+      <button class="btn btn--primary" data-face-pick style="width:100%;font-size:16px;font-weight:900;padding:14px">📷 얼굴 사진 올리기</button>
+      <input type="file" accept="image/*" capture="user" data-face-file hidden>
+      <p class="mf-hint" data-face-status style="font-size:12px;color:var(--text-dim);margin-top:10px">꼭 올려야 넘어갈 수 있어요 (건너뛰기 없음)</p>
+    </div>
+  </div>
 </main>
 
-<script src="assets/config.js?v=20260831.139"></script>
-<script src="assets/store.js?v=20260831.139"></script>
-<script src="assets/app.js?v=20260831.139"></script>
+<script src="assets/config.js?v=20260831.140"></script>
+<script src="assets/store.js?v=20260831.140"></script>
+<script src="assets/app.js?v=20260831.140"></script>
 <script>
 App.header("game.html");
 
@@ -238,7 +264,49 @@ function render(j) {
 
   renderStage(j);
   renderChain(j);
+  renderFace(j);
 }
+
+let lastFaceId = null;
+function renderFace(j) {
+  // 공개 오버레이(전원): faceReveal 있으면 이미지 한 번만 받아 표시, 없어지면 숨김
+  const fo = $("[data-face]");
+  if (j.faceReveal && sess) {
+    if (lastFaceId !== j.faceReveal.id) {
+      lastFaceId = j.faceReveal.id;
+      $("[data-face-img]").src = WC_URL + "/face?code=" + encodeURIComponent(sess.code) + "&id=" + encodeURIComponent(j.faceReveal.id) + "&_=" + Date.now();
+      $("[data-face-cap]").textContent = "📸 " + j.faceReveal.nick + "님의 얼공!";
+    }
+    fo.hidden = false;
+  } else { fo.hidden = true; lastFaceId = null; }
+  // 업로드 모달(탈락 당사자): faceDue일 때만, 스킵 없음
+  const fm = $("[data-facemodal]");
+  if (j.me && j.me.faceDue) {
+    if (fm.hidden) {   // 처음 뜰 때만 버튼·안내 초기화(업로드 중엔 유지)
+      $("[data-face-pick]").disabled = false;
+      $("[data-face-status]").textContent = "꼭 올려야 넘어갈 수 있어요 (건너뛰기 없음)";
+    }
+    $("[data-facemodal-nick]").textContent = j.me.nick; fm.hidden = false;
+  } else { fm.hidden = true; }
+}
+
+/* 얼공 업로드 */
+$("[data-face-pick]").onclick = () => $("[data-face-file]").click();
+$("[data-face-file]").onchange = async (e) => {
+  const file = e.target.files && e.target.files[0]; if (!file) return;
+  if (!/^image\//.test(file.type)) { App.toast("이미지 파일만 올릴 수 있어요."); return; }
+  if (file.size > 30 * 1024 * 1024) { App.toast("사진이 너무 커요 (최대 30MB)."); return; }
+  const st = $("[data-face-status]"), btn = $("[data-face-pick]");
+  st.textContent = "올리는 중… 📤"; btn.disabled = true;
+  try {
+    const r = await fetch(WC_URL + "/face?code=" + encodeURIComponent(sess.code) + "&pid=" + encodeURIComponent(sess.pid) + "&mime=" + encodeURIComponent(file.type),
+      { method: "POST", headers: { "Content-Type": file.type }, body: file });
+    const j = await r.json();
+    if (!j.ok) { App.toast(j.error || "업로드 실패"); st.textContent = "실패했어요. 다시 올려주세요."; btn.disabled = false; return; }
+    st.textContent = "올라갔어요! 📸 3초간 공개돼요."; poll();
+  } catch (err) { App.toast("업로드가 안 됐어요. 다시."); st.textContent = "실패했어요. 다시 올려주세요."; btn.disabled = false; }
+  finally { e.target.value = ""; }
+};
 
 function renderStage(j) {
   const st = $("[data-stage]");
