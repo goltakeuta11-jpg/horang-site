@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.141">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.141">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.142">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.142">
 <meta property="og:type" content="website">
 <meta property="og:title" content="끝말잇기 · 호랑봇 허브">
 <meta property="og:description" content="국어사전 실시간 검증 끝말잇기 (턴제·탈락전)">
 <meta property="og:url" content="https://horangbot.co.kr/wordchain.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.141"></script>
+<script src="assets/inapp.js?v=20260831.142"></script>
 <title>끝말잇기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.141">
+<link rel="stylesheet" href="assets/style.css?v=20260831.142">
 <style>
   [hidden] { display: none !important; }   /* ★ hidden 속성이 .wc-facemodal/.wc-faceview의 display:flex에 밀려 안 먹던 버그 수정 */
   .wc-wrap { max-width: 860px; }
@@ -162,16 +162,16 @@
       <div style="font-size:40px">📸</div>
       <h2 style="font-size:19px;font-weight:900;margin:8px 0 4px"><span data-facemodal-nick></span>님의 얼공 차례입니다!</h2>
       <p style="color:var(--text-dim);font-size:13.5px;line-height:1.6;margin:0 0 14px">탈락했어요 😵 벌칙으로 <b style="color:var(--text)">얼굴 사진</b>을 올려주세요!<br>올리면 <b style="color:var(--text)">3초만</b> 공개되고 서버에서 자동 삭제돼요. (최대 30MB)</p>
-      <button class="btn btn--primary" data-face-pick style="width:100%;font-size:16px;font-weight:900;padding:14px">📷 얼굴 사진 올리기</button>
-      <input type="file" accept="image/*" capture="user" data-face-file hidden>
+      <button class="btn btn--primary" data-face-pick style="width:100%;font-size:16px;font-weight:900;padding:14px">🖼️ 갤러리에서 얼굴 사진 고르기</button>
+      <input type="file" accept="image/*" data-face-file hidden>
       <p class="mf-hint" data-face-status style="font-size:12px;color:var(--text-dim);margin-top:10px">꼭 올려야 넘어갈 수 있어요 (건너뛰기 없음)</p>
     </div>
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.141"></script>
-<script src="assets/store.js?v=20260831.141"></script>
-<script src="assets/app.js?v=20260831.141"></script>
+<script src="assets/config.js?v=20260831.142"></script>
+<script src="assets/store.js?v=20260831.142"></script>
+<script src="assets/app.js?v=20260831.142"></script>
 <script>
 App.header("game.html");
 
@@ -311,6 +311,13 @@ $("[data-face-file]").onchange = async (e) => {
 
 function renderStage(j) {
   const st = $("[data-stage]");
+  // ★ 내가 입력 중이면 무대 재렌더 skip(폴링이 입력창 날리는 버그 방지). 차례·단계 바뀌면 자동 해제됨.
+  if (typing && j.phase === "play" && j.isMyTurn && !j.paused) return;
+  if (j.phase === "play" && j.paused) {
+    st.innerHTML = `<div class="wc-turn">⏸ 얼공 진행 중…</div>
+      <div class="wc-waitmsg">탈락자의 얼공이 끝나면 이어서 진행돼요. 잠시만요!</div>`;
+    return;
+  }
   if (j.phase === "lobby") {
     const enough = j.players.length >= j.minPlayers;
     st.innerHTML = `<div class="wc-turn">⏳ 참가자 대기 중</div>
