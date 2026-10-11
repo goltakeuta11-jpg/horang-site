@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.146">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.146">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.147">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.147">
 <meta property="og:type" content="website">
 <meta property="og:title" content="끝말잇기 · 호랑봇 허브">
 <meta property="og:description" content="국어사전 실시간 검증 끝말잇기 (턴제·탈락전)">
 <meta property="og:url" content="https://horangbot.co.kr/wordchain.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.146"></script>
+<script src="assets/inapp.js?v=20260831.147"></script>
 <title>끝말잇기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.146">
+<link rel="stylesheet" href="assets/style.css?v=20260831.147">
 <style>
   [hidden] { display: none !important; }   /* ★ hidden 속성이 .wc-facemodal/.wc-faceview의 display:flex에 밀려 안 먹던 버그 수정 */
   .wc-wrap { max-width: 860px; }
@@ -41,23 +41,23 @@
   }
   .wc-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; }
   .wc-panel h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; }
-  /* 무대 */
-  .wc-stage { background: linear-gradient(180deg, rgba(255,171,64,.08), var(--panel)); border: 1.5px solid var(--accent); text-align: center; padding: 20px 16px; }
-  .wc-turn { font-size: 14px; color: var(--accent); font-weight: 800; margin-bottom: 6px; }
-  .wc-last { font-size: 15px; color: var(--text-dim); }
-  .wc-last b { color: var(--text); font-size: 30px; font-weight: 900; display: block; margin: 6px 0; }
-  .wc-need { font-size: 15px; margin-top: 6px; }
-  .wc-need b { color: var(--accent); font-weight: 900; font-size: 20px; }
-  .wc-play { display: flex; gap: 8px; margin-top: 14px; }
-  .wc-play input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 13px 14px; font: inherit; font-size: 20px; font-weight: 800; text-align: center; }
+  /* 무대 (컴팩트) */
+  .wc-stage { background: linear-gradient(180deg, rgba(255,171,64,.08), var(--panel)); border: 1.5px solid var(--accent); text-align: center; padding: 12px 14px; }
+  .wc-turn { font-size: 13px; color: var(--accent); font-weight: 800; margin-bottom: 4px; }
+  .wc-last { font-size: 13px; color: var(--text-dim); }
+  .wc-last b { color: var(--text); font-size: 21px; font-weight: 900; display: block; margin: 2px 0; }
+  .wc-need { font-size: 13.5px; margin-top: 4px; }
+  .wc-need b { color: var(--accent); font-weight: 900; font-size: 16px; }
+  .wc-play { display: flex; gap: 8px; margin-top: 10px; }
+  .wc-play input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 17px; font-weight: 800; text-align: center; }
   .wc-play input:disabled { opacity: .5; }
   .wc-waitmsg { color: var(--text-dim); font-size: 14px; margin-top: 12px; }
-  /* 체인 */
-  .wc-chain { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-  .wc-link { display: flex; align-items: baseline; gap: 8px; font-size: 14px; padding: 4px 6px; border-radius: 6px; background: var(--bg); }
-  .wc-link__n { font-size: 11px; color: var(--text-dim); min-width: 22px; }
-  .wc-link__who { font-weight: 700; font-size: 12px; }
-  .wc-link__w { font-weight: 800; }
+  /* 게임 룰 */
+  .wc-gamerules { font-size: 13px; line-height: 1.5; color: var(--text-dim); }
+  .wc-gamerules p { margin: 0 0 7px; }
+  .wc-gamerules b { color: var(--text); }
+  .wc-gamerules__face { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--accent); }
+  .wc-gamerules__face b { color: var(--accent); }
   /* 참여자 */
   .wc-roster { display: flex; flex-wrap: wrap; gap: 7px; }
   .wc-roster span { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
@@ -135,8 +135,14 @@
       <div class="wc-col">
         <div class="wc-panel wc-stage" data-stage></div>
         <div class="wc-panel wc-chainp">
-          <h3>🔗 이어진 단어</h3>
-          <div class="wc-chain" data-chain></div>
+          <h3>📜 게임 룰</h3>
+          <div class="wc-gamerules">
+            <p>· 순서대로 단어 잇기 — <b>표준국어대사전 명사</b>만! (방언·원소 이름 ❌)</p>
+            <p>· <b>두음법칙</b> 적용 · <b>2글자 이상</b></p>
+            <p>· <b>10초</b> 안에 못 내면 탈락 · <b>중복</b>은 1회 경고·2회 탈락</p>
+            <p>· <b>마지막 1명이 우승!</b></p>
+            <p class="wc-gamerules__face">💀 탈락하면 <b>얼공(얼굴 공개)</b>! 갤러리에서 얼굴 사진을 올리면 모두에게 <b>잠깐 공개된 뒤 3초 후 서버에서 자동 삭제</b>돼요. (건너뛰기 없음)</p>
+          </div>
         </div>
       </div>
       <div class="wc-col">
@@ -165,9 +171,9 @@
   <input type="file" accept="image/*" data-face-file hidden>
 </main>
 
-<script src="assets/config.js?v=20260831.146"></script>
-<script src="assets/store.js?v=20260831.146"></script>
-<script src="assets/app.js?v=20260831.146"></script>
+<script src="assets/config.js?v=20260831.147"></script>
+<script src="assets/store.js?v=20260831.147"></script>
+<script src="assets/app.js?v=20260831.147"></script>
 <script>
 App.header("game.html");
 
@@ -260,7 +266,6 @@ function render(j) {
   }).join("");
 
   renderStage(j);
-  renderChain(j);
   renderFace(j);
 }
 
@@ -364,18 +369,6 @@ async function doPlay() {
     if (!r.ok) { App.toast(r.error || "낼 수 없어요."); if (btn) btn.disabled = false; return; }  // 거부 시 입력 유지
     inp.value = ""; typing = false; App.toast("🔗 " + (r.accepted || w) + "!"); poll();
   } catch (e) { App.toast("전송이 안 됐어요. 다시."); if (btn) btn.disabled = false; }
-}
-
-function renderChain(j) {
-  const box = $("[data-chain]");
-  const c = j.chain || [];
-  if (!c.length) { box.innerHTML = `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">아직 나온 단어가 없어요. 첫 단어를 기다려요!</p>`; return; }
-  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
-  box.innerHTML = c.map((h, i) => {
-    const col = (j.colors && j.colors[h.nick]) ? ` style="color:${j.colors[h.nick]}"` : "";
-    return `<div class="wc-link"><span class="wc-link__n">${(c.length > 40 ? "" : (i + 1) + ".")}</span><span class="wc-link__who"${col}>${esc(h.nick)}</span><span class="wc-link__w">${esc(h.word)}</span></div>`;
-  }).join("");
-  if (atBottom) box.scrollTop = box.scrollHeight;
 }
 
 /* 제한시간 카운트다운 (폴링과 독립) */
