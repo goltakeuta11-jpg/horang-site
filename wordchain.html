@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.136">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.136">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.137">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.137">
 <meta property="og:type" content="website">
 <meta property="og:title" content="끝말잇기 · 호랑봇 허브">
 <meta property="og:description" content="국어사전 실시간 검증 끝말잇기 (턴제·탈락전)">
 <meta property="og:url" content="https://horangbot.co.kr/wordchain.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.136"></script>
+<script src="assets/inapp.js?v=20260831.137"></script>
 <title>끝말잇기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.136">
+<link rel="stylesheet" href="assets/style.css?v=20260831.137">
 <style>
   .wc-wrap { max-width: 860px; }
   .wc-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
@@ -85,8 +85,8 @@
   <!-- 셋업 -->
   <section data-setup hidden>
     <div class="wc-panel wc-rules" style="margin-bottom:14px">
-      순서대로 단어를 이어가요. <b>국어사전(표준국어대사전)에 등록된 명사</b>만 인정! · <b>두음법칙 적용</b> · <b>2글자 이상</b> · 원소 이름·이미 나온 단어 불가.
-      제한시간 <b>30초</b> 넘기면 탈락, <b>마지막 1명이 우승</b>해요. (최소 3명 · 최대 15명)
+      순서대로 단어를 이어가요. <b>표준국어대사전에 등록된 명사</b>만 인정(방언·원소 이름 제외)! · <b>두음법칙 적용</b> · <b>2글자 이상</b>.
+      <b>중복 단어는 1회 경고 · 2회 탈락</b>! 제한시간 <b>10초</b> 넘겨도 탈락! <b>마지막 1명이 우승</b>해요. (3~15명)
     </div>
     <p class="mf-hint" data-create-note hidden style="margin:-4px 0 12px;color:var(--text-dim)">💡 방 생성은 관리자만 할 수 있어요. 받은 코드로 참가해주세요.</p>
     <div class="wc-setup">
@@ -142,9 +142,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.136"></script>
-<script src="assets/store.js?v=20260831.136"></script>
-<script src="assets/app.js?v=20260831.136"></script>
+<script src="assets/config.js?v=20260831.137"></script>
+<script src="assets/store.js?v=20260831.137"></script>
+<script src="assets/app.js?v=20260831.137"></script>
 <script>
 App.header("game.html");
 
@@ -274,7 +274,8 @@ function renderStage(j) {
     <div class="wc-play">
       <input data-word maxlength="20" inputmode="text" placeholder="${mine ? "단어 입력!" : (amDead ? "탈락했어요" : j.curNick + "님 차례…")}"${mine ? "" : " disabled"}>
       <button class="btn btn--primary" data-submit${mine ? "" : " disabled"}>제출</button>
-    </div>`;
+    </div>
+    ${(j.me && j.me.dupCount >= 1 && !amDead) ? `<div style="margin-top:8px;color:#FF5C7A;font-weight:800;font-size:13px">⚠️ 중복 경고 ${j.me.dupCount}/${j.me.dupLimit} — 한 번 더 중복이면 탈락!</div>` : ""}`;
   const inp = st.querySelector("[data-word]"), btn = st.querySelector("[data-submit]");
   if (inp) {
     inp.onfocus = () => typing = true; inp.onblur = () => typing = false;
