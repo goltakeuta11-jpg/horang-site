@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.142">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.142">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.143">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.143">
 <meta property="og:type" content="website">
 <meta property="og:title" content="끝말잇기 · 호랑봇 허브">
 <meta property="og:description" content="국어사전 실시간 검증 끝말잇기 (턴제·탈락전)">
 <meta property="og:url" content="https://horangbot.co.kr/wordchain.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.142"></script>
+<script src="assets/inapp.js?v=20260831.143"></script>
 <title>끝말잇기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.142">
+<link rel="stylesheet" href="assets/style.css?v=20260831.143">
 <style>
   [hidden] { display: none !important; }   /* ★ hidden 속성이 .wc-facemodal/.wc-faceview의 display:flex에 밀려 안 먹던 버그 수정 */
   .wc-wrap { max-width: 860px; }
@@ -31,8 +31,15 @@
   .wc-timer { margin-left: auto; font-weight: 900; font-size: 15px; font-variant-numeric: tabular-nums; }
   .wc-leave { background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
   .wc-close { background: rgba(255,92,122,.14); border: 1px solid rgba(255,92,122,.5); color: #FF6B81; border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
-  .wc-cols { display: grid; grid-template-columns: 1fr 300px; gap: 14px; align-items: start; }
-  @media (max-width: 760px) { .wc-cols { grid-template-columns: 1fr; } }
+  /* 데스크톱: 2열(좌 무대/체인, 우 참여자/채팅) */
+  .wc-cols { display: grid; grid-template-columns: 1fr 300px; gap: 14px; align-items: start;
+    grid-template-areas: "stage roster" "chain chat"; }
+  .wc-stage { grid-area: stage; } .wc-chainp { grid-area: chain; } .wc-rosterp { grid-area: roster; } .wc-chat { grid-area: chat; }
+  /* 모바일: 한 줄로 쌓되 채팅→단어입력(무대)→체인→참여자 순 */
+  @media (max-width: 760px) {
+    .wc-cols { display: flex; flex-direction: column; }
+    .wc-chat { order: 1; } .wc-stage { order: 2; } .wc-chainp { order: 3; } .wc-rosterp { order: 4; }
+  }
   .wc-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; }
   .wc-panel h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; }
   /* 무대 */
@@ -124,28 +131,23 @@
       <button class="wc-close" data-closeroom hidden>💥 방 닫기</button>
     </div>
 
+    <!-- 데스크톱: 2열(좌 무대+체인 / 우 참여자+채팅) · 모바일: 채팅→단어입력→체인→참여자 순 -->
     <div class="wc-cols">
-      <!-- 왼쪽: 무대 + 체인 -->
-      <div>
-        <div class="wc-panel wc-stage" data-stage></div>
-        <div class="wc-panel">
-          <h3>🔗 이어진 단어</h3>
-          <div class="wc-chain" data-chain></div>
-        </div>
+      <div class="wc-panel wc-stage" data-stage></div>
+      <div class="wc-panel wc-chainp">
+        <h3>🔗 이어진 단어</h3>
+        <div class="wc-chain" data-chain></div>
       </div>
-      <!-- 오른쪽: 참여자 + 채팅 -->
-      <div>
-        <div class="wc-panel">
-          <h3 data-roster-h>👥 참여자</h3>
-          <div class="wc-roster" data-roster></div>
-        </div>
-        <div class="wc-panel wc-chat">
+      <div class="wc-panel wc-rosterp">
+        <h3 data-roster-h>👥 참여자</h3>
+        <div class="wc-roster" data-roster></div>
+      </div>
+      <div class="wc-panel wc-chat">
           <div class="wc-chat__body" data-chatbox></div>
           <div class="wc-chat__foot">
             <input data-chat-input maxlength="200" placeholder="잡담…">
             <button class="btn btn--primary btn--sm" data-chat-send>전송</button>
           </div>
-        </div>
       </div>
     </div>
   </section>
@@ -169,9 +171,9 @@
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.142"></script>
-<script src="assets/store.js?v=20260831.142"></script>
-<script src="assets/app.js?v=20260831.142"></script>
+<script src="assets/config.js?v=20260831.143"></script>
+<script src="assets/store.js?v=20260831.143"></script>
+<script src="assets/app.js?v=20260831.143"></script>
 <script>
 App.header("game.html");
 
