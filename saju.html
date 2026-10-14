@@ -9,7 +9,7 @@
 <meta property="og:description" content="정밀 만세력으로 읽는 12단계 사주 리포트 — 평생 총운, 금전·연애·결혼, 대운과 세운">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://horangbot.co.kr/saju.html">
-<meta property="og:image" content="https://horangbot.co.kr/assets/saju-og.png?v=20260831.156">
+<meta property="og:image" content="https://horangbot.co.kr/assets/saju-og.png?v=20260831.157">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -190,8 +190,6 @@ a.it{text-decoration:none;display:block}
     <h2>생년월일시 입력 <span class="hj">四柱八字</span></h2>
     <p class="sub">태어난 시간까지 알면 여덟 글자가 전부 나와. 몰라도 여섯 글자로 볼 수 있어.</p>
     <form id="f" autocomplete="off">
-      <div class="field"><label for="nm">이름 <span class="hint" style="display:inline">(선택)</span></label>
-        <input type="text" id="nm" maxlength="12" placeholder="안 적어도 돼"></div>
       <div class="field"><span class="flabel">성별</span>
         <div class="seg"><input type="radio" name="g" id="gf" value="f" checked><label for="gf">여자</label><input type="radio" name="g" id="gm" value="m"><label for="gm">남자</label></div>
         <p class="hint">대운이 흐르는 방향(순행·역행)을 정하는 데 필요해.</p></div>
@@ -224,11 +222,11 @@ a.it{text-decoration:none;display:block}
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="assets/saju-lunar.min.js?v=20260831.156"></script>
-<script src="assets/saju-engine.js?v=20260831.156"></script>
-<script src="assets/saju-places.js?v=20260831.156"></script>
-<script src="assets/saju-data.js?v=20260831.156"></script>
-<script src="assets/saju-report.js?v=20260831.156"></script>
+<script src="assets/saju-lunar.min.js?v=20260831.157"></script>
+<script src="assets/saju-engine.js?v=20260831.157"></script>
+<script src="assets/saju-places.js?v=20260831.157"></script>
+<script src="assets/saju-data.js?v=20260831.157"></script>
+<script src="assets/saju-report.js?v=20260831.157"></script>
 <script>
 "use strict";
 
@@ -254,7 +252,7 @@ function cityStatus(){ const v=city.value.trim(), f=findPlace(v), h=$("#cityHint
 city.addEventListener("input",cityStatus); cityStatus();
 
 function readForm(){
-  return { name:$("#nm").value.trim(), g:document.querySelector("input[name=g]:checked").value,
+  return { name:"", g:document.querySelector("input[name=g]:checked").value,
     lunar:$("#cl").checked, leap:$("#leap").checked, y:+yy.value, m:+mm.value, d:+dd.value,
     noTime:$("#noTime").checked, hh:+hh.value, mi:+mi.value, city:city.value.trim(),
     solar:true, eot:false, yaja:false };
@@ -307,7 +305,7 @@ function toQuery(f){
 function fromQuery(){
   const q=new URLSearchParams(location.search); const d=q.get("d"); if(!d||!/^\d{8}$/.test(d)) return null;
   const t=q.get("t"), c=q.get("c");
-  return { name:(q.get("n")||"").slice(0,12), g:q.get("g")==="m"?"m":"f", lunar:!!q.get("l"), leap:q.get("l")==="2",
+  return { name:"", g:q.get("g")==="m"?"m":"f", lunar:!!q.get("l"), leap:q.get("l")==="2",
     y:+d.slice(0,4), m:+d.slice(4,6), d:+d.slice(6,8), noTime:!t, hh:t?+t.slice(0,2):12, mi:t?+t.slice(2,4):0,
     city:(c||"").slice(0,30), solar:true, eot:q.get("e")==="1", yaja:q.get("j")==="1", shared:true };
 }
