@@ -741,7 +741,7 @@ function render(r, meta){
   h+=`<section class="card"><h2>용어 한눈에 <span class="hj">用語</span></h2><p class="sub">리포트에 나온 사주 용어를 쉬운 말로 모아 뒀어. 모르는 단어가 나오면 여기서 찾아봐.</p>
     <details class="stage"><summary>용어 사전 펼치기 (${Object.keys(GLOSS).length}개)</summary>
     <dl class="kv" style="margin-top:4px">${Object.entries(GLOSS).map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl></details></section>`;
-  h+=`<div class="actions"><button class="btn" id="btnShare">🔗 결과 링크 공유</button><button class="btn ghost" id="btnAgain">${meta.shared?"내 사주 보기":"다시 입력하기"}</button></div>
+  h+=`<div class="actions"><button class="btn ghost" id="btnAgain">${meta.shared?"내 사주 보기":"다시 입력하기"}</button></div>
     <p class="foot">절입 시각은 VSOP87 기반 정밀 계산값, 음력 변환은 한국천문연구원 기준.<br>규칙 기반 자동 풀이라 실제 상담과 다를 수 있어. 인생은 네가 쓰는 거야 🐯</p>`;
   return h;
 }

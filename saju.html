@@ -9,7 +9,7 @@
 <meta property="og:description" content="정밀 만세력으로 읽는 12단계 사주 리포트 — 평생 총운, 금전·연애·결혼, 대운과 세운">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://horangbot.co.kr/saju.html">
-<meta property="og:image" content="https://horangbot.co.kr/assets/saju-og.png?v=20260831.158">
+<meta property="og:image" content="https://horangbot.co.kr/assets/saju-og.png?v=20260831.159">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -146,6 +146,8 @@ ul.clean li::before{content:"";position:absolute;left:2px;top:.72em;width:6px;he
 .mrank{flex:none;font-size:13px;font-weight:800;color:var(--ink3);width:20px;text-align:center}
 .msaved{background:linear-gradient(135deg,#eafaf0,#eef4ff);border-radius:16px;padding:12px 15px;font-size:14px;margin:10px 0}
 .lnk{background:none;border:0;color:var(--seal2);font:inherit;font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
+#adminPanel .tbl th{width:auto;padding:8px 14px 8px 0;border-bottom:1px solid var(--line);vertical-align:middle}
+#adminPanel .tbl td{padding:8px 14px 8px 0}
 .step{scroll-margin-top:12px}
 .stepno{display:inline-block;font-size:11.5px;font-weight:700;color:#fff;background:var(--grad);border-radius:999px;padding:2px 11px;margin-bottom:8px;letter-spacing:.04em}
 .toc{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
@@ -185,6 +187,9 @@ a.it{text-decoration:none;display:block}
     <div><h1>호랑 사주</h1><p>정밀 만세력으로 읽는 12단계 사주 리포트</p></div>
   </header>
 
+  <!-- 관리자 전용: 사주 저장 인원 목록 -->
+  <section id="adminPanel" class="card" hidden></section>
+
   <!-- 입력 -->
   <section id="intro" class="card">
     <h2>생년월일시 입력 <span class="hj">四柱八字</span></h2>
@@ -216,17 +221,17 @@ a.it{text-decoration:none;display:block}
   <!-- 궁합 (동의 기반 저장) -->
   <section id="match" class="card" hidden>
     <h2>사주 궁합 추천 <span class="hj">宮合</span></h2>
-    <p class="sub">자소서 닉네임·비밀번호로 로그인하고 <b>동의</b>하면, 방금 본 네 사주를 서버에 저장해 <b>이성 회원 중 궁합이 잘 맞는 3명</b>을 추천해 줘. 추천 결과는 <b>너만</b> 볼 수 있고, 동의하지 않으면 저장 없이 풀이만 봐도 돼.</p>
+    <p class="sub">자소서 닉네임·비밀번호로 로그인하고 <b>동의</b>하면, 방금 본 네 사주를 서버에 저장해 <b>이성 회원 중 궁합이 가장 잘 맞는 2명</b>을 추천해 줘. 추천 결과는 <b>너만</b> 볼 수 있고, 동의하지 않으면 저장 없이 풀이만 봐도 돼.</p>
     <div id="mBox"></div>
   </section>
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="assets/saju-lunar.min.js?v=20260831.158"></script>
-<script src="assets/saju-engine.js?v=20260831.158"></script>
-<script src="assets/saju-places.js?v=20260831.158"></script>
-<script src="assets/saju-data.js?v=20260831.158"></script>
-<script src="assets/saju-report.js?v=20260831.158"></script>
+<script src="assets/saju-lunar.min.js?v=20260831.159"></script>
+<script src="assets/saju-engine.js?v=20260831.159"></script>
+<script src="assets/saju-places.js?v=20260831.159"></script>
+<script src="assets/saju-data.js?v=20260831.159"></script>
+<script src="assets/saju-report.js?v=20260831.159"></script>
 <script>
 "use strict";
 
@@ -290,7 +295,6 @@ function show(f){
   box.querySelectorAll("#ytabs button").forEach(b=>b.onclick=()=>{ box.querySelectorAll("#ytabs button").forEach(x=>x.classList.toggle("on",x===b));
     box.querySelectorAll("[data-yp]").forEach(p=>p.hidden=p.dataset.yp!==b.dataset.y); });
   $("#btnAgain").onclick=()=>{ history.replaceState(null,"",location.pathname); box.hidden=true; $("#match").hidden=true; $("#intro").hidden=false; window.scrollTo(0,0); };
-  $("#btnShare").onclick=()=>share(f);
   window.scrollTo(0,0);
 }
 function toQuery(f){
@@ -381,7 +385,7 @@ function matchMain(){
     $("#mSave").onclick=doSave;
   } else {
     mBox().innerHTML=head+`<div class="msaved">✅ 사주가 저장돼 있어${MPROF&&MPROF.label?` <span class="mut">(${esc(MPROF.label)})</span>`:""}. 궁합 추천을 볼 수 있어.</div>
-      <div class="mrow"><button class="btn" id="mMatch">이성 궁합 Top 3 보기</button>
+      <div class="mrow"><button class="btn" id="mMatch">이성 궁합 Top 2 보기</button>
       <button class="btn ghost" id="mDel">동의 철회·데이터 삭제</button></div><div id="mResult"></div>`;
     $("#mMatch").onclick=doMatch; $("#mDel").onclick=doDelete;
   }
@@ -400,7 +404,7 @@ async function doMatch(){
   const btn=$("#mMatch"); if(btn){ btn.disabled=true; btn.textContent="계산 중…"; }
   try{
     const r=await sajuApi({sajuAction:"match",nick:MSESS.nick,pwHash:MSESS.pwHash});
-    if(btn){ btn.disabled=false; btn.textContent="이성 궁합 Top 3 다시 보기"; }
+    if(btn){ btn.disabled=false; btn.textContent="이성 궁합 Top 2 다시 보기"; }
     const box=$("#mResult"); if(!box) return;
     if(!r.ok){ box.innerHTML=`<p class="err">${esc(r.error||"조회에 실패했어.")}</p>`; return; }
     if(!r.matches||!r.matches.length){ box.innerHTML=`<p class="mnote">아직 저장된 이성 회원이 ${r.count||0}명이라 추천할 상대가 없어. 더 많은 사람이 저장하면 추천이 정확해져!</p>`; return; }
@@ -408,7 +412,7 @@ async function doMatch(){
       r.matches.map((m,i)=>`<div class="mcard"><div class="mrank">${i+1}</div><div class="mscore">${m.score}</div>
         <div class="mi"><div class="mn">${esc(m.nick)}</div><div class="mt">${esc(m.tier)}</div>
         <div class="mw">${(m.why||[]).map(w=>esc(w)).join(" · ")||"균형 잡힌 무난한 궁합이야."}</div></div></div>`).join("");
-  }catch(e){ if(btn){ btn.disabled=false; btn.textContent="이성 궁합 Top 3 보기"; } }
+  }catch(e){ if(btn){ btn.disabled=false; btn.textContent="이성 궁합 Top 2 보기"; } }
 }
 async function doDelete(){
   const btn=$("#mDel");
@@ -421,6 +425,24 @@ async function doDelete(){
     else { btn.disabled=false; btn.textContent="동의 철회·데이터 삭제"; toast(r.error||"삭제에 실패했어."); }
   }catch(e){ btn.disabled=false; btn.textContent="동의 철회·데이터 삭제"; toast("통신 오류야."); }
 }
+
+/* ===== 관리자 전용: 사주 저장 인원 목록 (허브 로그인 토큰 재사용) ===== */
+function adminToken(){ try{ return (sessionStorage.getItem("horang.admin")==="1" && sessionStorage.getItem("horang.key")) || ""; }catch(e){ return ""; } }
+async function adminMaybe(){
+  const tok=adminToken(); if(!tok) return;
+  try{
+    const r=await sajuApi({sajuAction:"adminlist",key:tok});
+    if(!r.ok) return;
+    const p=$("#adminPanel"); if(!p) return;
+    const list=r.list||[];
+    const rows=list.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.nick)}</b></td><td>${esc(x.gender||(x.g==="m"?"남":"여"))}</td><td class="mut">${esc(x.label||"-")}</td><td class="mut">${esc((x.updated||"").slice(0,10))}</td></tr>`).join("");
+    p.innerHTML=`<h2>관리자 · 사주 저장 인원 <span class="hj">${list.length}명</span></h2>
+      <p class="sub">동의하고 사주를 저장한 회원 목록이야 (관리자만 보여). 각자의 궁합 결과는 본인만 볼 수 있어.</p>
+      ${list.length?`<div class="scroll"><table class="tbl"><thead><tr><th>#</th><th>닉네임</th><th>성별</th><th>생년</th><th>저장일</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<p class="mnote">아직 사주를 저장한 사람이 없어.</p>`}`;
+    p.hidden=false;
+  }catch(e){}
+}
+adminMaybe();
 
 const qf = fromQuery();
 if(qf){ try{ show(qf); }catch(e){ console.error(e); } }
