@@ -9,7 +9,7 @@
 <meta property="og:description" content="정밀 만세력으로 읽는 12단계 사주 리포트 — 평생 총운, 금전·연애·결혼, 대운과 세운">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://horangbot.co.kr/saju.html">
-<meta property="og:image" content="https://horangbot.co.kr/assets/saju-og.png?v=20260831.155">
+<meta property="og:image" content="https://horangbot.co.kr/assets/saju-og.png?v=20260831.156">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -131,6 +131,21 @@ ul.clean li::before{content:"";position:absolute;left:2px;top:.72em;width:6px;he
   padding:11px 20px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
 .toast.on{opacity:1}
 [hidden]{display:none!important}
+/* ---- 궁합 ---- */
+.mrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.mrow input{max-width:180px}
+.consent{display:flex;gap:9px;align-items:flex-start;background:var(--soft);border-radius:16px;padding:13px 15px;margin:14px 0;font-size:14px;color:var(--ink2);cursor:pointer}
+.consent input{margin-top:3px;accent-color:var(--seal);flex:none;width:18px;height:18px}
+.mnote{font-size:12.5px;color:var(--ink3);margin:8px 0}
+.mcard{display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:14px 16px;margin:10px 0;box-shadow:0 0 0 1px var(--line) inset}
+.mscore{flex:none;width:58px;height:58px;border-radius:16px;display:grid;place-items:center;background:var(--grad);color:#fff;font-weight:800;font-size:20px;line-height:1}
+.mcard .mi{min-width:0}
+.mcard .mn{font-weight:800;font-size:16px}
+.mcard .mt{font-size:12.5px;font-weight:700;color:var(--seal2)}
+.mcard .mw{font-size:13px;color:var(--ink2);margin-top:4px;line-height:1.5}
+.mrank{flex:none;font-size:13px;font-weight:800;color:var(--ink3);width:20px;text-align:center}
+.msaved{background:linear-gradient(135deg,#eafaf0,#eef4ff);border-radius:16px;padding:12px 15px;font-size:14px;margin:10px 0}
+.lnk{background:none;border:0;color:var(--seal2);font:inherit;font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
 .step{scroll-margin-top:12px}
 .stepno{display:inline-block;font-size:11.5px;font-weight:700;color:#fff;background:var(--grad);border-radius:999px;padding:2px 11px;margin-bottom:8px;letter-spacing:.04em}
 .toc{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
@@ -199,14 +214,21 @@ a.it{text-decoration:none;display:block}
 
   <!-- 결과 -->
   <div id="result" hidden></div>
+
+  <!-- 궁합 (동의 기반 저장) -->
+  <section id="match" class="card" hidden>
+    <h2>사주 궁합 추천 <span class="hj">宮合</span></h2>
+    <p class="sub">자소서 닉네임·비밀번호로 로그인하고 <b>동의</b>하면, 방금 본 네 사주를 서버에 저장해 <b>이성 회원 중 궁합이 잘 맞는 3명</b>을 추천해 줘. 추천 결과는 <b>너만</b> 볼 수 있고, 동의하지 않으면 저장 없이 풀이만 봐도 돼.</p>
+    <div id="mBox"></div>
+  </section>
 </div>
 <div class="toast" id="toast"></div>
 
-<script src="assets/saju-lunar.min.js?v=20260831.155"></script>
-<script src="assets/saju-engine.js?v=20260831.155"></script>
-<script src="assets/saju-places.js?v=20260831.155"></script>
-<script src="assets/saju-data.js?v=20260831.155"></script>
-<script src="assets/saju-report.js?v=20260831.155"></script>
+<script src="assets/saju-lunar.min.js?v=20260831.156"></script>
+<script src="assets/saju-engine.js?v=20260831.156"></script>
+<script src="assets/saju-places.js?v=20260831.156"></script>
+<script src="assets/saju-data.js?v=20260831.156"></script>
+<script src="assets/saju-report.js?v=20260831.156"></script>
 <script>
 "use strict";
 
@@ -253,16 +275,23 @@ function compute(f){
   const r = SAJU.calc({y,m,d,hour:f.noTime?null:f.hh,min:f.noTime?null:f.mi,gender:f.g,lon,eot:f.solar&&f.eot,yaja:f.yaja});
   const meta = {name:f.name,g:f.g,y,solarStr:`${y}.${m}.${d}${f.noTime?"":" "+String(f.hh).padStart(2,"0")+":"+String(f.mi).padStart(2,"0")}`,
     lunarStr, hh:f.hh, mi:f.mi, lon, city:esc(place.name), shared:!!f.shared};
-  return {r,meta};
+  const A = analyze(r, f.g), P = r.pillars;
+  const factors = { ds:A.ds, de:A.de, cnt:A.cnt.slice(), yong:A.yongEl, hee:A.heeEl, gi:A.giEl, dbr:P.day.b, yb:P.year.b, mb:P.month.b };
+  return {r,meta,factors};
 }
+/* 사주 궁합용 상태(동의 기반 저장) */
+let LAST = null;   // {factors, label, g} — 마지막으로 조회한 사주
+let MSESS = null;  // {nick, pwHash} — 궁합 로그인 세션
 function show(f){
-  const {r,meta}=compute(f);
+  const {r,meta,factors}=compute(f);
+  LAST = { factors, label: meta.solarStr, g: f.g };
   const box=$("#result"); box.innerHTML=render(r,meta); box.hidden=false; $("#intro").hidden=true;
+  $("#match").hidden=false; matchInit();
   box.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{ box.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));
     box.querySelectorAll("[data-p]").forEach(p=>p.hidden=p.dataset.p!==b.dataset.t); });
   box.querySelectorAll("#ytabs button").forEach(b=>b.onclick=()=>{ box.querySelectorAll("#ytabs button").forEach(x=>x.classList.toggle("on",x===b));
     box.querySelectorAll("[data-yp]").forEach(p=>p.hidden=p.dataset.yp!==b.dataset.y); });
-  $("#btnAgain").onclick=()=>{ history.replaceState(null,"",location.pathname); box.hidden=true; $("#intro").hidden=false; window.scrollTo(0,0); };
+  $("#btnAgain").onclick=()=>{ history.replaceState(null,"",location.pathname); box.hidden=true; $("#match").hidden=true; $("#intro").hidden=false; window.scrollTo(0,0); };
   $("#btnShare").onclick=()=>share(f);
   window.scrollTo(0,0);
 }
@@ -294,6 +323,106 @@ function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on
 $("#f").onsubmit=e=>{ e.preventDefault(); $("#err").textContent="";
   try{ const f=readForm(); show(f); history.replaceState(null,"",location.pathname); }
   catch(err){ $("#err").textContent=err.message; console.error(err); } };
+
+/* ================= 사주 궁합 (동의 기반 저장) ================= */
+let MSAVED=false, MPROF=null, _delArm=false;
+async function sha256(str){ str=String(str==null?"":str);
+  try{ if(window.crypto&&crypto.subtle&&window.TextEncoder){ const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str)); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join(""); } }catch(e){}
+  return sha256js(str); }
+function sha256js(str){ function R(v,a){return (v>>>a)|(v<<(32-a));}
+  var mp=Math.pow,mw=mp(2,32),L="length",i,j,out="",words=[];
+  var ascii=unescape(encodeURIComponent(String(str==null?"":str)));
+  var abl=ascii[L]*8;
+  var hash=sha256js.h=sha256js.h||[],k=sha256js.k=sha256js.k||[],pc=k[L],isC={};
+  for(var c=2;pc<64;c++){ if(!isC[c]){ for(i=0;i<313;i+=c)isC[i]=c; hash[pc]=(mp(c,.5)*mw)|0; k[pc++]=(mp(c,1/3)*mw)|0; } }
+  ascii+="\x80"; while(ascii[L]%64-56)ascii+="\x00";
+  for(i=0;i<ascii[L];i++){ j=ascii.charCodeAt(i); if(j>>8)return ""; words[i>>2]|=j<<((3-i)%4)*8; }
+  words[words[L]]=(abl/mw)|0; words[words[L]]=abl;
+  for(j=0;j<words[L];){ var w=words.slice(j,j+=16),oldHash=hash; hash=hash.slice(0,8);
+    for(i=0;i<64;i++){ var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4];
+      var t1=hash[7]+(R(e,6)^R(e,11)^R(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]
+        +(w[i]=(i<16)?w[i]:(w[i-16]+(R(w15,7)^R(w15,18)^(w15>>>3))+w[i-7]+(R(w2,17)^R(w2,19)^(w2>>>10)))|0);
+      var t2=(R(a,2)^R(a,13)^R(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+      hash=[(t1+t2)|0].concat(hash); hash[4]=(hash[4]+t1)|0; }
+    for(i=0;i<8;i++)hash[i]=(hash[i]+oldHash[i])|0; }
+  for(i=0;i<8;i++)for(j=3;j+1;j--){ var b=(hash[i]>>(j*8))&255; out+=((b<16)?0:"")+b.toString(16); }
+  return out; }
+async function sajuApi(payload){
+  const r=await fetch("/api/gs",{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(payload)});
+  return r.json();
+}
+const mBox=()=>$("#mBox");
+function matchInit(){ if(MSESS) matchMain(); else matchLogin(); }
+function matchLogin(msg){
+  mBox().innerHTML=`<div class="mrow"><input type="text" id="mNick" placeholder="자소서 닉네임" maxlength="20" value="${MSESS?esc(MSESS.nick):''}">
+    <input type="password" id="mPw" placeholder="비밀번호" maxlength="40"></div>
+    <button class="btn ghost" id="mLogin">로그인</button>
+    ${msg?`<p class="err">${esc(msg)}</p>`:`<p class="mnote">작대기·자소서와 같은 닉네임·비밀번호를 쓰면 돼. 자소서가 없으면 먼저 '자소서' 탭에서 등록해줘.</p>`}`;
+  $("#mLogin").onclick=doLogin;
+  const pw=$("#mPw"); if(pw) pw.onkeydown=e=>{ if(e.key==="Enter") doLogin(); };
+}
+async function doLogin(){
+  const nick=$("#mNick").value.trim(), pw=$("#mPw").value;
+  if(!nick||!pw){ matchLogin("닉네임과 비밀번호를 입력해줘."); return; }
+  const btn=$("#mLogin"); btn.disabled=true; btn.textContent="확인 중…";
+  try{
+    const pwHash=await sha256(pw);
+    const r=await sajuApi({sajuAction:"get",nick,pwHash});
+    if(!r.ok){ matchLogin(r.error||"로그인에 실패했어."); return; }
+    MSESS={nick,pwHash}; MSAVED=!!r.saved; MPROF=r.profile; matchMain();
+  }catch(e){ matchLogin("통신 오류야. 잠시 후 다시 시도해줘."); }
+}
+function matchMain(){
+  const head=`<div class="msaved">👤 <b>${esc(MSESS.nick)}</b>(으)로 로그인됨 · <button class="lnk" id="mLogout">로그아웃</button></div>`;
+  if(!MSAVED){
+    mBox().innerHTML=head+`<label class="consent"><input type="checkbox" id="mConsent">
+      <span>내 사주 데이터(일간·오행·용신·지지·띠 등 계산값과 생년월일 표기)를 서버에 저장하고, 이성 회원 궁합 추천에 사용하는 데 동의합니다. 언제든 삭제·철회할 수 있어요.</span></label>
+      <button class="btn" id="mSave" disabled>동의하고 저장 후 궁합 보기</button>
+      <p class="mnote">※ 동의하지 않아도 위 사주 풀이는 그대로 볼 수 있어. 저장은 오직 궁합 추천에만 쓰여.</p>`;
+    $("#mConsent").onchange=e=>{ $("#mSave").disabled=!e.target.checked; };
+    $("#mSave").onclick=doSave;
+  } else {
+    mBox().innerHTML=head+`<div class="msaved">✅ 사주가 저장돼 있어${MPROF&&MPROF.label?` <span class="mut">(${esc(MPROF.label)})</span>`:""}. 궁합 추천을 볼 수 있어.</div>
+      <div class="mrow"><button class="btn" id="mMatch">이성 궁합 Top 3 보기</button>
+      <button class="btn ghost" id="mDel">동의 철회·데이터 삭제</button></div><div id="mResult"></div>`;
+    $("#mMatch").onclick=doMatch; $("#mDel").onclick=doDelete;
+  }
+  $("#mLogout").onclick=()=>{ MSESS=null;MSAVED=false;MPROF=null;_delArm=false; matchLogin(); };
+}
+async function doSave(){
+  if(!LAST){ toast("먼저 위에서 사주를 조회해줘."); return; }
+  const btn=$("#mSave"); btn.disabled=true; btn.textContent="저장 중…";
+  try{
+    const r=await sajuApi({sajuAction:"save",nick:MSESS.nick,pwHash:MSESS.pwHash,g:LAST.g,label:LAST.label,factors:LAST.factors});
+    if(!r.ok){ btn.disabled=false; btn.textContent="동의하고 저장 후 궁합 보기"; toast(r.error||"저장에 실패했어."); return; }
+    MSAVED=true; MPROF={label:LAST.label}; matchMain(); doMatch();
+  }catch(e){ btn.disabled=false; btn.textContent="동의하고 저장 후 궁합 보기"; toast("통신 오류야."); }
+}
+async function doMatch(){
+  const btn=$("#mMatch"); if(btn){ btn.disabled=true; btn.textContent="계산 중…"; }
+  try{
+    const r=await sajuApi({sajuAction:"match",nick:MSESS.nick,pwHash:MSESS.pwHash});
+    if(btn){ btn.disabled=false; btn.textContent="이성 궁합 Top 3 다시 보기"; }
+    const box=$("#mResult"); if(!box) return;
+    if(!r.ok){ box.innerHTML=`<p class="err">${esc(r.error||"조회에 실패했어.")}</p>`; return; }
+    if(!r.matches||!r.matches.length){ box.innerHTML=`<p class="mnote">아직 저장된 이성 회원이 ${r.count||0}명이라 추천할 상대가 없어. 더 많은 사람이 저장하면 추천이 정확해져!</p>`; return; }
+    box.innerHTML=`<p class="mnote">저장된 이성 회원 ${r.count}명 중 궁합 상위 ${r.matches.length}명이야.</p>`+
+      r.matches.map((m,i)=>`<div class="mcard"><div class="mrank">${i+1}</div><div class="mscore">${m.score}</div>
+        <div class="mi"><div class="mn">${esc(m.nick)}</div><div class="mt">${esc(m.tier)}</div>
+        <div class="mw">${(m.why||[]).map(w=>esc(w)).join(" · ")||"균형 잡힌 무난한 궁합이야."}</div></div></div>`).join("");
+  }catch(e){ if(btn){ btn.disabled=false; btn.textContent="이성 궁합 Top 3 보기"; } }
+}
+async function doDelete(){
+  const btn=$("#mDel");
+  if(!_delArm){ _delArm=true; btn.textContent="정말 삭제? 한 번 더 누르기"; btn.style.color="#e5484d";
+    setTimeout(()=>{ if(_delArm){ _delArm=false; btn.textContent="동의 철회·데이터 삭제"; btn.style.color=""; } },4000); return; }
+  _delArm=false; btn.disabled=true; btn.textContent="삭제 중…";
+  try{
+    const r=await sajuApi({sajuAction:"delete",nick:MSESS.nick,pwHash:MSESS.pwHash});
+    if(r.ok){ MSAVED=false; MPROF=null; matchMain(); toast("삭제했어. 동의가 철회됐어."); }
+    else { btn.disabled=false; btn.textContent="동의 철회·데이터 삭제"; toast(r.error||"삭제에 실패했어."); }
+  }catch(e){ btn.disabled=false; btn.textContent="동의 철회·데이터 삭제"; toast("통신 오류야."); }
+}
 
 const qf = fromQuery();
 if(qf){ try{ show(qf); }catch(e){ console.error(e); } }
