@@ -178,6 +178,7 @@
       ["donate.html", "후원"],
       ["members.html", "자소서"],
       ["psychtest.html", "심리테스트"],
+      ["saju.html", "사주"],
       ["sticks.html", "작대기"],
       ["game.html", "🎮 게임"]
     ];

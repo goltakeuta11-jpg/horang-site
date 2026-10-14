@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>호랑 사주</title>
+<meta name="description" content="생년월일시로 보는 12단계 사주 리포트 — 원국 구조, 평생 총운, 금전·직업·연애·결혼·건강·가족, 대운·세운, 현실 조언">
+<meta property="og:title" content="호랑 사주 — 내 사주팔자 풀이">
+<meta property="og:description" content="정밀 만세력으로 읽는 12단계 사주 리포트 — 평생 총운, 금전·연애·결혼, 대운과 세운">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://horangbot.co.kr/saju.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/saju-og.png?v=20260831.155">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🐯%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --bg:#fbf8ff; --card:rgba(255,255,255,.82); --line:#ece6f7; --soft:#f5f1fd;
+  --ink:#2b2840; --ink2:#5d5874; --ink3:#9a94b0;
+  --seal:#8b6cf6; --seal2:#7457e8; --gold:#ffb35c;
+  --grad:linear-gradient(135deg,#a78bfa 0%,#f9a8d4 55%,#fdba8c 100%);
+  --wood:#4fbf8b; --fire:#ff7f7f; --earth:#f2b544; --metal:#a3a8c9; --water:#6f8ef0;
+  --wood-t:#e3f6ec; --fire-t:#ffe8e6; --earth-t:#fff3d9; --metal-t:#eeeff8; --water-t:#e6ecfd;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --serif:var(--sans); --han:var(--sans);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.72;letter-spacing:-.01em;
+  -webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:break-word}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(40% 35% at 12% 8%,#e9dcff 0%,transparent 70%),radial-gradient(45% 40% at 95% 20%,#ffe1d6 0%,transparent 70%),
+  radial-gradient(50% 45% at 80% 95%,#ffe4f1 0%,transparent 70%),radial-gradient(40% 40% at 5% 85%,#dfe9ff 0%,transparent 70%),var(--bg)}
+.wrap{max-width:760px;margin:0 auto;padding:28px 16px 90px}
+.backhub{display:inline-block;margin:0 0 4px;font-size:13.5px;font-weight:600;color:var(--seal2);text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 15px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.backhub:hover{background:#fff}
+header.top{display:flex;align-items:center;gap:14px;margin:6px 0 22px}
+.seal{width:54px;height:54px;flex:none;border-radius:18px;background:var(--grad);display:grid;place-items:center;font-size:28px;
+  box-shadow:0 10px 24px -10px rgba(139,108,246,.6)}
+header.top h1{margin:0;font-size:25px;font-weight:800;letter-spacing:-.03em}
+header.top p{margin:0;color:var(--ink3);font-size:13.5px}
+.card{background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.9);
+  border-radius:26px;padding:24px 20px;margin:16px 0;box-shadow:0 1px 2px rgba(80,60,140,.04),0 14px 40px -22px rgba(110,80,200,.35)}
+.card h2{margin:0 0 4px;font-size:20px;font-weight:800;letter-spacing:-.03em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card h2 .hj{font-size:11.5px;font-weight:600;color:var(--seal);background:var(--soft);border-radius:999px;padding:2px 9px;letter-spacing:.08em}
+.card .sub{color:var(--ink3);font-size:13.5px;margin:0 0 14px}
+.card h3{font-size:16px;font-weight:700;margin:22px 0 6px;letter-spacing:-.02em}
+p{margin:8px 0}
+b{font-weight:700}
+/* ---- form ---- */
+.field{margin:16px 0}
+.field>label,.flabel{display:block;font-weight:700;font-size:14px;margin-bottom:8px}
+.seg{display:inline-flex;background:var(--soft);border-radius:999px;padding:4px;gap:2px}
+.seg input{display:none}
+.seg label{padding:8px 18px;cursor:pointer;font-size:14.5px;font-weight:600;color:var(--ink2);border-radius:999px;transition:.15s}
+.seg input:checked+label{background:#fff;color:var(--seal2);box-shadow:0 2px 8px -2px rgba(110,80,200,.35)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select,input[type=text]{font:inherit;font-size:15px;padding:11px 14px;border:1.5px solid transparent;border-radius:14px;background:var(--soft);color:var(--ink);outline:none;transition:.15s}
+select:focus,input[type=text]:focus{border-color:#c8b8fb;background:#fff}
+input[type=text]{width:100%;max-width:300px}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--ink2);cursor:pointer}
+.chk input{accent-color:var(--seal)}
+.hint{font-size:12.5px;color:var(--ink3);margin:6px 0 0}
+.btn{display:inline-block;font:inherit;font-weight:700;font-size:16px;padding:15px 30px;border-radius:999px;border:0;cursor:pointer;
+  background:var(--grad);color:#fff;box-shadow:0 12px 24px -12px rgba(167,139,250,.9);transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 16px 28px -12px rgba(167,139,250,1)}
+.btn.ghost{background:#fff;color:var(--ink2);box-shadow:0 0 0 1.5px var(--line) inset;font-size:14.5px;padding:12px 22px}
+.err{color:#e5484d;font-size:14px;margin-top:8px}
+/* ---- pillars ---- */
+.who{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;color:var(--ink2);margin-bottom:14px}
+.pillars{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:6px;align-items:stretch}
+.pillars .rh{font-size:11.5px;color:var(--ink3);display:flex;align-items:center;justify-content:flex-end;padding-right:4px;white-space:nowrap}
+.pillars .ch{text-align:center;font-size:13px;color:var(--ink2);font-weight:700}
+.pillars .ch small{display:block;font-weight:500;color:var(--ink3);font-size:11px}
+.tile{border-radius:18px;aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;min-width:0}
+.tile .h{font-size:clamp(26px,7.5vw,40px);font-weight:700;line-height:1}
+.tile .k{font-size:11.5px;margin-top:4px;font-weight:600;opacity:.85}
+.tile.e0{background:var(--wood-t);color:#2f8f62} .tile.e1{background:var(--fire-t);color:#e0564f} .tile.e2{background:var(--earth-t);color:#c08412}
+.tile.e3{background:var(--metal-t);color:#6a6f95} .tile.e4{background:var(--water-t);color:#3f5fcf}
+.tile.me{box-shadow:0 0 0 2.5px #fff,0 0 0 4.5px var(--seal)}
+.tile.none{background:repeating-linear-gradient(45deg,#f3f0fa,#f3f0fa 6px,#ece8f6 6px,#ece8f6 12px);color:var(--ink3)}
+.cell{text-align:center;font-size:12.5px;color:var(--ink2);line-height:1.35;padding:3px 0}
+.cell.ten{font-weight:700;color:var(--ink)}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--ink2);font-weight:600;margin:1px}
+.tag.good{background:#e7f8ef;color:#2f8f62}
+.tag.bad{background:#ffe9ec;color:#e5484d}
+.e-c0{color:#2f8f62} .e-c1{color:#e0564f} .e-c2{color:#c08412} .e-c3{color:#6a6f95} .e-c4{color:#3f5fcf}
+.timeinfo{font-size:12.5px;color:var(--ink3);margin-top:12px}
+/* ---- summary ---- */
+.hero{display:flex;gap:16px;align-items:flex-start}
+.hero .big{font-size:38px;line-height:1;flex:none;width:72px;height:72px;border-radius:24px;display:grid;place-items:center;background:var(--grad);
+  box-shadow:0 12px 26px -12px rgba(167,139,250,.8)}
+.hero h2{font-size:22px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:999px;background:var(--soft);color:var(--ink2)}
+.chip.red{background:linear-gradient(135deg,#efe7ff,#ffe6ef);color:var(--seal2)}
+/* ---- bars ---- */
+.bars{display:grid;gap:10px;margin:14px 0}
+.bar{display:grid;grid-template-columns:58px 1fr 40px;align-items:center;gap:10px;font-size:14px}
+.bar .lab{font-weight:700}
+.bar .track{height:12px;background:var(--soft);border-radius:999px;overflow:hidden}
+.bar .fill{height:100%;border-radius:999px}
+.bar .n{text-align:right;color:var(--ink3);font-size:13px;font-weight:600}
+.box{background:linear-gradient(135deg,#f4efff,#fff0ea);border-radius:18px;padding:14px 16px;margin:12px 0;font-size:14.5px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14.5px;margin:10px 0}
+.kv dt{color:var(--ink3);font-weight:600} .kv dd{margin:0}
+ul.clean{margin:8px 0;padding-left:0;list-style:none} ul.clean li{margin:8px 0;padding-left:16px;position:relative}
+ul.clean li::before{content:"";position:absolute;left:2px;top:.72em;width:6px;height:6px;border-radius:50%;background:var(--grad)}
+/* ---- daewoon ---- */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:6px 4px}
+.dw{display:flex;gap:8px;width:max-content}
+.dw .it{width:70px;text-align:center;border-radius:18px;padding:10px 4px;background:var(--soft);font-size:12px;color:var(--ink2)}
+.dw .it.now{background:#fff;box-shadow:0 0 0 2px var(--seal) inset,0 10px 20px -12px rgba(139,108,246,.7)}
+.dw .it .g{font-size:21px;font-weight:700;line-height:1.2;color:var(--ink);margin:3px 0}
+.dw .it .t{font-size:11px;color:var(--ink3)}
+.stars{color:var(--gold);letter-spacing:1px;font-size:14px}
+.months{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;margin-top:12px}
+.mo{border-radius:16px;padding:11px 13px;background:var(--soft);font-size:13px;color:var(--ink2)}
+.mo.now{background:#fff;box-shadow:0 0 0 2px var(--seal) inset}
+.mo .mh{display:flex;justify-content:space-between;align-items:baseline;color:var(--ink);font-weight:700;font-size:14px}
+.mo .mh span{font-size:12.5px;color:var(--ink3);font-weight:600}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 6px}
+.tabs button{font:inherit;font-size:14px;font-weight:600;padding:7px 16px;border-radius:999px;border:0;background:var(--soft);color:var(--ink2);cursor:pointer}
+.tabs button.on{background:var(--grad);color:#fff}
+.banner{background:linear-gradient(135deg,#f1eaff,#ffeee7);border-radius:18px;padding:12px 16px;font-size:14px;margin:10px 0}
+.foot{color:var(--ink3);font-size:12.5px;text-align:center;margin-top:30px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:20px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:11px 20px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+[hidden]{display:none!important}
+.step{scroll-margin-top:12px}
+.stepno{display:inline-block;font-size:11.5px;font-weight:700;color:#fff;background:var(--grad);border-radius:999px;padding:2px 11px;margin-bottom:8px;letter-spacing:.04em}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.toc a{font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--soft);color:var(--ink2);text-decoration:none;transition:.15s}
+.toc a:hover{background:#fff;color:var(--seal2);box-shadow:0 0 0 1.5px #d6c9fd inset}
+.gl{color:var(--ink3);font-size:.88em;font-weight:400}
+.cf{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;vertical-align:2px;margin-left:4px}
+.cf-high{background:#e7f8ef;color:#2f8f62}.cf-mid{background:#fff3d9;color:#b07510}.cf-low{background:#f1eff6;color:var(--ink3)}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
+.tbl th{text-align:left;white-space:nowrap;color:var(--ink3);font-weight:600;padding:8px 14px 8px 0;vertical-align:top;width:1%}
+.tbl td{padding:8px 0;border-bottom:1px solid var(--line)}
+.tbl tr:last-child td{border-bottom:0}
+details.stage{border-radius:18px;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px var(--line) inset;margin:10px 0;padding:0 16px;transition:.15s}
+details.stage[open]{background:#fff;box-shadow:0 0 0 1px var(--line) inset,0 12px 28px -18px rgba(110,80,200,.45);padding-bottom:8px}
+details.stage summary{cursor:pointer;padding:14px 0;font-size:14.5px;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+details.stage summary::-webkit-details-marker{display:none}
+details.stage summary::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:.2s}
+details.stage[open] summary::after{transform:rotate(-135deg)}
+details.stage p{font-size:14.5px}
+.mut{color:var(--ink3);font-size:12.5px}
+a.it{text-decoration:none;display:block}
+@media (max-width:480px){
+  .card{padding:20px 15px;border-radius:22px}
+  .pillars{gap:4px}
+  .pillars .rh{font-size:10.5px}
+  .cell{font-size:11.5px}
+  .tile{border-radius:14px}
+  .hero .big{width:60px;height:60px;font-size:32px;border-radius:20px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="index.html" class="backhub">← 호랑봇 허브</a>
+  <header class="top">
+    <div class="seal">🐯</div>
+    <div><h1>호랑 사주</h1><p>정밀 만세력으로 읽는 12단계 사주 리포트</p></div>
+  </header>
+
+  <!-- 입력 -->
+  <section id="intro" class="card">
+    <h2>생년월일시 입력 <span class="hj">四柱八字</span></h2>
+    <p class="sub">태어난 시간까지 알면 여덟 글자가 전부 나와. 몰라도 여섯 글자로 볼 수 있어.</p>
+    <form id="f" autocomplete="off">
+      <div class="field"><label for="nm">이름 <span class="hint" style="display:inline">(선택)</span></label>
+        <input type="text" id="nm" maxlength="12" placeholder="안 적어도 돼"></div>
+      <div class="field"><span class="flabel">성별</span>
+        <div class="seg"><input type="radio" name="g" id="gf" value="f" checked><label for="gf">여자</label><input type="radio" name="g" id="gm" value="m"><label for="gm">남자</label></div>
+        <p class="hint">대운이 흐르는 방향(순행·역행)을 정하는 데 필요해.</p></div>
+      <div class="field"><span class="flabel">생년월일</span>
+        <div class="row" style="margin-bottom:8px">
+          <div class="seg"><input type="radio" name="cal" id="cs" value="s" checked><label for="cs">양력</label><input type="radio" name="cal" id="cl" value="l"><label for="cl">음력</label></div>
+          <label class="chk" id="leapWrap" hidden><input type="checkbox" id="leap"> 윤달</label>
+        </div>
+        <div class="row"><select id="yy" aria-label="년"></select><select id="mm" aria-label="월"></select><select id="dd" aria-label="일"></select></div></div>
+      <div class="field"><span class="flabel">태어난 시간</span>
+        <div class="row"><select id="hh" aria-label="시"></select><select id="mi" aria-label="분"></select>
+          <label class="chk"><input type="checkbox" id="noTime"> 몰라요</label></div></div>
+      <div class="field"><label for="city">출생 지역</label>
+        <input type="text" id="city" list="placeList" maxlength="30" placeholder="예: 서울, 부산 해운대, 경기 수원" value="서울"><datalist id="placeList"></datalist>
+        <p class="hint" id="cityHint"></p></div>
+      <div style="margin-top:20px"><button class="btn" type="submit">사주 풀어보기</button></div>
+      <div class="err" id="err"></div>
+    </form>
+  </section>
+
+  <!-- 결과 -->
+  <div id="result" hidden></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="assets/saju-lunar.min.js?v=20260831.155"></script>
+<script src="assets/saju-engine.js?v=20260831.155"></script>
+<script src="assets/saju-places.js?v=20260831.155"></script>
+<script src="assets/saju-data.js?v=20260831.155"></script>
+<script src="assets/saju-report.js?v=20260831.155"></script>
+<script>
+"use strict";
+
+/* ================= UI ================= */
+function fillSelect(el, from, to, fmt, sel){ el.innerHTML=""; for(let i=from;i<=to;i++){ const o=document.createElement("option"); o.value=i; o.textContent=fmt(i); if(i===sel) o.selected=true; el.appendChild(o);} }
+const yy=$("#yy"), mm=$("#mm"), dd=$("#dd"), hh=$("#hh"), mi=$("#mi");
+const nowY = new Date().getFullYear();
+fillSelect(yy,1920,Math.min(nowY,2050),i=>i+"년",1995);
+fillSelect(mm,1,12,i=>i+"월",1);
+fillSelect(hh,0,23,i=>String(i).padStart(2,"0")+"시",12);
+fillSelect(mi,0,59,i=>String(i).padStart(2,"0")+"분",0);
+function refreshDays(){ const lunar=$("#cl").checked; const y=+yy.value,m=+mm.value; const cur=+dd.value||1;
+  const max = lunar?30:new Date(y,m,0).getDate(); fillSelect(dd,1,max,i=>i+"일",Math.min(cur,max)); }
+refreshDays(); yy.onchange=mm.onchange=refreshDays;
+document.querySelectorAll("input[name=cal]").forEach(x=>x.onchange=()=>{ $("#leapWrap").hidden=!$("#cl").checked; refreshDays(); });
+$("#noTime").onchange=()=>{ hh.disabled=mi.disabled=$("#noTime").checked; };
+const city=$("#city");
+$("#placeList").innerHTML = PLACE_NAMES.map(n=>`<option value="${n}">`).join("");
+function cityStatus(){ const v=city.value.trim(), f=findPlace(v), h=$("#cityHint");
+  if(!v){ h.textContent="비워 두면 서울 기준으로 계산해."; return; }
+  h.innerHTML = f ? `📍 <b>${esc(f.name)}</b> 기준 (동경 ${f.lon.toFixed(2)}°)으로 태양 시각을 맞춰서 시주를 계산해.`
+                  : `국내 시·군 이름을 못 찾았어. 해외거나 모르는 지역이면 서울 기준으로 계산해.`; }
+city.addEventListener("input",cityStatus); cityStatus();
+
+function readForm(){
+  return { name:$("#nm").value.trim(), g:document.querySelector("input[name=g]:checked").value,
+    lunar:$("#cl").checked, leap:$("#leap").checked, y:+yy.value, m:+mm.value, d:+dd.value,
+    noTime:$("#noTime").checked, hh:+hh.value, mi:+mi.value, city:city.value.trim(),
+    solar:true, eot:false, yaja:false };
+}
+function compute(f){
+  let y=f.y,m=f.m,d=f.d, lunarStr;
+  const klc = new KoreanLunarCalendar();
+  if(f.lunar){
+    if(!klc.setLunarDate(y,m,d,f.leap)) throw new Error(f.leap?"그 해 그 달엔 윤달이 없어. 윤달 체크를 확인해 줘.":"없는 음력 날짜야. 날짜를 다시 확인해 줘.");
+    const s=klc.getSolarCalendar(); y=s.year; m=s.month; d=s.day;
+    lunarStr = `${f.y}.${f.m}.${f.d}${f.leap?" (윤)":""}`;
+  } else {
+    if(klc.setSolarDate(y,m,d)){ const l=klc.getLunarCalendar(); lunarStr=`${l.year}.${l.month}.${l.day}${l.intercalation?" (윤)":""}`; }
+    else lunarStr="-";
+  }
+  const place = findPlace(f.city) || {name:f.city?`서울(입력한 ‘${f.city}’ 대신)`:"서울",lon:126.98};
+  const lon = f.solar ? place.lon : null;
+  const r = SAJU.calc({y,m,d,hour:f.noTime?null:f.hh,min:f.noTime?null:f.mi,gender:f.g,lon,eot:f.solar&&f.eot,yaja:f.yaja});
+  const meta = {name:f.name,g:f.g,y,solarStr:`${y}.${m}.${d}${f.noTime?"":" "+String(f.hh).padStart(2,"0")+":"+String(f.mi).padStart(2,"0")}`,
+    lunarStr, hh:f.hh, mi:f.mi, lon, city:esc(place.name), shared:!!f.shared};
+  return {r,meta};
+}
+function show(f){
+  const {r,meta}=compute(f);
+  const box=$("#result"); box.innerHTML=render(r,meta); box.hidden=false; $("#intro").hidden=true;
+  box.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{ box.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));
+    box.querySelectorAll("[data-p]").forEach(p=>p.hidden=p.dataset.p!==b.dataset.t); });
+  box.querySelectorAll("#ytabs button").forEach(b=>b.onclick=()=>{ box.querySelectorAll("#ytabs button").forEach(x=>x.classList.toggle("on",x===b));
+    box.querySelectorAll("[data-yp]").forEach(p=>p.hidden=p.dataset.yp!==b.dataset.y); });
+  $("#btnAgain").onclick=()=>{ history.replaceState(null,"",location.pathname); box.hidden=true; $("#intro").hidden=false; window.scrollTo(0,0); };
+  $("#btnShare").onclick=()=>share(f);
+  window.scrollTo(0,0);
+}
+function toQuery(f){
+  const q=new URLSearchParams();
+  q.set("d",`${f.y}${String(f.m).padStart(2,"0")}${String(f.d).padStart(2,"0")}`);
+  if(!f.noTime) q.set("t",`${String(f.hh).padStart(2,"0")}${String(f.mi).padStart(2,"0")}`);
+  q.set("g",f.g); if(f.lunar) q.set("l",f.leap?"2":"1");
+  if(f.city) q.set("c",f.city); if(f.eot) q.set("e","1"); if(f.yaja) q.set("j","1");
+  if(f.name) q.set("n",f.name);
+  return q.toString();
+}
+function fromQuery(){
+  const q=new URLSearchParams(location.search); const d=q.get("d"); if(!d||!/^\d{8}$/.test(d)) return null;
+  const t=q.get("t"), c=q.get("c");
+  return { name:(q.get("n")||"").slice(0,12), g:q.get("g")==="m"?"m":"f", lunar:!!q.get("l"), leap:q.get("l")==="2",
+    y:+d.slice(0,4), m:+d.slice(4,6), d:+d.slice(6,8), noTime:!t, hh:t?+t.slice(0,2):12, mi:t?+t.slice(2,4):0,
+    city:(c||"").slice(0,30), solar:true, eot:q.get("e")==="1", yaja:q.get("j")==="1", shared:true };
+}
+async function share(f){
+  const url = location.origin + location.pathname + "?" + toQuery(f);
+  const mobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  if(mobile && navigator.share){ try{ await navigator.share({title:"호랑 사주",text:"내 사주 풀이 결과야 🐯",url}); return; }catch(e){ if(e.name==="AbortError") return; } }
+  try{ await navigator.clipboard.writeText(url); toast("링크를 복사했어!"); }
+  catch(e){ prompt("이 링크를 복사해 줘", url); }
+}
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); setTimeout(()=>t.classList.remove("on"),1800); }
+
+$("#f").onsubmit=e=>{ e.preventDefault(); $("#err").textContent="";
+  try{ const f=readForm(); show(f); history.replaceState(null,"",location.pathname); }
+  catch(err){ $("#err").textContent=err.message; console.error(err); } };
+
+const qf = fromQuery();
+if(qf){ try{ show(qf); }catch(e){ console.error(e); } }
+</script>
+</body>
+</html>
