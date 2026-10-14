@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.162">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.162">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.163">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.163">
 <meta property="og:type" content="website">
 <meta property="og:title" content="끝말잇기 · 호랑봇 허브">
 <meta property="og:description" content="국어사전 실시간 검증 끝말잇기 (턴제·탈락전)">
 <meta property="og:url" content="https://horangbot.co.kr/wordchain.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.162"></script>
+<script src="assets/inapp.js?v=20260831.163"></script>
 <title>끝말잇기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.162">
+<link rel="stylesheet" href="assets/style.css?v=20260831.163">
 <style>
   [hidden] { display: none !important; }   /* ★ hidden 속성이 .wc-facemodal/.wc-faceview의 display:flex에 밀려 안 먹던 버그 수정 */
   .wc-wrap { max-width: 860px; }
@@ -123,6 +123,12 @@
         <button class="btn btn--primary" data-join style="width:100%">참가하기</button>
       </div>
     </div>
+    <div class="wc-box" style="margin-top:14px">
+      <h2>👀 관전하기</h2>
+      <p class="mf-hint" style="margin:-4px 0 10px;font-size:12.5px;color:var(--text-dim)">진행 중인 게임을 구경만 해요. <b>단어 입력·채팅은 할 수 없어요.</b></p>
+      <input class="wc-input" data-spec-code maxlength="4" placeholder="방 코드 (4자리)" style="text-transform:uppercase">
+      <button class="btn btn--ghost" data-spectate style="width:100%">관전 입장</button>
+    </div>
   </section>
 
   <!-- 게임 -->
@@ -178,9 +184,9 @@
   <input type="file" accept="image/*" data-face-file hidden>
 </main>
 
-<script src="assets/config.js?v=20260831.162"></script>
-<script src="assets/store.js?v=20260831.162"></script>
-<script src="assets/app.js?v=20260831.162"></script>
+<script src="assets/config.js?v=20260831.163"></script>
+<script src="assets/store.js?v=20260831.163"></script>
+<script src="assets/app.js?v=20260831.163"></script>
 <script>
 App.header("game.html");
 
@@ -224,6 +230,13 @@ $("[data-join]").onclick = async () => {
   if (!j.ok) return App.toast(j.error || "참가 실패");
   saveSess({ code: j.code, pid: j.pid }); sinceId = 0; startGame();
 };
+$("[data-spectate]").onclick = async () => {
+  const code = $("[data-spec-code]").value.trim().toUpperCase();
+  if (!code) return App.toast("방 코드를 입력해주세요.");
+  const j = await api("spectate", { code });
+  if (!j.ok) return App.toast(j.error || "관전 입장 실패");
+  saveSess({ code: j.code, pid: j.pid, spectator: true }); sinceId = 0; startGame();
+};
 
 function startGame() { lastStageSig = null; show("game"); startPoll(); }
 function startPoll() { stopPoll(); poll(); pollTimer = setInterval(poll, 1500); }
@@ -261,8 +274,12 @@ function render(j) {
   const codeEl = $("[data-code]"); codeEl.textContent = j.code;
   codeEl.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(j.code); App.toast("코드 복사됨: " + j.code); };
   $("[data-closeroom]").hidden = !j.isHost;
+  const spec = !!(j.spectator || (j.me && j.me.spectator));   // 관전 모드
   const phaseTxt = j.phase === "lobby" ? "⏳ 대기 중" : j.phase === "ended" ? "🏁 게임 종료" : "🔗 진행 중";
-  $("[data-phase]").textContent = phaseTxt + (j.phase === "play" ? ` · 생존 ${j.aliveCount}명` : "");
+  $("[data-phase]").textContent = phaseTxt + (j.phase === "play" ? ` · 생존 ${j.aliveCount}명` : "") + (spec ? " · 👀 관전" : "");
+  const ci = $("[data-chat-input]"), cs = $("[data-chat-send]");   // 관전자는 채팅 불가(구경만)
+  if (ci) { ci.disabled = spec; ci.placeholder = spec ? "👀 관전 모드 — 채팅할 수 없어요" : "잡담…"; }
+  if (cs) cs.disabled = spec;
 
   // 참여자
   $("[data-roster-h]").textContent = `👥 참여자 (${j.players.length}명` + (j.phase === "play" ? ` · 생존 ${j.aliveCount}` : "") + `)` + (j.isHost ? "  —  👑 넘기기 · ✖ 강퇴" : "");
@@ -281,10 +298,11 @@ let lastFaceId = null;
 function renderFace(j) {
   // 공개 오버레이(전원): faceReveal 있으면 이미지 한 번만 받아 표시, 없어지면 숨김
   const fo = $("[data-face]");
-  if (j.faceReveal && sess) {
+  const spec = !!(j.spectator || (j.me && j.me.spectator));   // 관전자는 얼공 안 보임
+  if (j.faceReveal && sess && !spec) {
     if (lastFaceId !== j.faceReveal.id) {
       lastFaceId = j.faceReveal.id;
-      $("[data-face-img]").src = WC_URL + "/face?code=" + encodeURIComponent(sess.code) + "&id=" + encodeURIComponent(j.faceReveal.id) + "&_=" + Date.now();
+      $("[data-face-img]").src = WC_URL + "/face?code=" + encodeURIComponent(sess.code) + "&pid=" + encodeURIComponent(sess.pid) + "&id=" + encodeURIComponent(j.faceReveal.id) + "&_=" + Date.now();
       $("[data-face-cap]").textContent = "📸 " + j.faceReveal.nick + "님의 얼공!";
     }
     fo.hidden = false;
@@ -356,14 +374,15 @@ function renderStage(j) {
   // play
   const need = (j.nextStarts && j.nextStarts.length) ? j.nextStarts : null;
   const mine = j.isMyTurn;
-  const amDead = j.me && !j.me.alive;
+  const spec = !!(j.spectator || (j.me && j.me.spectator));
+  const amDead = !spec && j.me && !j.me.alive;
   st.innerHTML = `
-    <div class="wc-turn">${mine ? "🟢 내 차례!" : (amDead ? "💀 당신은 탈락 (구경 중)" : `지금 ${esc(j.curNick)}님 차례`)}</div>
+    <div class="wc-turn">${mine ? "🟢 내 차례!" : (spec ? `👀 관전 중 — 지금 ${esc(j.curNick)}님 차례` : (amDead ? "💀 당신은 탈락 (구경 중)" : `지금 ${esc(j.curNick)}님 차례`))}</div>
     ${j.lastWord
       ? `<div class="wc-last">직전 단어<b>${esc(j.lastWord)}</b></div><div class="wc-need">${need ? `<b>${need.map(esc).join("</b> 또는 <b>")}</b> (으)로 시작!` : ""}</div>`
       : `<div class="wc-last" style="font-size:16px">첫 단어! <b style="font-size:20px;display:inline">아무 명사</b>나 외쳐요</div>`}
     <div class="wc-play">
-      <input data-word maxlength="20" inputmode="text" placeholder="${mine ? "단어 입력!" : (amDead ? "탈락했어요" : j.curNick + "님 차례…")}"${mine ? "" : " disabled"}>
+      <input data-word maxlength="20" inputmode="text" placeholder="${mine ? "단어 입력!" : (spec ? "👀 관전 모드 — 입력 불가" : (amDead ? "탈락했어요" : j.curNick + "님 차례…"))}"${mine ? "" : " disabled"}>
       <button class="btn btn--primary" data-submit${mine ? "" : " disabled"}>제출</button>
     </div>`;
   const inp = st.querySelector("[data-word]"), btn = st.querySelector("[data-submit]");
