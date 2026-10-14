@@ -716,7 +716,7 @@ function render(r, meta){
   if(bigYear) turns.push(`<b>${bigYear.y}년(${bigYear.age}세)</b> — ${bigYear.comb>=3?"크게 열리는":"크게 흔들리는"} 해. ${why(bigYear)}`);
   const pastLine = (()=>{ const ys=years.filter(x=>x.y<thisYear&&x.age>=10); if(!ys.length) return ""; const lo=ys.slice().sort((a,b)=>a.comb-b.comb)[0], hi=ys.slice().sort((a,b)=>b.comb-a.comb)[0];
     return `지금까지는 ${hi.y}년 무렵 가장 순풍이, ${lo.y}년 무렵 가장 역풍이 불었을 거야. `; })();
-  h+=stepHead(12,"結論","가장 먼저 고칠 것 · 붙잡을 강점 · 생존 전략 · 총평");
+  h+=stepHead(12,"結論","가장 먼저 고칠 것 · 붙잡을 강점 · 분야별 생존 전략");
   h+=`<h3>가장 먼저 고쳐야 할 것 3가지</h3>${li(fixes.slice(0,3))}
     <h3>반드시 붙잡아야 할 강점 3가지</h3>${li(strengths.slice(0,3))}
     <h3>분야별 생존 전략</h3><table class="tbl"><tbody>
@@ -725,8 +725,18 @@ function render(r, meta){
       <tr><th>결혼</th><td>${lateMarry?"내 생활 기반이 잡힌 뒤에.":"좋은 인연이 오면 미루지 말기."} 갈등 포인트(${A.relHit("충","day")?"생활 습관":dayTen.includes("재")?"돈":"역할 기대"})는 결혼 전에 합의.</td></tr>
       <tr><th>건강</th><td>${EL_HEALTH[weakEls[0]].sys} 관리 + ${A.strongSide?"운동으로 에너지 배출":"휴식을 일정에 넣기"}.</td></tr></tbody></table>
     <h3>지금까지의 삶이 왜 이렇게 흘렀는지</h3><p>${pastLine}<b>"${top==="비겁"?"내 힘으로 버텨 온":top==="식상"?"표현하고 부딪치며 길을 낸":top==="재성"?"현실을 붙잡고 결과로 증명해 온":top==="관성"?"책임을 짊어지고 인정받아 온":"배우고 견디며 내공을 쌓아 온"} ${ILJU[P.day.i][0]}"</b> — ${crux.replace("가장 크게 부딪히는 문제는 ","핵심 숙제는 ")}</p>
-    <h3>앞으로 가장 중요한 변곡점 3개</h3>${li(turns.slice(0,3))}
-    <h3>총평 — 이 사람 인생의 본질</h3><div class="box">${dm.e} <b>${callName==="너"?"너는":jNeun(callName)} ${A.gyeok}의 ${dm.img}</b>${jongType(dm.img)?"이야":"야"}. ${jEul(dm.kw)} 타고났고, ${A.strength}이라 ${A.strongSide?"넘치는 힘을 어디에 쓰느냐가":A.weakSide?"나를 채워 줄 사람과 환경을 고르는 게":"균형을 지키며 승부처를 정하는 게"} 인생의 성패를 가르는 열쇠야. 가장 필요한 기운은 <b>${elName(A.yongEl)}</b>이고, 그 기운이 들어오는 ${dwList.filter(d=>{const l=luck(A,d.gz);return l.favor>=1&&d.year+9>=thisYear;}).slice(0,2).map(d=>`${d.year}~${d.year+9}년(${SAJU.gzName(d.gz)} 대운)`).join(", ")||"시기"}에 인생의 큰 문이 열려. ${themes[0].t.replace(/<\/?b>/g,"").split(" — ")[0]} — 이게 평생 반복되는 ${callName==="너"?"너의":callName+"의"} 테마야.</div></section>`;
+    <h3>앞으로 가장 중요한 변곡점 3개</h3>${li(turns.slice(0,3))}</section>`;
+
+  /* ===== 사주 총정리 (맨 끝 한눈 요약) ===== */
+  const _goodWin = dwList.filter(d=>{const l=luck(A,d.gz);return l.favor>=1&&d.year+9>=thisYear;}).slice(0,2).map(d=>`${d.year}~${d.year+9}년`).join(", ")||"앞으로 용신이 들어오는 시기";
+  h+=`<section class="card"><h2>사주 한눈 총정리 <span class="hj">總評</span></h2>
+    <p class="sub">긴 리포트를 딱 줄이면 이래 — 어떤 사주고, 어떤 사람인지.</p>
+    <dl class="kv">
+      <dt>어떤 사주</dt><dd><b>${STEM[A.ds]}${EL[A.de]}(${STEMH[A.ds]}) 일간</b>의 <b>${A.gyeok}</b>, <b>${A.strength}</b> 사주야. 오행은 <b class="e-c${most}">${elName(most)}</b> 기운이 가장 세고${missing.length?`, <b>${missing.map(elName).join("·")}</b> 기운이 비어 있어`:" 비교적 고르게 퍼져 있어"}. 꼭 필요한 약(용신)은 <b class="e-c${A.yongEl}">${elName(A.yongEl)}</b>.</dd>
+      <dt>어떤 사람</dt><dd><b>${ILJU[P.day.i][0]}</b> — ${dm.kw.replace(/ · /g,"·")} 기질의 ${jYa(dm.img)}. 강점은 <b>${dm.kw.split(" · ")[0]}</b>, 그리고 원국의 중심인 ${top}(${GROUP_INFO[top].m})의 힘이야. 조심할 건 ${A.strongSide?"넘치는 힘을 엉뚱한 데 쏟는 것":A.weakSide?"주변에 휘둘려 중심을 잃는 것":"균형에 안주해 결단을 미루는 것"}이고.</dd>
+      <dt>삶의 방향</dt><dd>${themes[0].t.replace(/<\/?b>/g,"").split(" — ")[0]} — 이게 평생 반복되는 테마야. <b class="e-c${A.yongEl}">${elName(A.yongEl)}</b> 기운이 들어오는 <b>${_goodWin}</b>에 인생의 큰 문이 열려.</dd>
+    </dl>
+    <div class="box">${dm.e} 한마디로, <b>${A.strength} ${dm.img}</b>. ${A.strongSide?"힘이 넘치니 그 힘을 쏟을 곳만 정하면 크게 돼.":A.weakSide?"기운을 채워 줄 사람과 환경을 만나면 확 피어나.":"균형이 좋으니 승부처만 잘 고르면 돼."} 인생은 네가 쓰는 거야.</div></section>`;
 
   h+=`<section class="card"><h2>용어 한눈에 <span class="hj">用語</span></h2><p class="sub">리포트에 나온 사주 용어를 쉬운 말로 모아 뒀어. 모르는 단어가 나오면 여기서 찾아봐.</p>
     <details class="stage"><summary>용어 사전 펼치기 (${Object.keys(GLOSS).length}개)</summary>
