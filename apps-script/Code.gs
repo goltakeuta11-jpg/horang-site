@@ -648,7 +648,7 @@ function stickSheet() {
 }
 
 /* 오늘 날짜(KST, yyyy-MM-dd) — 셀에 붙이는 날짜 */
-function stickDate() { return Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd"); }
+function stickDate() { return Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm"); }
 
 /* 셀 문자열 "상대/날짜" → { to, date }.  "작대기 취소/날짜" 도 동일 파싱(to="작대기 취소"). */
 function stickParseCell(s) {
@@ -677,6 +677,9 @@ function stickReadRow(sh, row) {
     var c = String(vals[i]).trim();
     if (c) out.push(stickParseCell(c));
   }
+  // 시트의 좌우 배치(최신 왼쪽/오른쪽 어느 쪽이든)와 무관하게, 날짜로 정렬해 항상 시간순(오래된→최신) 반환.
+  // → 서버는 늘 "마지막=최신"으로 처리할 수 있고, 시트를 어느 방향으로 써도 가져오기가 안전함.
+  out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
   return out;
 }
 
@@ -843,7 +846,7 @@ function writeStickHistory(rows) {
   if (order.length && maxLen > 0) {
     var width = 1 + maxLen;
     var grid = order.map(function (f) {
-      var items = by[f].slice();
+      var items = by[f].slice().reverse();   // 최신이 B열(왼쪽)에 오게 역순 기록. 오른쪽으로 갈수록 과거.
       while (items.length < maxLen) items.push("");
       return [f].concat(items);
     });
