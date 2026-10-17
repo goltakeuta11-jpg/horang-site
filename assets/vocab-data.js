@@ -647,10 +647,24 @@
 
   var CATS = ["일상", "비즈니스", "학술", "시험", "수능"];
   var POS_KO = { n: "명사", v: "동사", adj: "형용사", adv: "부사" };
-  var N = VOCAB.length;
   var DAY_MS = 86400000;
   // 런칭 기준일(KST 2026-10-17) = day 0. 모든 사람이 같은 날 같은 단어.
   var EPOCH = Math.floor((Date.UTC(2026, 9, 17, 0, 0, 0) + 9 * 3600000) / DAY_MS);
+
+  /* ★ 풀 확장 이력 — 이미 지난/오늘 날짜의 단어가 "풀을 늘렸다고" 바뀌지 않게,
+     그날 당시의 풀 크기로 고정해서 뽑는다. (단어는 배열 뒤에 append만 하므로 앞 index는 불변)
+     fromDay = 그 크기가 적용되기 시작하는 일차(0=런칭일 2026-10-17).
+     ▶ 앞으로 단어를 더 늘릴 때마다 { fromDay: '늘린 다음 날의 일차', size: 새 VOCAB.length } 한 줄을 추가할 것.
+       그래야 이미 지나간 날짜(오늘 포함)의 단어가 안 바뀜. */
+  var POOL_HISTORY = [
+    { fromDay: 0, size: 360 },   // 런칭 ~ 확장 전: 원래 360개
+    { fromDay: 1, size: 611 }    // day1(2026-10-18)부터: 확장된 전체 풀
+  ];
+  function poolSizeForDay(d) {
+    var size = POOL_HISTORY[0].size;
+    for (var i = 0; i < POOL_HISTORY.length; i++) if (d >= POOL_HISTORY[i].fromDay) size = POOL_HISTORY[i].size;
+    return Math.min(size, VOCAB.length);
+  }
 
   function kstDayIndex(ms) { return Math.floor((ms + 9 * 3600000) / DAY_MS); }
   function dayIndex() { return Math.max(0, kstDayIndex(Date.now()) - EPOCH); }
@@ -664,20 +678,21 @@
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
-  function seededPerm(seed) {
-    var idx = []; for (var i = 0; i < N; i++) idx.push(i);
+  function seededPerm(seed, n) {
+    var idx = []; for (var i = 0; i < n; i++) idx.push(i);
     var rnd = mulberry32((seed * 2654435761) ^ 0x9e3779b9);
-    for (var j = N - 1; j > 0; j--) { var k = Math.floor(rnd() * (j + 1)); var tmp = idx[j]; idx[j] = idx[k]; idx[k] = tmp; }
+    for (var j = n - 1; j > 0; j--) { var k = Math.floor(rnd() * (j + 1)); var tmp = idx[j]; idx[j] = idx[k]; idx[k] = tmp; }
     return idx;
   }
-  // d일차의 '새 단어 30개' 인덱스(결정적)
+  // d일차의 '새 단어 30개' 인덱스(결정적). 풀 크기는 그날 당시 크기로 고정(확장해도 과거 날짜 불변).
   function wordsForDay(d) {
     if (d < 0) return [];
-    var cycle = Math.floor((d * 30) / N);
-    var perm = seededPerm(cycle);
-    var start = (d * 30) % N;
+    var n = poolSizeForDay(d);
+    var cycle = Math.floor((d * 30) / n);
+    var perm = seededPerm(cycle, n);
+    var start = (d * 30) % n;
     var out = [];
-    for (var i = 0; i < 30; i++) out.push(perm[(start + i) % N]);
+    for (var i = 0; i < 30; i++) out.push(perm[(start + i) % n]);
     return out;
   }
   // 오늘 학습 세트 = (어제 30 + 오늘 30), 중복 제거. 첫날(d=0)은 30개.
@@ -741,7 +756,7 @@
 
   window.VOCAB = VOCAB;
   window.VB = {
-    CATS: CATS, POS_KO: POS_KO, size: N,
+    CATS: CATS, POS_KO: POS_KO, size: VOCAB.length,
     dayIndex: dayIndex, wordsForDay: wordsForDay, todaySet: todaySet, makeQuestions: makeQuestions
   };
 })();
