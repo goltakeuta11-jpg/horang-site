@@ -135,16 +135,8 @@
     t._timer = setTimeout(() => t.classList.remove("is-on"), 2600);
   }
 
-  /* 페이지 조회 1건 기록 — 세션당 1회, 보내고 신경 끔(실패해도 화면 무관). */
-  function trackHit(page) {
-    const url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
-    if (!url || !page) return;
-    try {
-      if (sessionStorage.getItem("hit." + page)) return;   // 이 방문에서 이미 셌으면 스킵
-      sessionStorage.setItem("hit." + page, "1");
-    } catch (e) {}
-    try { fetch(url + "?action=hit&page=" + encodeURIComponent(page) + "&_=" + Date.now(), { cache: "no-store", mode: "no-cors" }).catch(function () {}); } catch (e) {}
-  }
+  /* 페이지 조회 집계 — 사용자 요청으로 완전 비활성화(서버로 아무것도 안 보냄). */
+  function trackHit(page) { /* 조회 집계 중단됨 */ }
 
   /* 편집잠금 배너 (오목 상시 오픈이라 게임탭은 항상 노출 — nav 배열에 직접 넣음) */
   function siteFlags() {
