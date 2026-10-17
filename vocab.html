@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.166">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.166">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.166">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.167">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.167">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.167">
 <meta property="og:type" content="website">
 <meta property="og:title" content="오늘의 영단어 · 호랑봇 허브">
 <meta property="og:description" content="매일 바뀌는 영단어 30개 + 5지선다 퀴즈. 연속 출석 순위표와 나만의 성적표까지!">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.166"></script>
+<script src="assets/inapp.js?v=20260831.167"></script>
 <title>오늘의 영단어 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.166">
+<link rel="stylesheet" href="assets/style.css?v=20260831.167">
 <style>
   .vc-intro { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
               padding: 14px 16px; margin: 0 0 18px; font-size: 13.5px; line-height: 1.65; color: var(--text-dim); }
@@ -91,7 +91,7 @@
   .vc-board { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .vc-board th, .vc-board td { padding: 9px 8px; text-align: left; border-bottom: 1px solid var(--line); }
   .vc-board th { font-size: 12px; color: var(--text-dim); font-weight: 700; }
-  .vc-board td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .vc-board .num { text-align: right; font-variant-numeric: tabular-nums; }
   .vc-board tr.is-me { background: rgba(255,92,122,.1); }
   .vc-board .rank { font-weight: 800; color: var(--text-dim); width: 34px; }
   .vc-board .rank.top { color: #FFB020; }
@@ -140,10 +140,10 @@
   <section data-adm hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.166"></script>
-<script src="assets/store.js?v=20260831.166"></script>
-<script src="assets/app.js?v=20260831.166"></script>
-<script src="assets/vocab-data.js?v=20260831.166"></script>
+<script src="assets/config.js?v=20260831.167"></script>
+<script src="assets/store.js?v=20260831.167"></script>
+<script src="assets/app.js?v=20260831.167"></script>
+<script src="assets/vocab-data.js?v=20260831.167"></script>
 <script>
 App.header("vocab.html");
 
@@ -394,7 +394,10 @@ async function initAdmin() {
     const list = r.board || [];
     el.hidden = false;
     el.innerHTML = `
-      <h2 class="vc-sec-title">🛠 관리자 — 참여자 ${list.length}명</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <h2 class="vc-sec-title" style="margin:30px 0 10px">🛠 관리자 — 참여자 ${list.length}명</h2>
+        ${list.length ? `<button class="btn btn--danger btn--sm" data-resetall>⚠️ 전체 성적 초기화</button>` : ""}
+      </div>
       <div>${list.map(x => `
         <div class="vc-adm__row" data-nick="${esc(x.nick)}">
           <span>${esc(x.nick)} <span class="vc-muted">· 🔥${x.streak}일 · ${x.acc}% · ${x.days}일 · 퀴즈 ${x.quizzes}회</span></span>
@@ -405,9 +408,27 @@ async function initAdmin() {
       if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.textContent = "정말?"; setTimeout(() => { btn.dataset.confirm = "0"; btn.textContent = "삭제"; }, 2500); return; }
       btn.disabled = true;
       const rr = await api({ vocabAction: "admindelete", key: App.key(), nick });
-      if (rr.ok) { row.remove(); App.toast(nick + " 기록 삭제됨"); } else { App.toast(rr.error || "삭제 실패", true); btn.disabled = false; }
+      if (rr.ok) { row.remove(); App.toast(nick + " 기록 삭제됨"); refreshAfterAdmin(nick); } else { App.toast(rr.error || "삭제 실패", true); btn.disabled = false; }
     });
+    const resetBtn = el.querySelector("[data-resetall]");
+    if (resetBtn) resetBtn.onclick = async () => {
+      if (resetBtn.dataset.confirm !== "1") { resetBtn.dataset.confirm = "1"; resetBtn.textContent = "진짜 전부 지울까?"; setTimeout(() => { resetBtn.dataset.confirm = "0"; resetBtn.textContent = "⚠️ 전체 성적 초기화"; }, 3000); return; }
+      resetBtn.disabled = true; resetBtn.textContent = "초기화 중…";
+      const rr = await api({ vocabAction: "adminreset", key: App.key() });
+      if (rr.ok) { App.toast(`전체 성적 초기화 완료 (${rr.cleared || 0}명 삭제)`); refreshAfterAdmin(); initAdmin(); }
+      else { App.toast(rr.error || "초기화 실패", true); resetBtn.disabled = false; resetBtn.textContent = "⚠️ 전체 성적 초기화"; }
+    };
   } catch (e) {}
+}
+// 관리자가 성적을 지운 뒤 화면 동기화 — 순위표/상태바/성적표 갱신
+async function refreshAfterAdmin() {
+  BOARD = [];
+  if (SESS) {
+    try { const r = await api({ vocabAction: "get", nick: SESS.nick, pwHash: SESS.pwHash, dayNum: DAY }); if (r.ok) { ME = r.me; BOARD = r.board || []; } } catch (e) {}
+    renderAuth();
+  }
+  renderBoard();
+  if (!panes.report.classList.contains("vc-hidden")) renderReport();
 }
 
 /* ================= 부팅 ================= */
