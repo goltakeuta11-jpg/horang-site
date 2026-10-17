@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.165">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.165">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.165">
+<meta property="og:type" content="website">
+<meta property="og:title" content="오늘의 영단어 · 호랑봇 허브">
+<meta property="og:description" content="매일 바뀌는 영단어 30개 + 5지선다 퀴즈. 연속 출석 순위표와 나만의 성적표까지!">
+<meta property="og:url" content="https://horangbot.co.kr/vocab.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.165"></script>
+<title>오늘의 영단어 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.165">
+<style>
+  .vc-intro { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
+              padding: 14px 16px; margin: 0 0 18px; font-size: 13.5px; line-height: 1.65; color: var(--text-dim); }
+  .vc-intro b { color: var(--text); }
+  .vc-dayinfo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 6px; }
+  .vc-dayinfo .big { font-size: 22px; font-weight: 800; color: var(--text); }
+  .vc-dayinfo .sub { font-size: 13px; color: var(--text-dim); }
+  .vc-err { color: var(--accent); font-size: 13px; font-weight: 700; margin-top: 10px; }
+  .vc-login { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .vc-login .input { flex: 1; min-width: 130px; }
+  /* 상태바(로그인 후) */
+  .vc-stat { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; }
+  .vc-pill { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px;
+             min-width: 92px; text-align: center; flex: 1; }
+  .vc-pill .n { font-size: 22px; font-weight: 800; color: var(--text); display: block; line-height: 1.2; }
+  .vc-pill .l { font-size: 11.5px; color: var(--text-dim); }
+  .vc-pill.is-hot .n { color: #FF8A3D; }
+  /* 탭 */
+  .vc-tabs { display: flex; gap: 6px; margin: 0 0 16px; border-bottom: 1px solid var(--line); }
+  .vc-tab { background: none; border: none; color: var(--text-dim); font-size: 14px; font-weight: 700;
+            padding: 9px 12px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .vc-tab.is-on { color: var(--text); border-bottom-color: var(--accent); }
+  /* 단어 카드 */
+  .vc-listbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 0 12px; flex-wrap: wrap; }
+  .vc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  .vc-word { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
+             padding: 11px 13px; cursor: pointer; }
+  .vc-word .w { font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: .2px; }
+  .vc-word .k { font-size: 14px; color: var(--text); margin-top: 4px; }
+  .vc-word.hide-k .k { filter: blur(5px); opacity: .55; }
+  .vc-badges { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+  .vc-badge { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+  .vc-badge.pos { background: var(--panel-2); color: var(--text-dim); }
+  .cat-일상    { background: rgba(91,155,213,.18); color: #5B9BD5; }
+  .cat-비즈니스 { background: rgba(255,176,32,.18); color: #E0920A; }
+  .cat-학술    { background: rgba(140,122,230,.2); color: #9B86F0; }
+  .cat-시험    { background: rgba(255,92,122,.18); color: var(--accent); }
+  .cat-수능    { background: rgba(63,191,111,.18); color: #3FBF6F; }
+  /* 퀴즈 */
+  .vc-qwrap { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px 16px; }
+  .vc-prog { height: 6px; background: var(--panel-2); border-radius: 4px; overflow: hidden; margin-bottom: 14px; }
+  .vc-prog > i { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+  .vc-qmeta { font-size: 12.5px; color: var(--text-dim); margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .vc-qword { font-size: 30px; font-weight: 800; color: var(--text); text-align: center; margin: 8px 0 4px; word-break: break-word; }
+  .vc-qbadges { display: flex; gap: 6px; justify-content: center; margin-bottom: 18px; }
+  .vc-choices { display: flex; flex-direction: column; gap: 9px; }
+  .vc-choice { text-align: left; background: var(--panel-2); border: 1.5px solid var(--line); color: var(--text);
+               border-radius: 10px; padding: 12px 14px; font-size: 15px; cursor: pointer; transition: .12s; }
+  .vc-choice:hover:not(:disabled) { border-color: var(--text-dim); }
+  .vc-choice.is-correct { border-color: #3FBF6F; background: rgba(63,191,111,.16); font-weight: 700; }
+  .vc-choice.is-wrong   { border-color: var(--accent); background: rgba(255,92,122,.14); }
+  .vc-choice:disabled { cursor: default; }
+  .vc-next { margin-top: 14px; width: 100%; }
+  /* 결과/성적표 */
+  .vc-score { text-align: center; margin: 4px 0 18px; }
+  .vc-score .pct { font-size: 46px; font-weight: 800; color: var(--accent); line-height: 1; }
+  .vc-score .d { font-size: 14px; color: var(--text-dim); margin-top: 6px; }
+  .vc-attend { background: rgba(255,138,61,.12); border: 1px solid rgba(255,138,61,.4); color: #FF8A3D;
+               border-radius: 10px; padding: 10px 14px; text-align: center; font-weight: 700; font-size: 14px; margin: 0 0 18px; }
+  .vc-sec-title { font-size: 15px; font-weight: 800; margin: 22px 0 10px; }
+  .vc-bar { margin-bottom: 9px; }
+  .vc-bar .top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .vc-bar .top b { font-weight: 700; }
+  .vc-bar .track { height: 9px; background: var(--panel-2); border-radius: 5px; overflow: hidden; }
+  .vc-bar .track > i { display: block; height: 100%; border-radius: 5px; }
+  .vc-weak { display: flex; flex-wrap: wrap; gap: 7px; }
+  .vc-weak .chip { background: rgba(255,92,122,.12); border: 1px solid rgba(255,92,122,.35); color: var(--text);
+                   border-radius: 20px; padding: 5px 11px; font-size: 13px; }
+  .vc-weak .chip b { color: var(--accent); }
+  .vc-weak .chip .mk { color: var(--text-dim); margin-left: 4px; font-size: 11.5px; }
+  /* 순위표 */
+  .vc-board { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .vc-board th, .vc-board td { padding: 9px 8px; text-align: left; border-bottom: 1px solid var(--line); }
+  .vc-board th { font-size: 12px; color: var(--text-dim); font-weight: 700; }
+  .vc-board td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .vc-board tr.is-me { background: rgba(255,92,122,.1); }
+  .vc-board .rank { font-weight: 800; color: var(--text-dim); width: 34px; }
+  .vc-board .rank.top { color: #FFB020; }
+  .vc-board .st { color: #FF8A3D; font-weight: 700; }
+  .vc-muted { color: var(--text-dim); font-size: 13px; }
+  .vc-hidden { display: none !important; }
+  /* 관리자 */
+  .vc-adm { margin-top: 30px; border-top: 1px dashed var(--line); padding-top: 18px; }
+  .vc-adm__row { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+                 padding: 7px 10px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page">
+  <h1 class="page__title">오늘의 영단어 📖</h1>
+  <p class="page__desc">매일 새 단어 30개가 떠요. 어제 것까지 합쳐 복습하고, 5지선다 퀴즈로 확인해보세요!</p>
+
+  <div class="vc-intro">
+    <div class="vc-dayinfo">
+      <span class="big" data-daytitle>DAY 1</span>
+      <span class="sub" data-daysub>오늘의 단어 30개</span>
+    </div>
+    <p style="margin:6px 0 0">📅 <b>누적 복습</b> — 둘째 날부터는 <b>어제 30개 + 오늘 30개 = 60개</b>를 함께 외워요. · 🔒 성적·순위는 <b>자소서 비밀번호</b>로 로그인해서 저장돼요.</p>
+  </div>
+
+  <!-- 로그인/상태 -->
+  <section data-auth></section>
+
+  <!-- 탭 -->
+  <div class="vc-tabs" data-tabs hidden>
+    <button class="vc-tab is-on" data-tab="list">단어장</button>
+    <button class="vc-tab" data-tab="quiz">퀴즈</button>
+    <button class="vc-tab" data-tab="report">내 성적표</button>
+    <button class="vc-tab" data-tab="board">순위표</button>
+  </div>
+
+  <section data-pane="list"></section>
+  <section data-pane="quiz" class="vc-hidden"></section>
+  <section data-pane="report" class="vc-hidden"></section>
+  <section data-pane="board" class="vc-hidden"></section>
+
+  <!-- 관리자 -->
+  <section data-adm hidden></section>
+</main>
+
+<script src="assets/config.js?v=20260831.165"></script>
+<script src="assets/store.js?v=20260831.165"></script>
+<script src="assets/app.js?v=20260831.165"></script>
+<script src="assets/vocab-data.js?v=20260831.165"></script>
+<script>
+App.header("vocab.html");
+
+const $ = s => document.querySelector(s);
+const esc = s => App.esc(String(s == null ? "" : s));
+const DAY = VB.dayIndex();
+const TODAY = VB.todaySet(DAY);          // 오늘 학습 세트(30 또는 60)
+let SESS = null;                         // { nick, pwHash }
+let ME = null;                           // 내 성적 요약
+let BOARD = [];                          // 순위표
+let QUIZ = null;                         // 진행 중 퀴즈 상태
+
+const authEl = $("[data-auth]");
+const tabsEl = $("[data-tabs]");
+const panes = { list: $('[data-pane="list"]'), quiz: $('[data-pane="quiz"]'), report: $('[data-pane="report"]'), board: $('[data-pane="board"]') };
+
+/* ---------- 서버 API ---------- */
+async function api(payload) {
+  const r = await fetch("/api/gs", { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+  return r.json();
+}
+
+/* ---------- 날짜 머리말 ---------- */
+(function initDay() {
+  $("[data-daytitle]").textContent = "DAY " + (DAY + 1);
+  $("[data-daysub]").textContent = "오늘의 단어 " + TODAY.length + "개" + (DAY >= 1 ? " (어제 30 + 오늘 30)" : "");
+})();
+
+/* ================= 로그인 영역 ================= */
+function renderAuth(msg) {
+  if (SESS) {
+    const m = ME || {};
+    const streak = m.streak || 0, best = m.best || 0, days = m.days || 0;
+    const acc = m.total ? m.total.acc : 0;
+    authEl.innerHTML = `
+      <div class="vc-stat">
+        <div class="vc-pill ${streak > 0 ? "is-hot" : ""}"><span class="n">${streak}일</span><span class="l">🔥 연속 출석</span></div>
+        <div class="vc-pill"><span class="n">${days}일</span><span class="l">총 학습일</span></div>
+        <div class="vc-pill"><span class="n">${acc}%</span><span class="l">전체 정답률</span></div>
+        <div class="vc-pill"><span class="n">${best}일</span><span class="l">최고 기록</span></div>
+      </div>
+      <p class="vc-muted" style="margin:-6px 0 14px">👤 <b style="color:var(--text)">${esc(SESS.nick)}</b> 님 · <a href="#" data-logout style="color:var(--text-dim)">로그아웃</a></p>`;
+    authEl.querySelector("[data-logout]").onclick = e => { e.preventDefault(); SESS = null; ME = null; try { sessionStorage.removeItem("horang.vocab"); } catch (x) {} boot(); };
+  } else {
+    authEl.innerHTML = `
+      <div class="card" style="padding:16px">
+        <p style="margin:0 0 12px;font-size:14px">자소서 <b>닉네임 + 비밀번호</b>로 로그인하면 출석·성적·순위가 저장돼요. <span class="vc-muted">(로그인 없이 단어장은 볼 수 있어요)</span></p>
+        <div class="vc-login">
+          <label class="field" style="flex:1"><span class="field__label">닉네임</span><input class="input" data-nick placeholder="자소서 닉네임"></label>
+          <label class="field" style="flex:1"><span class="field__label">비밀번호</span><input class="input" type="password" data-pw placeholder="자소서 비밀번호" autocomplete="current-password"></label>
+          <button class="btn btn--primary" data-login>로그인</button>
+        </div>
+        ${msg ? `<p class="vc-err">${esc(msg)}</p>` : ""}
+      </div>`;
+    authEl.querySelector("[data-login]").onclick = doLogin;
+    authEl.querySelector("[data-pw]").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+  }
+}
+async function doLogin() {
+  const nick = (authEl.querySelector("[data-nick]").value || "").trim();
+  const pw = (authEl.querySelector("[data-pw]").value || "").trim();
+  if (!nick) return App.toast("닉네임을 입력해주세요.", true);
+  if (!pw) return App.toast("비밀번호를 입력해주세요.", true);
+  const btn = authEl.querySelector("[data-login]"); btn.disabled = true; btn.textContent = "확인 중...";
+  try {
+    const pwHash = await App.sha256(pw);
+    const r = await api({ vocabAction: "get", nick, pwHash, dayNum: DAY });
+    if (!r.ok) { renderAuth(r.error || "로그인에 실패했어요."); return; }
+    SESS = { nick, pwHash }; ME = r.me; BOARD = r.board || [];
+    try { sessionStorage.setItem("horang.vocab", JSON.stringify(SESS)); } catch (x) {}
+    renderAuth(); renderBoard();
+    App.toast("로그인 완료! 오늘도 화이팅 💪");
+  } catch (e) { renderAuth("네트워크 오류예요. 잠시 후 다시 시도해주세요."); }
+}
+
+/* ================= 탭 전환 ================= */
+function showTab(name) {
+  tabsEl.querySelectorAll(".vc-tab").forEach(b => b.classList.toggle("is-on", b.dataset.tab === name));
+  Object.keys(panes).forEach(k => panes[k].classList.toggle("vc-hidden", k !== name));
+  if (name === "report") renderReport();
+  if (name === "board") renderBoard();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+tabsEl.querySelectorAll(".vc-tab").forEach(b => b.onclick = () => {
+  if ((b.dataset.tab === "quiz" || b.dataset.tab === "report") && !SESS) { App.toast("먼저 로그인해주세요!", true); return; }
+  showTab(b.dataset.tab);
+});
+
+/* ================= 단어장 ================= */
+let hideK = false;
+function renderList() {
+  panes.list.innerHTML = `
+    <div class="vc-listbar">
+      <span class="vc-muted">오늘 외울 단어 <b style="color:var(--text)">${TODAY.length}개</b></span>
+      <button class="btn btn--ghost btn--sm" data-hidek>${hideK ? "👁 뜻 보이기" : "🙈 뜻 가리기"}</button>
+    </div>
+    <div class="vc-grid">
+      ${TODAY.map(e => `
+        <div class="vc-word ${hideK ? "hide-k" : ""}" data-w>
+          <div class="w">${esc(e.w)}</div>
+          <div class="k">${esc(e.k)}</div>
+          <div class="vc-badges">
+            <span class="vc-badge cat-${e.cat}">${e.cat}</span>
+            <span class="vc-badge pos">${VB.POS_KO[e.pos] || e.pos}</span>
+          </div>
+        </div>`).join("")}
+    </div>
+    <button class="btn btn--primary" style="width:100%;margin-top:18px" data-startquiz>✏️ 퀴즈 풀기 (${Math.min(20, TODAY.length)}문항)</button>`;
+  panes.list.querySelector("[data-hidek]").onclick = () => { hideK = !hideK; renderList(); };
+  // 개별 카드 클릭 → 뜻 토글(가린 상태에서 확인용)
+  panes.list.querySelectorAll("[data-w]").forEach(c => c.onclick = () => c.classList.toggle("hide-k"));
+  panes.list.querySelector("[data-startquiz]").onclick = () => {
+    if (!SESS) return App.toast("먼저 로그인해주세요!", true);
+    startQuiz();
+  };
+}
+
+/* ================= 퀴즈 ================= */
+function startQuiz() {
+  const stats = (ME && ME.word) || {};
+  const n = Math.min(20, TODAY.length);
+  const qs = VB.makeQuestions(TODAY, stats, n, Math.floor(Math.random() * 1e9));
+  QUIZ = { qs, i: 0, answers: [], done: false };
+  showTab("quiz"); renderQuiz();
+}
+function renderQuiz() {
+  const q = QUIZ.qs[QUIZ.i];
+  const total = QUIZ.qs.length;
+  panes.quiz.innerHTML = `
+    <div class="vc-qwrap">
+      <div class="vc-prog"><i style="width:${Math.round(QUIZ.i / total * 100)}%"></i></div>
+      <div class="vc-qmeta"><span>문제 ${QUIZ.i + 1} / ${total}</span><span>뜻을 골라주세요</span></div>
+      <div class="vc-qword">${esc(q.w)}</div>
+      <div class="vc-qbadges">
+        <span class="vc-badge cat-${q.cat}">${q.cat}</span>
+        <span class="vc-badge pos">${VB.POS_KO[q.pos] || q.pos}</span>
+      </div>
+      <div class="vc-choices">
+        ${q.choices.map((c, idx) => `<button class="vc-choice" data-c="${idx}">${esc(c)}</button>`).join("")}
+      </div>
+      <button class="btn btn--primary vc-next vc-hidden" data-next>다음 →</button>
+    </div>`;
+  const choiceEls = panes.quiz.querySelectorAll(".vc-choice");
+  choiceEls.forEach(btn => btn.onclick = () => {
+    const pick = +btn.dataset.c;
+    const correct = pick === q.answer;
+    choiceEls.forEach((b, idx) => {
+      b.disabled = true;
+      if (idx === q.answer) b.classList.add("is-correct");
+      else if (idx === pick) b.classList.add("is-wrong");
+    });
+    QUIZ.answers.push({ w: q.w, cat: q.cat, pos: q.pos, correct });
+    const nx = panes.quiz.querySelector("[data-next]");
+    nx.textContent = (QUIZ.i + 1 >= total) ? "결과 보기 →" : "다음 →";
+    nx.classList.remove("vc-hidden");
+    nx.onclick = () => { QUIZ.i++; if (QUIZ.i >= total) finishQuiz(); else renderQuiz(); };
+  });
+}
+async function finishQuiz() {
+  const answers = QUIZ.answers;
+  const c = answers.filter(a => a.correct).length;
+  panes.quiz.innerHTML = `<div class="vc-qwrap" style="text-align:center"><p>채점 중...</p></div>`;
+  try {
+    const r = await api({ vocabAction: "submit", nick: SESS.nick, pwHash: SESS.pwHash, dayNum: DAY, answers });
+    if (!r.ok) { App.toast(r.error || "저장에 실패했어요.", true); return; }
+    ME = r.me; BOARD = r.board || []; renderAuth();
+    renderQuizResult(r, c, answers.length);
+  } catch (e) { App.toast("네트워크 오류예요.", true); }
+}
+function renderQuizResult(r, c, total) {
+  const pct = total ? Math.round(c / total * 100) : 0;
+  const attend = r.firstToday ? `<div class="vc-attend">🔥 오늘 출석 완료! 연속 ${(r.me && r.me.streak) || 1}일째예요</div>` : `<div class="vc-attend" style="color:var(--text-dim);background:var(--panel);border-color:var(--line)">오늘은 이미 출석했어요. (복습 기록은 성적표에 반영돼요)</div>`;
+  panes.quiz.innerHTML = `
+    <div class="vc-qwrap">
+      <div class="vc-score"><div class="pct">${pct}%</div><div class="d">${total}문제 중 <b>${c}개</b> 정답</div></div>
+      ${attend}
+      <button class="btn btn--primary" style="width:100%;margin-bottom:9px" data-report>📊 내 성적표 보기</button>
+      <button class="btn btn--ghost" style="width:100%" data-retry>↻ 다시 풀기</button>
+    </div>`;
+  panes.quiz.querySelector("[data-report]").onclick = () => showTab("report");
+  panes.quiz.querySelector("[data-retry]").onclick = () => startQuiz();
+}
+
+/* ================= 성적표 ================= */
+const CAT_COLOR = { "일상": "#5B9BD5", "비즈니스": "#E0920A", "학술": "#9B86F0", "시험": "#FF5C7A", "수능": "#3FBF6F" };
+function renderReport() {
+  if (!ME) { panes.report.innerHTML = `<p class="vc-muted">로그인 후 퀴즈를 풀면 성적표가 나와요.</p>`; return; }
+  const t = ME.total || { c: 0, w: 0, acc: 0 };
+  // 카테고리별 정답률
+  const cats = VB.CATS.map(cat => {
+    const s = (ME.cat && ME.cat[cat]) || { c: 0, w: 0 };
+    const tot = s.c + s.w; return { cat, tot, acc: tot ? Math.round(s.c / tot * 100) : null };
+  }).filter(x => x.tot > 0);
+  const done = cats.slice().sort((a, b) => b.acc - a.acc);
+  const strong = done[0], weak = done[done.length - 1];
+  const catBars = cats.length ? cats.map(x => `
+    <div class="vc-bar">
+      <div class="top"><b>${x.cat}</b><span class="vc-muted">${x.acc}% <span style="opacity:.6">(${x.tot}문제)</span></span></div>
+      <div class="track"><i style="width:${x.acc}%;background:${CAT_COLOR[x.cat] || "var(--accent)"}"></i></div>
+    </div>`).join("") : `<p class="vc-muted">아직 데이터가 없어요.</p>`;
+  // 약한 단어: 2회 이상 풀었고 정답률 낮은 순
+  const weakWords = Object.keys(ME.word || {}).map(w => {
+    const s = ME.word[w]; const tot = s.c + s.w; return { w, tot, acc: tot ? s.c / tot : 1, wrong: s.w };
+  }).filter(x => x.wrong > 0).sort((a, b) => a.acc - b.acc || b.wrong - a.wrong).slice(0, 15);
+  const meaning = {}; (window.VOCAB || []).forEach(e => meaning[e.w] = e.k);
+  const weakHtml = weakWords.length ? `<div class="vc-weak">${weakWords.map(x => `
+    <span class="chip"><b>${esc(x.w)}</b> ${esc(meaning[x.w] ? meaning[x.w].split(",")[0] : "")}<span class="mk">${Math.round(x.acc * 100)}%</span></span>`).join("")}</div>`
+    : `<p class="vc-muted">틀린 단어가 없어요. 완벽해요! 🎉</p>`;
+
+  panes.report.innerHTML = `
+    <div class="vc-score"><div class="pct">${t.acc}%</div><div class="d">전체 정답률 · 누적 ${t.c + t.w}문제 (맞은 개수 ${t.c})</div></div>
+    ${done.length >= 2 ? `<p style="text-align:center;font-size:14px;margin:0 0 6px">💪 가장 강한 분야 <b style="color:${CAT_COLOR[strong.cat]}">${strong.cat}</b> (${strong.acc}%) · 📌 보완할 분야 <b style="color:${CAT_COLOR[weak.cat]}">${weak.cat}</b> (${weak.acc}%)</p>` : ""}
+    <div class="vc-sec-title">📚 분야별 정답률</div>
+    ${catBars}
+    <div class="vc-sec-title">🩹 약한 단어 (복습 추천)</div>
+    ${weakHtml}
+    <p class="vc-muted" style="margin-top:12px">약한 단어는 다음 퀴즈에서 더 자주 나와요.</p>`;
+}
+
+/* ================= 순위표 ================= */
+function renderBoard() {
+  const myNick = SESS ? SESS.nick : null;
+  if (!BOARD.length) { panes.board.innerHTML = `<p class="vc-muted">아직 순위 데이터가 없어요. 첫 번째 주인공이 되어보세요!</p>`; return; }
+  panes.board.innerHTML = `
+    <p class="vc-muted" style="margin:0 0 12px">🔥 <b style="color:var(--text)">연속 출석일</b> 순위예요. (동점이면 정답률 → 총 학습일 순)</p>
+    <table class="vc-board">
+      <thead><tr><th class="rank">#</th><th>닉네임</th><th class="num">🔥연속</th><th class="num">정답률</th><th class="num">학습일</th></tr></thead>
+      <tbody>
+        ${BOARD.map((r, i) => `
+          <tr class="${myNick && r.nick === myNick ? "is-me" : ""}">
+            <td class="rank ${i < 3 ? "top" : ""}">${i + 1}</td>
+            <td>${esc(r.nick)}${myNick && r.nick === myNick ? " <span class='vc-muted'>(나)</span>" : ""}</td>
+            <td class="num st">${r.streak}일</td>
+            <td class="num">${r.acc}%</td>
+            <td class="num">${r.days}일</td>
+          </tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+
+/* ================= 관리자 ================= */
+async function initAdmin() {
+  if (!App.isAdmin()) return;
+  const el = $("[data-adm]");
+  try {
+    const r = await api({ vocabAction: "adminlist", key: App.key() });
+    if (!r.ok) return;
+    const list = r.board || [];
+    el.hidden = false;
+    el.innerHTML = `
+      <h2 class="vc-sec-title">🛠 관리자 — 참여자 ${list.length}명</h2>
+      <div>${list.map(x => `
+        <div class="vc-adm__row" data-nick="${esc(x.nick)}">
+          <span>${esc(x.nick)} <span class="vc-muted">· 🔥${x.streak}일 · ${x.acc}% · ${x.days}일 · 퀴즈 ${x.quizzes}회</span></span>
+          <button class="btn btn--danger btn--sm" data-del>삭제</button>
+        </div>`).join("") || `<p class="vc-muted">아직 참여자가 없어요.</p>`}</div>`;
+    el.querySelectorAll("[data-del]").forEach(btn => btn.onclick = async () => {
+      const row = btn.closest("[data-nick]"); const nick = row.dataset.nick;
+      if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.textContent = "정말?"; setTimeout(() => { btn.dataset.confirm = "0"; btn.textContent = "삭제"; }, 2500); return; }
+      btn.disabled = true;
+      const rr = await api({ vocabAction: "admindelete", key: App.key(), nick });
+      if (rr.ok) { row.remove(); App.toast(nick + " 기록 삭제됨"); } else { App.toast(rr.error || "삭제 실패", true); btn.disabled = false; }
+    });
+  } catch (e) {}
+}
+
+/* ================= 부팅 ================= */
+function boot() {
+  renderAuth(); renderList(); renderBoard();
+  tabsEl.hidden = false;
+  showTab("list");
+}
+(async function () {
+  // 세션 복원
+  try { const s = JSON.parse(sessionStorage.getItem("horang.vocab") || "null"); if (s && s.nick && s.pwHash) SESS = s; } catch (e) {}
+  if (SESS) {
+    try {
+      const r = await api({ vocabAction: "get", nick: SESS.nick, pwHash: SESS.pwHash, dayNum: DAY });
+      if (r.ok) { ME = r.me; BOARD = r.board || []; } else { SESS = null; }
+    } catch (e) { SESS = null; }
+  }
+  boot();
+  initAdmin();
+})();
+</script>
+</body>
+</html>
