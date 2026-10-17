@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.169">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.169">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.169">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.170">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.170">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.170">
 <meta property="og:type" content="website">
 <meta property="og:title" content="오늘의 영단어 · 호랑봇 허브">
 <meta property="og:description" content="매일 바뀌는 영단어 30개 + 5지선다 퀴즈. 연속 출석 순위표와 나만의 성적표까지!">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.169"></script>
+<script src="assets/inapp.js?v=20260831.170"></script>
 <title>오늘의 영단어 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.169">
+<link rel="stylesheet" href="assets/style.css?v=20260831.170">
 <style>
   .vc-intro { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
               padding: 14px 16px; margin: 0 0 18px; font-size: 13.5px; line-height: 1.65; color: var(--text-dim); }
@@ -42,11 +42,18 @@
   /* 단어 카드 */
   .vc-listbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 0 12px; flex-wrap: wrap; }
   .vc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
-  .vc-word { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  .vc-word { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
              padding: 11px 13px; cursor: pointer; }
-  .vc-word .w { font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: .2px; }
+  .vc-word .w { font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: .2px; padding-right: 58px; }
   .vc-word .k { font-size: 14px; color: var(--text); margin-top: 4px; }
   .vc-word.hide-k .k { filter: blur(5px); opacity: .55; }
+  /* 외움 표시 */
+  .vc-know { position: absolute; top: 9px; right: 9px; font-size: 11px; font-weight: 700; line-height: 1;
+             padding: 4px 8px; border-radius: 20px; border: 1px solid var(--line); background: var(--panel-2);
+             color: var(--text-dim); cursor: pointer; white-space: nowrap; }
+  .vc-know:hover { border-color: var(--text-dim); }
+  .vc-word.is-known { border-color: rgba(63,191,111,.6); background: rgba(63,191,111,.07); }
+  .vc-word.is-known .vc-know { background: rgba(63,191,111,.2); color: #3FBF6F; border-color: transparent; }
   .vc-badges { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
   .vc-badge { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
   .vc-badge.pos { background: var(--panel-2); color: var(--text-dim); }
@@ -140,10 +147,10 @@
   <section data-adm hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.169"></script>
-<script src="assets/store.js?v=20260831.169"></script>
-<script src="assets/app.js?v=20260831.169"></script>
-<script src="assets/vocab-data.js?v=20260831.169"></script>
+<script src="assets/config.js?v=20260831.170"></script>
+<script src="assets/store.js?v=20260831.170"></script>
+<script src="assets/app.js?v=20260831.170"></script>
+<script src="assets/vocab-data.js?v=20260831.170"></script>
 <script>
 App.header("vocab.html");
 
@@ -214,7 +221,8 @@ async function doLogin() {
     if (!r.ok) { renderAuth(r.error || "로그인에 실패했어요."); return; }
     SESS = { nick, pwHash }; ME = r.me; BOARD = r.board || [];
     try { sessionStorage.setItem("horang.vocab", JSON.stringify(SESS)); } catch (x) {}
-    renderAuth(); renderBoard();
+    KNOWN = loadKnown();           // 로그인하면 그 닉의 외움 목록으로 전환
+    renderAuth(); renderList(); renderBoard();
     App.toast("로그인 완료! 오늘도 화이팅 💪");
   } catch (e) { renderAuth("네트워크 오류예요. 잠시 후 다시 시도해주세요."); }
 }
@@ -233,16 +241,31 @@ tabsEl.querySelectorAll(".vc-tab").forEach(b => b.onclick = () => {
 });
 
 /* ================= 단어장 ================= */
-let hideK = false;
+let hideK = false, hideKnown = false;
+let ORDER = TODAY.slice();      // 화면 표시 순서 (섞기 버튼으로 변경)
+let KNOWN = new Set();          // 외운 단어(개인) — localStorage, 로그인 닉별
+
+function knownKey() { return "horang.vocab.known." + (SESS ? SESS.nick : "guest"); }
+function loadKnown() { try { return new Set(JSON.parse(localStorage.getItem(knownKey()) || "[]")); } catch (e) { return new Set(); } }
+function saveKnown() { try { localStorage.setItem(knownKey(), JSON.stringify([...KNOWN])); } catch (e) {} }
+function shuffleOrder() { for (let i = ORDER.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = ORDER[i]; ORDER[i] = ORDER[j]; ORDER[j] = t; } }
+
 function renderList() {
+  const list = ORDER.filter(e => !(hideKnown && KNOWN.has(e.w)));
+  const knownCount = ORDER.filter(e => KNOWN.has(e.w)).length;
   panes.list.innerHTML = `
     <div class="vc-listbar">
-      <span class="vc-muted">오늘 외울 단어 <b style="color:var(--text)">${TODAY.length}개</b></span>
-      <button class="btn btn--ghost btn--sm" data-hidek>${hideK ? "👁 뜻 보이기" : "🙈 뜻 가리기"}</button>
+      <span class="vc-muted">오늘 단어 <b style="color:var(--text)">${TODAY.length}개</b> · ✅ 외움 <b style="color:#3FBF6F">${knownCount}</b></span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn--ghost btn--sm" data-shuffle>🔀 순서 섞기</button>
+        <button class="btn btn--ghost btn--sm" data-hidek>${hideK ? "👁 뜻 보이기" : "🙈 뜻 가리기"}</button>
+        <button class="btn btn--ghost btn--sm" data-hideknown>${hideKnown ? "👀 전체 보기" : "✅ 외운 거 숨기기"}</button>
+      </div>
     </div>
     <div class="vc-grid">
-      ${TODAY.map(e => `
-        <div class="vc-word ${hideK ? "hide-k" : ""}" data-w>
+      ${list.map(e => `
+        <div class="vc-word ${hideK ? "hide-k" : ""} ${KNOWN.has(e.w) ? "is-known" : ""}" data-card data-w="${esc(e.w)}">
+          <button class="vc-know" data-know>${KNOWN.has(e.w) ? "✅ 외움" : "＋ 외움"}</button>
           <div class="w">${esc(e.w)}</div>
           <div class="k">${esc(e.k)}</div>
           <div class="vc-badges">
@@ -251,10 +274,20 @@ function renderList() {
           </div>
         </div>`).join("")}
     </div>
+    ${list.length === 0 ? `<p class="vc-muted" style="text-align:center;margin:20px 0">외운 단어를 다 숨겼어요! 🎉 "전체 보기"로 다시 볼 수 있어요.</p>` : ""}
     <button class="btn btn--primary" style="width:100%;margin-top:18px" data-startquiz>✏️ 퀴즈 풀기 (${Math.min(20, TODAY.length)}문항)</button>`;
+  panes.list.querySelector("[data-shuffle]").onclick = () => { shuffleOrder(); renderList(); };
   panes.list.querySelector("[data-hidek]").onclick = () => { hideK = !hideK; renderList(); };
+  panes.list.querySelector("[data-hideknown]").onclick = () => { hideKnown = !hideKnown; renderList(); };
+  // 외움 토글 (카드 클릭보다 먼저 가로채기)
+  panes.list.querySelectorAll("[data-know]").forEach(b => b.onclick = (ev) => {
+    ev.stopPropagation();
+    const w = b.closest("[data-card]").dataset.w;
+    if (KNOWN.has(w)) KNOWN.delete(w); else KNOWN.add(w);
+    saveKnown(); renderList();
+  });
   // 개별 카드 클릭 → 뜻 토글(가린 상태에서 확인용)
-  panes.list.querySelectorAll("[data-w]").forEach(c => c.onclick = () => c.classList.toggle("hide-k"));
+  panes.list.querySelectorAll("[data-card]").forEach(c => c.onclick = () => c.classList.toggle("hide-k"));
   panes.list.querySelector("[data-startquiz]").onclick = () => {
     if (!SESS) return App.toast("먼저 로그인해주세요!", true);
     startQuiz();
@@ -433,6 +466,7 @@ async function refreshAfterAdmin() {
 
 /* ================= 부팅 ================= */
 function boot() {
+  KNOWN = loadKnown();           // 현재 로그인 상태(닉/게스트)에 맞는 외움 목록
   renderAuth(); renderList(); renderBoard();
   tabsEl.hidden = false;
   showTab("list");
