@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.167">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.167">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.167">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.168">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.168">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.168">
 <meta property="og:type" content="website">
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 외출 · 패치노트를 한 곳에서.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.167"></script>
+<script src="assets/inapp.js?v=20260831.168"></script>
 <title>호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.167">
+<link rel="stylesheet" href="assets/style.css?v=20260831.168">
 </head>
 <body>
 
@@ -41,9 +41,9 @@
   </section>
 </main>
 
-<script src="assets/config.js?v=20260831.167"></script>
-<script src="assets/store.js?v=20260831.167"></script>
-<script src="assets/app.js?v=20260831.167"></script>
+<script src="assets/config.js?v=20260831.168"></script>
+<script src="assets/store.js?v=20260831.168"></script>
+<script src="assets/app.js?v=20260831.168"></script>
 <script>
   document.title = CONFIG.ROOM_NAME + " 허브";
   App.header("index.html");
@@ -111,11 +111,6 @@
           ②시트(Bot-Web)에서 수정·삭제한 뒤 ③<b>가져오기</b>를 누르면 사이트에 반영되고 잠금이 풀려요.
           <span data-lockline></span>
         </div>
-      </div>
-      <div class="card" style="margin-top:16px" data-viewstats>
-        <h2 style="font-size:17px;margin-bottom:4px">📊 탭별 하루 평균 조회</h2>
-        <p style="color:var(--text-dim);font-size:13px;margin:0 0 12px">한 방문당 1회로 셉니다. (봇·크롤러 제외)</p>
-        <div data-views>불러오는 중…</div>
       </div>`;
 
     const sheetLink = '<a href="' + Store.sheetEditUrl() + '" target="_blank" rel="noopener" style="color:var(--accent-2)">시트 열기</a>';
@@ -133,35 +128,6 @@
       catch (e) { App.toast("복사가 막혀 있습니다. 주소를 직접 선택해 주세요.", true); }
     };
 
-    /* ---------- 탭별 하루 평균 조회 ---------- */
-    (async function renderViews() {
-      const el = box.querySelector("[data-views]");
-      const url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
-      if (!url) { el.textContent = "시트 연결(SCRIPT_URL)이 없어 통계를 볼 수 없습니다."; return; }
-      let views;
-      try {
-        const r = await fetch(url + "?action=viewstats&_=" + Date.now(), { redirect: "follow" });
-        const j = await r.json();
-        if (!j || !j.ok) throw 0;
-        views = j.views || [];
-      } catch (e) { el.textContent = "조회통계를 불러오지 못했습니다. (재배포 필요할 수 있어요)"; return; }
-      if (!views.length) { el.innerHTML = "<div class='empty' style='padding:20px'><strong>아직 조회 기록이 없습니다</strong>사람들이 페이지를 열면 여기에 쌓입니다.</div>"; return; }
-      const byPage = {}, dayset = {}, monthDays = {};
-      views.forEach(v => {
-        byPage[v.page] = (byPage[v.page] || 0) + v.count;
-        if (String(v.date).length === 7) monthDays[v.date] = Math.max(monthDays[v.date] || 0, v.days || 0); // 월요약(YYYY-MM): 달당 1번 일수
-        else dayset[v.date] = 1;                                                                            // 일별(YYYY-MM-DD): 날짜 1개
-      });
-      const days = (Object.keys(dayset).length + Object.values(monthDays).reduce((s, d) => s + d, 0)) || 1;
-      const rows = Object.keys(byPage).map(p => ({ p, total: byPage[p], avg: byPage[p] / days }))
-        .sort((a, b) => b.avg - a.avg);
-      el.innerHTML =
-        "<div class='rows'>" +
-        rows.map(x => `<div class="row"><span class="row__k" style="min-width:110px">${App.esc(x.p)}</span>` +
-          `<span class="row__v"><b>${x.avg.toFixed(1)}</b>회/일 <span style="color:var(--text-dim)">· 누적 ${x.total}</span></span></div>`).join("") +
-        "</div>" +
-        `<p style="color:var(--text-dim);font-size:12px;margin:12px 0 0">집계 기간 ${days}일 · 총 ${views.reduce((s, v) => s + v.count, 0)}회</p>`;
-    })();
     /* ---------- 📤 내보내기 / 📥 가져오기 (서버 ↔ 시트) + 잠금 상태 ---------- */
     const url_ = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
     const lockLine = box.querySelector("[data-lockline]");
