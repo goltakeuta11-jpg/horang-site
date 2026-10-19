@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.188">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.188">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.188">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.189">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.189">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.189">
 <meta property="og:type" content="website">
 <meta property="og:title" content="학습관리 · 호랑봇 허브">
 <meta property="og:description" content="우리 공부 기록을 그래프로 한눈에.">
 <meta property="og:url" content="https://horangbot.co.kr/studylog.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.188"></script>
+<script src="assets/inapp.js?v=20260831.189"></script>
 <title>학습관리 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.188">
+<link rel="stylesheet" href="assets/style.css?v=20260831.189">
 <style>
   .sl-kakao { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 800;
     background: #FEE500; color: #3C1E1E; text-decoration: none; padding: 13px 18px; border-radius: 14px; margin: 0 0 18px;
@@ -34,8 +34,9 @@
   .sl-row .d { color: var(--text-dim); font-variant-numeric: tabular-nums; }
   .sl-row b { color: var(--accent); }
   .sl-muted { color: var(--text-dim); font-size: 13px; }
-  .sl-weeknav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; }
-  .sl-weekrange { font-size: 14.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+  .sl-weeknav { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+  .sl-weeklabel { font-size: 13px; font-weight: 700; color: var(--text-dim); white-space: nowrap; }
+  .sl-weeksel { flex: 1; max-width: 240px; font-variant-numeric: tabular-nums; }
   .sl-total-title { font-size: 12.5px; font-weight: 700; color: var(--text-dim); margin: 14px 0 6px; }
   .sl-total { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
   .sl-pill { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 6px 11px; font-size: 12.5px; }
@@ -56,9 +57,8 @@
   <div class="sl-card">
     <div class="sl-sec-title">📈 공부 시간 그래프 <span class="sl-muted" style="font-weight:500">(분 · 주간)</span></div>
     <div class="sl-weeknav">
-      <button class="btn btn--ghost btn--sm" data-prev>◀ 지난주</button>
-      <span class="sl-weekrange" data-weekrange>—</span>
-      <button class="btn btn--ghost btn--sm" data-next>다음주 ▶</button>
+      <span class="sl-weeklabel">주 선택</span>
+      <select class="input sl-weeksel" data-weeksel></select>
     </div>
     <div class="sl-chartwrap"><canvas data-chart></canvas></div>
     <div class="sl-legend" data-legend></div>
@@ -76,9 +76,9 @@
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.188"></script>
-<script src="assets/store.js?v=20260831.188"></script>
-<script src="assets/app.js?v=20260831.188"></script>
+<script src="assets/config.js?v=20260831.189"></script>
+<script src="assets/store.js?v=20260831.189"></script>
+<script src="assets/app.js?v=20260831.189"></script>
 <script>
 App.header("study.html");
 
@@ -184,20 +184,48 @@ function drawChart() {
     `<span><i style="background:${COLORS[ni % COLORS.length]}"></i>${esc(n)}</span>`).join("");
 }
 
-/* ---------- 주간 네비 + 합계 pill ---------- */
+/* ---------- 분 → "N시간 N분" ---------- */
+function fmtMin(m) {
+  m = Math.round(Number(m) || 0);
+  const h = Math.floor(m / 60), mm = m % 60;
+  if (h > 0 && mm > 0) return h + "시간 " + mm + "분";
+  if (h > 0) return h + "시간";
+  return mm + "분";
+}
+function weekLabel(startStr) {
+  const s = parseYmd(startStr), e = addDays(s, 6);
+  return ymd(s).slice(5).replace("-", "/") + " ~ " + ymd(e).slice(5).replace("-", "/");
+}
+function weekStartOf(dateStr) { const d = parseYmd(dateStr); return ymd(addDays(d, -d.getUTCDay())); }
+
+/* ---------- 주 선택 드롭다운 ---------- */
+function allWeekStarts() {
+  const set = {};
+  const t = kstNow(); const cur = ymd(addDays(t, -t.getUTCDay()));
+  set[cur] = 1;
+  LOGS.forEach(r => { if (r && r.date) set[weekStartOf(r.date)] = 1; });
+  const arr = Object.keys(set).sort();
+  const min = parseYmd(arr[0]), max = parseYmd(arr[arr.length - 1]);   // 최소~최대 주를 연속 생성
+  const out = [];
+  for (let d = new Date(min.getTime()); d.getTime() <= max.getTime(); d = addDays(d, 7)) out.push(ymd(d));
+  return out.reverse();   // 최근 주가 위
+}
 function renderWeekNav() {
-  const dates = weekDates();
-  const a = dates[0], b = dates[6];
-  $("[data-weekrange]").textContent = a.slice(5).replace("-", "/") + " ~ " + b.slice(5).replace("-", "/");
+  const sel = $("[data-weeksel]");
+  const starts = allWeekStarts();
+  if (starts.indexOf(WEEK_START) < 0) WEEK_START = starts[0];   // 안전장치
+  const t = kstNow(); const cur = ymd(addDays(t, -t.getUTCDay()));
+  sel.innerHTML = starts.map(s => `<option value="${s}"${s === WEEK_START ? " selected" : ""}>${weekLabel(s)}${s === cur ? " (이번 주)" : ""}</option>`).join("");
+  sel.onchange = () => { WEEK_START = sel.value; refresh(); };
 }
 function renderTotals() {
   const { people, names } = weekBuild();
   const el = $("[data-total]"), title = $("[data-total-title]");
   if (!names.length) { el.innerHTML = ""; title.textContent = ""; return; }
-  title.textContent = "🗓 이 주 합계 (" + weekDates()[0].slice(5).replace("-", "/") + "~" + weekDates()[6].slice(5).replace("-", "/") + ")";
+  title.textContent = "🗓 이 주 합계 (" + weekLabel(WEEK_START) + ")";
   const totals = names.map(n => ({ n, m: Object.values(people[n]).reduce((s, v) => s + v, 0) }))
     .sort((a, b) => b.m - a.m);
-  el.innerHTML = totals.map(t => `<span class="sl-pill">${esc(t.n)} <b>${Math.round(t.m)}분</b></span>`).join("");
+  el.innerHTML = totals.map(t => `<span class="sl-pill">${esc(t.n)} <b>${fmtMin(t.m)}</b></span>`).join("");
 }
 
 /* ---------- 기록 목록 ---------- */
@@ -210,7 +238,7 @@ function renderList() {
     <div class="sl-row" data-id="${esc(r.id)}">
       <span><b>${esc(r.name)}</b> · <span class="d">${esc(r.date)}</span></span>
       <span style="display:flex;align-items:center;gap:10px">
-        <span>${Math.round(Number(r.minutes) || 0)}분</span>
+        <span>${fmtMin(r.minutes)}</span>
         ${admin ? `<button class="btn btn--danger btn--sm" data-del>삭제</button>` : ""}
       </span>
     </div>`).join("");
@@ -260,10 +288,7 @@ async function doAdd() {
 
 /* ---------- 렌더 ---------- */
 function refresh() { renderWeekNav(); drawChart(); renderTotals(); renderList(); }
-function shiftWeek(delta) { WEEK_START = ymd(addDays(parseYmd(WEEK_START), delta * 7)); refresh(); }
 window.addEventListener("resize", drawChart);
-$("[data-prev]").onclick = () => shiftWeek(-1);
-$("[data-next]").onclick = () => shiftWeek(1);
 
 (async function () {
   renderAdmin();
