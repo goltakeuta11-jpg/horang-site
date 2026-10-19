@@ -167,7 +167,7 @@
     const primary = [
       ["notices.html", "공지"],
       ["calendar.html", "캘린더"],
-      ["donate.html", "후원"],
+      ["study.html", "📚 공부"],
       ["members.html", "자소서"],
       ["psychtest.html", "심리테스트"],
       ["saju.html", "사주"],
@@ -177,6 +177,7 @@
     // "더보기 ▾" 안에 접히는 탭 (자주 안 보는 것)
     const more = [
       ["commands.html", "명령어"],
+      ["donate.html", "후원"],
       ["ranking.html", "게임랭킹"],
       ["outings.html", "외출"],
       ["patchnotes.html", "패치노트"]

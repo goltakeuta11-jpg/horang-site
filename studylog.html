@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.184">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.184">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.184">
+<meta property="og:type" content="website">
+<meta property="og:title" content="학습관리 · 호랑봇 허브">
+<meta property="og:description" content="우리 공부 기록을 그래프로 한눈에.">
+<meta property="og:url" content="https://horangbot.co.kr/studylog.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.184"></script>
+<title>학습관리 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.184">
+<style>
+  .sl-kakao { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700;
+    background: #FEE500; color: #3C1E1E; text-decoration: none; padding: 6px 12px; border-radius: 18px; margin: 0 0 18px; }
+  .sl-kakao:hover { filter: brightness(.96); }
+  .sl-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; margin: 0 0 18px; }
+  .sl-sec-title { font-size: 15px; font-weight: 800; margin: 0 0 12px; }
+  .sl-chartwrap { position: relative; width: 100%; }
+  .sl-legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 0; font-size: 12.5px; }
+  .sl-legend span { display: inline-flex; align-items: center; gap: 5px; color: var(--text-dim); }
+  .sl-legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  .sl-empty { color: var(--text-dim); text-align: center; padding: 28px 10px; font-size: 14px; }
+  .sl-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .sl-form .field { flex: 1; min-width: 120px; }
+  .sl-row { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 7px 10px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .sl-row .d { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .sl-row b { color: var(--accent); }
+  .sl-muted { color: var(--text-dim); font-size: 13px; }
+  .sl-total { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+  .sl-pill { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 6px 11px; font-size: 12.5px; }
+  .sl-pill b { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page">
+  <h1 class="page__title">학습관리 📊</h1>
+  <p class="page__desc">함께 공부한 기록을 그래프로 모아봐요. (날짜별 공부 시간)</p>
+
+  <a class="sl-kakao" href="https://open.kakao.com/o/gWHFnJSi" target="_blank" rel="noopener">💬 공부 오픈채팅 참여하기</a>
+
+  <!-- 그래프 -->
+  <div class="sl-card">
+    <div class="sl-sec-title">📈 공부 시간 그래프</div>
+    <div class="sl-chartwrap"><canvas data-chart></canvas></div>
+    <div class="sl-legend" data-legend></div>
+    <div class="sl-total" data-total></div>
+  </div>
+
+  <!-- 관리자 입력 -->
+  <section data-admin hidden></section>
+
+  <!-- 기록 목록 -->
+  <div class="sl-card">
+    <div class="sl-sec-title">📋 기록</div>
+    <div data-list><p class="sl-muted">불러오는 중…</p></div>
+  </div>
+</main>
+
+<script src="assets/config.js?v=20260831.184"></script>
+<script src="assets/store.js?v=20260831.184"></script>
+<script src="assets/app.js?v=20260831.184"></script>
+<script>
+App.header("study.html");
+
+const $ = s => document.querySelector(s);
+const esc = s => App.esc(String(s == null ? "" : s));
+const COLORS = ["#FF5C7A", "#5B9BD5", "#3FBF6F", "#E0920A", "#9B86F0", "#FF8A3D", "#2CC5C5", "#D45BBE", "#8FBF3F", "#6C7BF0"];
+let LOGS = [];
+
+async function api(payload) {
+  const r = await fetch("/api/gs", { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+  return r.json();
+}
+
+/* ---------- 그래프 (날짜 x축 · 공부시간 y축 · 사람별 선) ---------- */
+function groupByPerson(logs) {
+  const people = {};            // name -> { date -> sumHours }
+  const dateSet = {};
+  logs.forEach(r => {
+    const n = String(r.name || "").trim(); const d = String(r.date || "").trim(); const h = Number(r.hours) || 0;
+    if (!n || !d) return;
+    people[n] = people[n] || {};
+    people[n][d] = (people[n][d] || 0) + h;
+    dateSet[d] = 1;
+  });
+  const dates = Object.keys(dateSet).sort();
+  const names = Object.keys(people).sort();
+  return { people, dates, names };
+}
+function drawChart() {
+  const canvas = $("[data-chart]");
+  const wrap = canvas.parentElement;
+  const cssW = Math.max(260, wrap.clientWidth);
+  const cssH = 300;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+  canvas.style.width = cssW + "px"; canvas.style.height = cssH + "px";
+  const ctx = canvas.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const cs = getComputedStyle(document.body);
+  const colText = (cs.getPropertyValue("--text-dim") || "#888").trim() || "#888";
+  const colLine = (cs.getPropertyValue("--line") || "#333").trim() || "#333";
+
+  const { people, dates, names } = groupByPerson(LOGS);
+  if (!dates.length) {
+    ctx.fillStyle = colText; ctx.font = "14px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("아직 기록이 없어요.", cssW / 2, cssH / 2);
+    $("[data-legend]").innerHTML = ""; return;
+  }
+  const padL = 38, padR = 12, padT = 14, padB = 34;
+  const plotW = cssW - padL - padR, plotH = cssH - padT - padB;
+  let maxY = 0;
+  names.forEach(n => dates.forEach(d => { if ((people[n][d] || 0) > maxY) maxY = people[n][d]; }));
+  maxY = Math.max(1, Math.ceil(maxY));
+  const xAt = i => padL + (dates.length === 1 ? plotW / 2 : plotW * i / (dates.length - 1));
+  const yAt = v => padT + plotH - plotH * (v / maxY);
+
+  // y 그리드 + 라벨
+  ctx.strokeStyle = colLine; ctx.fillStyle = colText; ctx.font = "11px sans-serif"; ctx.lineWidth = 1;
+  const steps = 4;
+  for (let s = 0; s <= steps; s++) {
+    const v = maxY * s / steps, y = yAt(v);
+    ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(cssW - padR, y); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(String(Math.round(v * 10) / 10), padL - 6, y);
+  }
+  // x 라벨 (MM-DD, 너무 많으면 솎기)
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  const skip = Math.ceil(dates.length / 7);
+  dates.forEach((d, i) => { if (i % skip === 0 || i === dates.length - 1) ctx.fillText(d.slice(5), xAt(i), cssH - padB + 8); });
+
+  // 사람별 선
+  names.forEach((n, ni) => {
+    const col = COLORS[ni % COLORS.length];
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2;
+    let started = false; ctx.beginPath();
+    dates.forEach((d, i) => {
+      if (!(d in people[n])) return;
+      const x = xAt(i), y = yAt(people[n][d]);
+      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    dates.forEach((d, i) => { if (d in people[n]) { ctx.beginPath(); ctx.arc(xAt(i), yAt(people[n][d]), 3, 0, Math.PI * 2); ctx.fill(); } });
+  });
+
+  // 범례
+  $("[data-legend]").innerHTML = names.map((n, ni) =>
+    `<span><i style="background:${COLORS[ni % COLORS.length]}"></i>${esc(n)}</span>`).join("");
+}
+
+/* ---------- 합계 pill ---------- */
+function renderTotals() {
+  const { people, names } = groupByPerson(LOGS);
+  const el = $("[data-total]");
+  if (!names.length) { el.innerHTML = ""; return; }
+  const totals = names.map(n => ({ n, h: Object.values(people[n]).reduce((s, v) => s + v, 0) }))
+    .sort((a, b) => b.h - a.h);
+  el.innerHTML = totals.map(t => `<span class="sl-pill">${esc(t.n)} <b>${Math.round(t.h * 10) / 10}시간</b></span>`).join("");
+}
+
+/* ---------- 기록 목록 ---------- */
+function renderList() {
+  const admin = App.isAdmin();
+  const el = $("[data-list]");
+  if (!LOGS.length) { el.innerHTML = `<p class="sl-muted">아직 기록이 없어요.${admin ? " 아래에서 추가해보세요!" : ""}</p>`; return; }
+  const sorted = LOGS.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.at).localeCompare(String(a.at)));
+  el.innerHTML = sorted.map(r => `
+    <div class="sl-row" data-id="${esc(r.id)}">
+      <span><b>${esc(r.name)}</b> · <span class="d">${esc(r.date)}</span></span>
+      <span style="display:flex;align-items:center;gap:10px">
+        <span>${Math.round((Number(r.hours) || 0) * 10) / 10}시간</span>
+        ${admin ? `<button class="btn btn--danger btn--sm" data-del>삭제</button>` : ""}
+      </span>
+    </div>`).join("");
+  if (admin) el.querySelectorAll("[data-del]").forEach(btn => btn.onclick = async () => {
+    const row = btn.closest("[data-id]"); const id = row.dataset.id;
+    if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.textContent = "정말?"; setTimeout(() => { btn.dataset.confirm = "0"; btn.textContent = "삭제"; }, 2500); return; }
+    btn.disabled = true;
+    const r = await api({ studyAction: "delete", key: App.key(), id });
+    if (r.ok) { LOGS = r.logs || []; refresh(); App.toast("삭제됐어요."); } else { App.toast(r.error || "삭제 실패", true); btn.disabled = false; }
+  });
+}
+
+/* ---------- 관리자 입력 ---------- */
+function renderAdmin() {
+  if (!App.isAdmin()) return;
+  const el = $("[data-admin]");
+  el.hidden = false;
+  const today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+  el.innerHTML = `
+    <div class="sl-card">
+      <div class="sl-sec-title">🛠 기록 추가 (관리자)</div>
+      <div class="sl-form">
+        <label class="field"><span class="field__label">이름</span><input class="input" data-name placeholder="이름"></label>
+        <label class="field"><span class="field__label">날짜</span><input class="input" type="date" data-date value="${today}"></label>
+        <label class="field"><span class="field__label">공부 시간</span><input class="input" type="number" data-hours step="0.5" min="0" placeholder="예: 2.5"></label>
+        <button class="btn btn--primary" data-add>추가</button>
+      </div>
+      <p class="sl-muted" style="margin:10px 0 0">시간은 숫자로 입력해요 (예: 2.5 = 2시간 30분). 추가하면 바로 그래프에 반영돼요.</p>
+    </div>`;
+  el.querySelector("[data-add]").onclick = doAdd;
+}
+async function doAdd() {
+  const name = ($("[data-name]").value || "").trim();
+  const date = ($("[data-date]").value || "").trim();
+  const hours = parseFloat($("[data-hours]").value);
+  if (!name) return App.toast("이름을 입력해주세요.", true);
+  if (!date) return App.toast("날짜를 선택해주세요.", true);
+  if (!(hours > 0)) return App.toast("공부 시간을 입력해주세요.", true);
+  const btn = $("[data-add]"); btn.disabled = true; btn.textContent = "추가 중…";
+  try {
+    const r = await api({ studyAction: "add", key: App.key(), name, date, hours });
+    if (r.ok) { LOGS = r.logs || []; refresh(); $("[data-name]").value = ""; $("[data-hours]").value = ""; App.toast("기록이 추가됐어요!"); }
+    else App.toast(r.error || "추가 실패", true);
+  } catch (e) { App.toast("네트워크 오류예요.", true); }
+  finally { btn.disabled = false; btn.textContent = "추가"; }
+}
+
+/* ---------- 렌더 ---------- */
+function refresh() { drawChart(); renderTotals(); renderList(); }
+window.addEventListener("resize", drawChart);
+
+(async function () {
+  renderAdmin();
+  try { const r = await api({ studyAction: "list" }); if (r.ok) LOGS = r.logs || []; } catch (e) {}
+  refresh();
+})();
+</script>
+</body>
+</html>

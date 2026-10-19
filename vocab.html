@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.183">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.183">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.183">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.184">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.184">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.184">
 <meta property="og:type" content="website">
 <meta property="og:title" content="오늘의 영단어 · 호랑봇 허브">
 <meta property="og:description" content="매일 바뀌는 영단어 30개 + 5지선다 퀴즈. 연속 출석 순위표와 나만의 성적표까지!">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.183"></script>
+<script src="assets/inapp.js?v=20260831.184"></script>
 <title>오늘의 영단어 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.183">
+<link rel="stylesheet" href="assets/style.css?v=20260831.184">
 <style>
   .vc-intro { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
               padding: 14px 16px; margin: 0 0 18px; font-size: 13.5px; line-height: 1.65; color: var(--text-dim); }
@@ -67,6 +67,12 @@
   .vc-prog { height: 6px; background: var(--panel-2); border-radius: 4px; overflow: hidden; margin-bottom: 14px; }
   .vc-prog > i { display: block; height: 100%; background: var(--accent); transition: width .25s; }
   .vc-qmeta { font-size: 12.5px; color: var(--text-dim); margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .vc-timer { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-dim); }
+  .vc-timer.is-low { color: var(--accent); }
+  .vc-timer.is-up { color: var(--accent); }
+  .vc-timebar { height: 5px; background: var(--panel-2); border-radius: 3px; overflow: hidden; margin: 0 0 14px; }
+  .vc-timebar > i { display: block; height: 100%; background: #3FBF6F; width: 100%; transition: width .1s linear; }
+  .vc-timebar > i.is-low { background: var(--accent); }
   .vc-qword { font-size: 30px; font-weight: 800; color: var(--text); text-align: center; margin: 8px 0 4px; word-break: break-word; }
   .vc-qbadges { display: flex; gap: 6px; justify-content: center; margin-bottom: 18px; }
   .vc-choices { display: flex; flex-direction: column; gap: 9px; }
@@ -147,12 +153,12 @@
   <section data-adm hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.183"></script>
-<script src="assets/store.js?v=20260831.183"></script>
-<script src="assets/app.js?v=20260831.183"></script>
-<script src="assets/vocab-data.js?v=20260831.183"></script>
+<script src="assets/config.js?v=20260831.184"></script>
+<script src="assets/store.js?v=20260831.184"></script>
+<script src="assets/app.js?v=20260831.184"></script>
+<script src="assets/vocab-data.js?v=20260831.184"></script>
 <script>
-App.header("vocab.html");
+App.header("study.html");
 
 const $ = s => document.querySelector(s);
 const esc = s => App.esc(String(s == null ? "" : s));
@@ -229,6 +235,7 @@ async function doLogin() {
 
 /* ================= 탭 전환 ================= */
 function showTab(name) {
+  if (name !== "quiz") clearQTimer();   // 퀴즈 탭을 벗어나면 타이머 정지
   tabsEl.querySelectorAll(".vc-tab").forEach(b => b.classList.toggle("is-on", b.dataset.tab === name));
   Object.keys(panes).forEach(k => panes[k].classList.toggle("vc-hidden", k !== name));
   if (name === "report") renderReport();
@@ -302,13 +309,18 @@ function startQuiz() {
   QUIZ = { qs, i: 0, answers: [], done: false };
   showTab("quiz"); renderQuiz();
 }
+const QUIZ_LIMIT = 10;   // 문제당 제한 시간(초)
+function clearQTimer() { if (QUIZ && QUIZ.timer) { clearInterval(QUIZ.timer); QUIZ.timer = null; } }
 function renderQuiz() {
+  clearQTimer();
   const q = QUIZ.qs[QUIZ.i];
   const total = QUIZ.qs.length;
+  const isLast = QUIZ.i + 1 >= total;
   panes.quiz.innerHTML = `
     <div class="vc-qwrap">
       <div class="vc-prog"><i style="width:${Math.round(QUIZ.i / total * 100)}%"></i></div>
-      <div class="vc-qmeta"><span>문제 ${QUIZ.i + 1} / ${total}</span><span>뜻을 골라주세요</span></div>
+      <div class="vc-qmeta"><span>문제 ${QUIZ.i + 1} / ${total}</span><span class="vc-timer" data-timer>⏱ ${QUIZ_LIMIT}초</span></div>
+      <div class="vc-timebar"><i data-timebar></i></div>
       <div class="vc-qword">${esc(q.w)}</div>
       <div class="vc-qbadges">
         <span class="vc-badge cat-${q.cat}">${q.cat}</span>
@@ -320,8 +332,14 @@ function renderQuiz() {
       <button class="btn btn--primary vc-next vc-hidden" data-next>다음 →</button>
     </div>`;
   const choiceEls = panes.quiz.querySelectorAll(".vc-choice");
-  choiceEls.forEach(btn => btn.onclick = () => {
-    const pick = +btn.dataset.c;
+  const tEl = panes.quiz.querySelector("[data-timer]");
+  const barEl = panes.quiz.querySelector("[data-timebar]");
+  let answered = false;
+  // pick: 고른 보기 인덱스, -1이면 시간 초과(무응답=오답)
+  function reveal(pick) {
+    if (answered) return;
+    answered = true;
+    clearQTimer();
     const correct = pick === q.answer;
     choiceEls.forEach((b, idx) => {
       b.disabled = true;
@@ -329,11 +347,28 @@ function renderQuiz() {
       else if (idx === pick) b.classList.add("is-wrong");
     });
     QUIZ.answers.push({ w: q.w, cat: q.cat, pos: q.pos, correct });
+    if (pick === -1 && tEl) { tEl.textContent = "⏱ 시간 초과"; tEl.classList.add("is-up"); }
     const nx = panes.quiz.querySelector("[data-next]");
-    nx.textContent = (QUIZ.i + 1 >= total) ? "결과 보기 →" : "다음 →";
+    nx.textContent = isLast ? "결과 보기 →" : "다음 →";
     nx.classList.remove("vc-hidden");
     nx.onclick = () => { QUIZ.i++; if (QUIZ.i >= total) finishQuiz(); else renderQuiz(); };
-  });
+  }
+  choiceEls.forEach(btn => btn.onclick = () => reveal(+btn.dataset.c));
+  // 10초 카운트다운
+  const t0 = Date.now();
+  QUIZ.timer = setInterval(() => {
+    const remain = QUIZ_LIMIT * 1000 - (Date.now() - t0);
+    if (remain <= 0) {
+      if (barEl) barEl.style.width = "0%";
+      if (tEl) tEl.textContent = "⏱ 0초";
+      reveal(-1);
+      return;
+    }
+    const sec = Math.ceil(remain / 1000);
+    const low = sec <= 3;
+    if (tEl) { tEl.textContent = "⏱ " + sec + "초"; tEl.classList.toggle("is-low", low); }
+    if (barEl) { barEl.style.width = (remain / (QUIZ_LIMIT * 1000) * 100) + "%"; barEl.classList.toggle("is-low", low); }
+  }, 100);
 }
 async function finishQuiz() {
   const answers = QUIZ.answers;
