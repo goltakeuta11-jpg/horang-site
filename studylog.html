@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.186">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.186">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.186">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.187">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.187">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.187">
 <meta property="og:type" content="website">
 <meta property="og:title" content="학습관리 · 호랑봇 허브">
 <meta property="og:description" content="우리 공부 기록을 그래프로 한눈에.">
 <meta property="og:url" content="https://horangbot.co.kr/studylog.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.186"></script>
+<script src="assets/inapp.js?v=20260831.187"></script>
 <title>학습관리 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.186">
+<link rel="stylesheet" href="assets/style.css?v=20260831.187">
 <style>
   .sl-kakao { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 800;
     background: #FEE500; color: #3C1E1E; text-decoration: none; padding: 13px 18px; border-radius: 14px; margin: 0 0 18px;
@@ -67,9 +67,9 @@
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.186"></script>
-<script src="assets/store.js?v=20260831.186"></script>
-<script src="assets/app.js?v=20260831.186"></script>
+<script src="assets/config.js?v=20260831.187"></script>
+<script src="assets/store.js?v=20260831.187"></script>
+<script src="assets/app.js?v=20260831.187"></script>
 <script>
 App.header("study.html");
 
@@ -124,7 +124,8 @@ function drawChart() {
   let maxY = 0;
   names.forEach(n => dates.forEach(d => { if ((people[n][d] || 0) > maxY) maxY = people[n][d]; }));
   maxY = Math.max(1, Math.ceil(maxY));
-  const xAt = i => padL + (dates.length === 1 ? plotW / 2 : plotW * i / (dates.length - 1));
+  const groupW = plotW / dates.length;          // 날짜 한 칸 폭
+  const xAt = i => padL + groupW * (i + 0.5);    // 그룹(날짜) 중심 x
   const yAt = v => padT + plotH - plotH * (v / maxY);
 
   // y 그리드 + 라벨
@@ -140,18 +141,19 @@ function drawChart() {
   const skip = Math.ceil(dates.length / 7);
   dates.forEach((d, i) => { if (i % skip === 0 || i === dates.length - 1) ctx.fillText(d.slice(5), xAt(i), cssH - padB + 8); });
 
-  // 사람별 선
-  names.forEach((n, ni) => {
-    const col = COLORS[ni % COLORS.length];
-    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2;
-    let started = false; ctx.beginPath();
-    dates.forEach((d, i) => {
-      if (!(d in people[n])) return;
-      const x = xAt(i), y = yAt(people[n][d]);
-      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+  // 날짜별 막대 (한 날짜 안에 공부한 사람들을 나란히, 사람별 색)
+  const baseY = padT + plotH;
+  dates.forEach((d, i) => {
+    const ppl = names.filter(n => d in people[n]);
+    if (!ppl.length) return;
+    const bw = Math.min(26, (groupW * 0.72) / ppl.length);
+    let x = xAt(i) - (bw * ppl.length) / 2;
+    ppl.forEach(n => {
+      const y = yAt(people[n][d]);
+      ctx.fillStyle = COLORS[names.indexOf(n) % COLORS.length];
+      ctx.fillRect(x + 1, y, Math.max(2, bw - 2), baseY - y);
+      x += bw;
     });
-    ctx.stroke();
-    dates.forEach((d, i) => { if (d in people[n]) { ctx.beginPath(); ctx.arc(xAt(i), yAt(people[n][d]), 3, 0, Math.PI * 2); ctx.fill(); } });
   });
 
   // 범례
