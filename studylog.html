@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.187">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.187">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.187">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.188">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.188">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.188">
 <meta property="og:type" content="website">
 <meta property="og:title" content="학습관리 · 호랑봇 허브">
 <meta property="og:description" content="우리 공부 기록을 그래프로 한눈에.">
 <meta property="og:url" content="https://horangbot.co.kr/studylog.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.187"></script>
+<script src="assets/inapp.js?v=20260831.188"></script>
 <title>학습관리 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.187">
+<link rel="stylesheet" href="assets/style.css?v=20260831.188">
 <style>
   .sl-kakao { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 800;
     background: #FEE500; color: #3C1E1E; text-decoration: none; padding: 13px 18px; border-radius: 14px; margin: 0 0 18px;
@@ -34,7 +34,10 @@
   .sl-row .d { color: var(--text-dim); font-variant-numeric: tabular-nums; }
   .sl-row b { color: var(--accent); }
   .sl-muted { color: var(--text-dim); font-size: 13px; }
-  .sl-total { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+  .sl-weeknav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; }
+  .sl-weekrange { font-size: 14.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+  .sl-total-title { font-size: 12.5px; font-weight: 700; color: var(--text-dim); margin: 14px 0 6px; }
+  .sl-total { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
   .sl-pill { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 6px 11px; font-size: 12.5px; }
   .sl-pill b { color: var(--text); }
 </style>
@@ -51,9 +54,15 @@
 
   <!-- 그래프 -->
   <div class="sl-card">
-    <div class="sl-sec-title">📈 공부 시간 그래프 <span class="sl-muted" style="font-weight:500">(분)</span></div>
+    <div class="sl-sec-title">📈 공부 시간 그래프 <span class="sl-muted" style="font-weight:500">(분 · 주간)</span></div>
+    <div class="sl-weeknav">
+      <button class="btn btn--ghost btn--sm" data-prev>◀ 지난주</button>
+      <span class="sl-weekrange" data-weekrange>—</span>
+      <button class="btn btn--ghost btn--sm" data-next>다음주 ▶</button>
+    </div>
     <div class="sl-chartwrap"><canvas data-chart></canvas></div>
     <div class="sl-legend" data-legend></div>
+    <div class="sl-total-title" data-total-title></div>
     <div class="sl-total" data-total></div>
   </div>
 
@@ -67,9 +76,9 @@
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.187"></script>
-<script src="assets/store.js?v=20260831.187"></script>
-<script src="assets/app.js?v=20260831.187"></script>
+<script src="assets/config.js?v=20260831.188"></script>
+<script src="assets/store.js?v=20260831.188"></script>
+<script src="assets/app.js?v=20260831.188"></script>
 <script>
 App.header("study.html");
 
@@ -83,18 +92,27 @@ async function api(payload) {
   return r.json();
 }
 
-/* ---------- 그래프 (날짜 x축 · 공부시간 y축 · 사람별 선) ---------- */
-function groupByPerson(logs) {
-  const people = {};            // name -> { date -> sumHours }
-  const dateSet = {};
-  logs.forEach(r => {
+/* ---------- 주(일~토) 유틸 ---------- */
+const WDAY = ["일", "월", "화", "수", "목", "금", "토"];
+function kstNow() { return new Date(Date.now() + 9 * 3600000); }            // getUTC* = KST 벽시계
+function ymd(dt) { return dt.getUTCFullYear() + "-" + String(dt.getUTCMonth() + 1).padStart(2, "0") + "-" + String(dt.getUTCDate()).padStart(2, "0"); }
+function parseYmd(s) { const p = String(s).split("-").map(Number); return new Date(Date.UTC(p[0], (p[1] || 1) - 1, p[2] || 1)); }
+function addDays(dt, n) { const x = new Date(dt.getTime()); x.setUTCDate(x.getUTCDate() + n); return x; }
+function weekdayOf(s) { return parseYmd(s).getUTCDay(); }                    // 0=일
+let WEEK_START = (function () { const t = kstNow(); return ymd(addDays(t, -t.getUTCDay())); })();  // 이번 주 일요일
+function weekDates() { const s = parseYmd(WEEK_START); const out = []; for (let i = 0; i < 7; i++) out.push(ymd(addDays(s, i))); return out; }
+
+/* 선택한 주로 집계: dates=그 주 7일(일~토 고정), people=그 주 데이터만 */
+function weekBuild() {
+  const dates = weekDates();
+  const dset = {}; dates.forEach(d => dset[d] = 1);
+  const people = {};
+  LOGS.forEach(r => {
     const n = String(r.name || "").trim(); const d = String(r.date || "").trim(); const m = Number(r.minutes) || 0;
-    if (!n || !d) return;
+    if (!n || !(d in dset)) return;
     people[n] = people[n] || {};
     people[n][d] = (people[n][d] || 0) + m;
-    dateSet[d] = 1;
   });
-  const dates = Object.keys(dateSet).sort();
   const names = Object.keys(people).sort();
   return { people, dates, names };
 }
@@ -113,13 +131,8 @@ function drawChart() {
   const colText = (cs.getPropertyValue("--text-dim") || "#888").trim() || "#888";
   const colLine = (cs.getPropertyValue("--line") || "#333").trim() || "#333";
 
-  const { people, dates, names } = groupByPerson(LOGS);
-  if (!dates.length) {
-    ctx.fillStyle = colText; ctx.font = "14px sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("아직 기록이 없어요.", cssW / 2, cssH / 2);
-    $("[data-legend]").innerHTML = ""; return;
-  }
-  const padL = 38, padR = 12, padT = 14, padB = 34;
+  const { people, dates, names } = weekBuild();   // 선택한 주 7일(일~토) 고정
+  const padL = 38, padR = 12, padT = 14, padB = 40;
   const plotW = cssW - padL - padR, plotH = cssH - padT - padB;
   let maxY = 0;
   names.forEach(n => dates.forEach(d => { if ((people[n][d] || 0) > maxY) maxY = people[n][d]; }));
@@ -136,10 +149,20 @@ function drawChart() {
     ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(cssW - padR, y); ctx.stroke(); ctx.globalAlpha = 1;
     ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillText(String(Math.round(v)), padL - 6, y);
   }
-  // x 라벨 (MM-DD, 너무 많으면 솎기)
+  // x 라벨 (7일: 일자 + 요일)
   ctx.textAlign = "center"; ctx.textBaseline = "top";
-  const skip = Math.ceil(dates.length / 7);
-  dates.forEach((d, i) => { if (i % skip === 0 || i === dates.length - 1) ctx.fillText(d.slice(5), xAt(i), cssH - padB + 8); });
+  dates.forEach((d, i) => {
+    const wd = weekdayOf(d);
+    ctx.fillStyle = (wd === 0) ? "#FF5C7A" : (wd === 6 ? "#5B9BD5" : colText);
+    ctx.fillText(String(parseYmd(d).getUTCDate()), xAt(i), cssH - padB + 7);
+    ctx.fillText("(" + WDAY[wd] + ")", xAt(i), cssH - padB + 20);
+  });
+  ctx.fillStyle = colText;
+  if (!names.length) {
+    ctx.font = "14px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("이 주에는 기록이 없어요.", cssW / 2, padT + plotH / 2);
+    $("[data-legend]").innerHTML = ""; return;
+  }
 
   // 날짜별 막대 (한 날짜 안에 공부한 사람들을 나란히, 사람별 색)
   const baseY = padT + plotH;
@@ -161,11 +184,17 @@ function drawChart() {
     `<span><i style="background:${COLORS[ni % COLORS.length]}"></i>${esc(n)}</span>`).join("");
 }
 
-/* ---------- 합계 pill ---------- */
+/* ---------- 주간 네비 + 합계 pill ---------- */
+function renderWeekNav() {
+  const dates = weekDates();
+  const a = dates[0], b = dates[6];
+  $("[data-weekrange]").textContent = a.slice(5).replace("-", "/") + " ~ " + b.slice(5).replace("-", "/");
+}
 function renderTotals() {
-  const { people, names } = groupByPerson(LOGS);
-  const el = $("[data-total]");
-  if (!names.length) { el.innerHTML = ""; return; }
+  const { people, names } = weekBuild();
+  const el = $("[data-total]"), title = $("[data-total-title]");
+  if (!names.length) { el.innerHTML = ""; title.textContent = ""; return; }
+  title.textContent = "🗓 이 주 합계 (" + weekDates()[0].slice(5).replace("-", "/") + "~" + weekDates()[6].slice(5).replace("-", "/") + ")";
   const totals = names.map(n => ({ n, m: Object.values(people[n]).reduce((s, v) => s + v, 0) }))
     .sort((a, b) => b.m - a.m);
   el.innerHTML = totals.map(t => `<span class="sl-pill">${esc(t.n)} <b>${Math.round(t.m)}분</b></span>`).join("");
@@ -230,8 +259,11 @@ async function doAdd() {
 }
 
 /* ---------- 렌더 ---------- */
-function refresh() { drawChart(); renderTotals(); renderList(); }
+function refresh() { renderWeekNav(); drawChart(); renderTotals(); renderList(); }
+function shiftWeek(delta) { WEEK_START = ymd(addDays(parseYmd(WEEK_START), delta * 7)); refresh(); }
 window.addEventListener("resize", drawChart);
+$("[data-prev]").onclick = () => shiftWeek(-1);
+$("[data-next]").onclick = () => shiftWeek(1);
 
 (async function () {
   renderAdmin();
