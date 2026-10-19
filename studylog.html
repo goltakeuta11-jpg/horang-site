@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.189">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.189">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.189">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.190">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.190">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.190">
 <meta property="og:type" content="website">
 <meta property="og:title" content="학습관리 · 호랑봇 허브">
 <meta property="og:description" content="우리 공부 기록을 그래프로 한눈에.">
 <meta property="og:url" content="https://horangbot.co.kr/studylog.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.189"></script>
+<script src="assets/inapp.js?v=20260831.190"></script>
 <title>학습관리 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.189">
+<link rel="stylesheet" href="assets/style.css?v=20260831.190">
 <style>
   .sl-kakao { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 800;
     background: #FEE500; color: #3C1E1E; text-decoration: none; padding: 13px 18px; border-radius: 14px; margin: 0 0 18px;
@@ -72,13 +72,14 @@
   <!-- 기록 목록 -->
   <div class="sl-card">
     <div class="sl-sec-title">📋 기록</div>
+    <input class="input sl-search" data-search placeholder="🔎 이름으로 검색 (비우면 전체)" style="margin:0 0 12px">
     <div data-list><p class="sl-muted">불러오는 중…</p></div>
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.189"></script>
-<script src="assets/store.js?v=20260831.189"></script>
-<script src="assets/app.js?v=20260831.189"></script>
+<script src="assets/config.js?v=20260831.190"></script>
+<script src="assets/store.js?v=20260831.190"></script>
+<script src="assets/app.js?v=20260831.190"></script>
 <script>
 App.header("study.html");
 
@@ -86,6 +87,7 @@ const $ = s => document.querySelector(s);
 const esc = s => App.esc(String(s == null ? "" : s));
 const COLORS = ["#FF5C7A", "#5B9BD5", "#3FBF6F", "#E0920A", "#9B86F0", "#FF8A3D", "#2CC5C5", "#D45BBE", "#8FBF3F", "#6C7BF0"];
 let LOGS = [];
+let LISTQ = "";   // 기록 이름 검색어
 
 async function api(payload) {
   const r = await fetch("/api/gs", { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
@@ -233,7 +235,11 @@ function renderList() {
   const admin = App.isAdmin();
   const el = $("[data-list]");
   if (!LOGS.length) { el.innerHTML = `<p class="sl-muted">아직 기록이 없어요.${admin ? " 아래에서 추가해보세요!" : ""}</p>`; return; }
-  const sorted = LOGS.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.at).localeCompare(String(a.at)));
+  const q = (LISTQ || "").trim().toLowerCase();
+  let rows = LOGS.slice();
+  if (q) rows = rows.filter(r => String(r.name || "").toLowerCase().indexOf(q) >= 0);   // 이름 검색(부분일치)
+  if (!rows.length) { el.innerHTML = `<p class="sl-muted">"${esc(LISTQ)}" 이름의 기록이 없어요.</p>`; return; }
+  const sorted = rows.sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.at).localeCompare(String(a.at)));
   el.innerHTML = sorted.map(r => `
     <div class="sl-row" data-id="${esc(r.id)}">
       <span><b>${esc(r.name)}</b> · <span class="d">${esc(r.date)}</span></span>
@@ -289,6 +295,7 @@ async function doAdd() {
 /* ---------- 렌더 ---------- */
 function refresh() { renderWeekNav(); drawChart(); renderTotals(); renderList(); }
 window.addEventListener("resize", drawChart);
+$("[data-search]").addEventListener("input", (e) => { LISTQ = e.target.value; renderList(); });
 
 (async function () {
   renderAdmin();
