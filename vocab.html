@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.190">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.190">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.190">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.191">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.191">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.191">
 <meta property="og:type" content="website">
 <meta property="og:title" content="오늘의 영단어 · 호랑봇 허브">
 <meta property="og:description" content="매일 바뀌는 영단어 30개 + 5지선다 퀴즈. 연속 출석 순위표와 나만의 성적표까지!">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.190"></script>
+<script src="assets/inapp.js?v=20260831.191"></script>
 <title>오늘의 영단어 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.190">
+<link rel="stylesheet" href="assets/style.css?v=20260831.191">
 <style>
   .vc-intro { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
               padding: 14px 16px; margin: 0 0 18px; font-size: 13.5px; line-height: 1.65; color: var(--text-dim); }
@@ -62,6 +62,7 @@
   .cat-학술    { background: rgba(140,122,230,.2); color: #9B86F0; }
   .cat-시험    { background: rgba(255,92,122,.18); color: var(--accent); }
   .cat-수능    { background: rgba(63,191,111,.18); color: #3FBF6F; }
+  .cat-토익    { background: rgba(23,179,196,.18); color: #17B3C4; }
   /* 퀴즈 */
   .vc-qwrap { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px 16px; }
   .vc-prog { height: 6px; background: var(--panel-2); border-radius: 4px; overflow: hidden; margin-bottom: 14px; }
@@ -153,10 +154,10 @@
   <section data-adm hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.190"></script>
-<script src="assets/store.js?v=20260831.190"></script>
-<script src="assets/app.js?v=20260831.190"></script>
-<script src="assets/vocab-data.js?v=20260831.190"></script>
+<script src="assets/config.js?v=20260831.191"></script>
+<script src="assets/store.js?v=20260831.191"></script>
+<script src="assets/app.js?v=20260831.191"></script>
+<script src="assets/vocab-data.js?v=20260831.191"></script>
 <script>
 App.header("study.html");
 
@@ -396,7 +397,7 @@ function renderQuizResult(r, c, total) {
 }
 
 /* ================= 성적표 ================= */
-const CAT_COLOR = { "일상": "#5B9BD5", "비즈니스": "#E0920A", "학술": "#9B86F0", "시험": "#FF5C7A", "수능": "#3FBF6F" };
+const CAT_COLOR = { "일상": "#5B9BD5", "비즈니스": "#E0920A", "학술": "#9B86F0", "시험": "#FF5C7A", "수능": "#3FBF6F", "토익": "#17B3C4" };
 function renderReport() {
   if (!ME) { panes.report.innerHTML = `<p class="vc-muted">로그인 후 퀴즈를 풀면 성적표가 나와요.</p>`; return; }
   const t = ME.total || { c: 0, w: 0, acc: 0 };
