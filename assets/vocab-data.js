@@ -3039,9 +3039,11 @@
   }
 
   /* ★ 단어풀 정리(2026-10-20): 수능·토익만 남기고 일상/비즈니스/학술/시험은 삭제.
-     day 0~3(런칭~'오늘' 2026-10-20)이 보여줬던 단어는 삭제된 분류까지 포함하므로,
+     day 0~2(런칭~2026-10-19)이 보여줬던 단어는 삭제된 분류까지 포함하므로,
      그날 단어 객체를 통째로 '동결'해 보관 → 이미 나온 단어가 100% 불변.
-     day 4(2026-10-21)~ 는 아래 era2(수능15+토익15)로 생성. */
+     (오늘=day3의 '복습'은 day2 동결본이라 유지되고, 오늘 '신규'부터 era2로 교체.)
+     day 3(오늘, 2026-10-20)~ 는 아래 era2(수능15+토익15)로 생성.
+     ※ LEGACY_WORDS[3]은 더 이상 안 쓰임(오늘 신규가 era2로 넘어감) — 참고용으로 남겨둠. */
   var LEGACY_WORDS = [
     /* day0 */ [
       { w: "stuffy", k: "(코가) 막힌, 답답한", pos: "adj", cat: "일상", lv: 2 },
@@ -3173,7 +3175,7 @@
     ]
   ];
 
-  var ERA2_START = 4;      // 2026-10-21
+  var ERA2_START = 3;      // 2026-10-20(오늘)부터 신규=수능15+토익15 (복습은 day2 동결본 유지)
   var ERA2_HALF = 15;      // 하루 수능 15 + 토익 15 = 30
   function idxOfCat(cat) {
     var a = []; for (var i = 0; i < VOCAB.length; i++) if (VOCAB[i].cat === cat) a.push(i);
@@ -3198,7 +3200,7 @@
       .concat(catWordsForDay(TOEIC_IDX, e, ERA2_HALF, 900000));
     return ids.map(function (i) { return VOCAB[i]; });
   }
-  // d일차 '새 단어' 목록(단어 객체 배열). day 0~3 = 동결, day 4~ = 수능15+토익15.
+  // d일차 '새 단어' 목록(단어 객체 배열). day 0~2 = 동결, day 3(오늘)~ = 수능15+토익15.
   function wordsForDay(d) {
     if (d < 0) return [];
     if (d < ERA2_START) return LEGACY_WORDS[d] ? LEGACY_WORDS[d].slice() : [];
