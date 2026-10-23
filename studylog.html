@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.193">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.193">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.193">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.194">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.194">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.194">
 <meta property="og:type" content="website">
 <meta property="og:title" content="학습관리 · 호랑봇 허브">
 <meta property="og:description" content="우리 공부 기록을 그래프로 한눈에.">
 <meta property="og:url" content="https://horangbot.co.kr/studylog.html">
 <meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.193"></script>
+<script src="assets/inapp.js?v=20260831.194"></script>
 <title>학습관리 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.193">
+<link rel="stylesheet" href="assets/style.css?v=20260831.194">
 <style>
   .sl-kakao { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 800;
     background: #FEE500; color: #3C1E1E; text-decoration: none; padding: 13px 18px; border-radius: 14px; margin: 0 0 18px;
@@ -26,6 +26,10 @@
   .sl-legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 0; font-size: 12.5px; }
   .sl-legend span { display: inline-flex; align-items: center; gap: 5px; color: var(--text-dim); }
   .sl-legend i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+  .sl-tip { position: absolute; z-index: 5; pointer-events: none; background: var(--panel, #1c1c22); color: var(--text, #eee); border: 1px solid var(--line, #333); border-radius: 8px; padding: 6px 9px; font-size: 12px; line-height: 1.45; white-space: nowrap; transform: translate(-50%, calc(-100% - 8px)); box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+  .sl-tip i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: middle; }
+  .sl-tip b { font-weight: 700; }
+  .sl-tip[hidden] { display: none; }
   .sl-empty { color: var(--text-dim); text-align: center; padding: 28px 10px; font-size: 14px; }
   .sl-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
   .sl-form .field { flex: 1; min-width: 120px; }
@@ -60,7 +64,7 @@
       <span class="sl-weeklabel">주 선택</span>
       <select class="input sl-weeksel" data-weeksel></select>
     </div>
-    <div class="sl-chartwrap"><canvas data-chart></canvas></div>
+    <div class="sl-chartwrap"><canvas data-chart></canvas><div class="sl-tip" data-tip hidden></div></div>
     <div class="sl-legend" data-legend></div>
     <div class="sl-total-title" data-total-title></div>
     <div class="sl-total" data-total></div>
@@ -77,15 +81,16 @@
   </div>
 </main>
 
-<script src="assets/config.js?v=20260831.193"></script>
-<script src="assets/store.js?v=20260831.193"></script>
-<script src="assets/app.js?v=20260831.193"></script>
+<script src="assets/config.js?v=20260831.194"></script>
+<script src="assets/store.js?v=20260831.194"></script>
+<script src="assets/app.js?v=20260831.194"></script>
 <script>
 App.header("study.html");
 
 const $ = s => document.querySelector(s);
 const esc = s => App.esc(String(s == null ? "" : s));
 const COLORS = ["#FF5C7A", "#5B9BD5", "#3FBF6F", "#E0920A", "#9B86F0", "#FF8A3D", "#2CC5C5", "#D45BBE", "#8FBF3F", "#6C7BF0"];
+let CHART_BARS = [];   // 호버 툴팁용: 그린 막대들의 위치(CSS px) + 사람/시간/날짜
 let LOGS = [];
 let LISTQ = "";   // 기록 이름 검색어
 
@@ -128,6 +133,7 @@ function drawChart() {
   canvas.style.width = cssW + "px"; canvas.style.height = cssH + "px";
   const ctx = canvas.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, cssH);
+  { const tp = $("[data-tip]"); if (tp) tp.hidden = true; }   // 다시 그리면 툴팁 숨김
 
   const cs = getComputedStyle(document.body);
   const colText = (cs.getPropertyValue("--text-dim") || "#888").trim() || "#888";
@@ -168,15 +174,20 @@ function drawChart() {
 
   // 날짜별 막대 (한 날짜 안에 공부한 사람들을 나란히, 사람별 색)
   const baseY = padT + plotH;
+  CHART_BARS = [];
   dates.forEach((d, i) => {
     const ppl = names.filter(n => d in people[n]);
     if (!ppl.length) return;
     const bw = Math.min(26, (groupW * 0.72) / ppl.length);
     let x = xAt(i) - (bw * ppl.length) / 2;
     ppl.forEach(n => {
-      const y = yAt(people[n][d]);
+      const mins = people[n][d];
+      const y = yAt(mins);
+      const bx = x + 1, bwidth = Math.max(2, bw - 2);
       ctx.fillStyle = COLORS[names.indexOf(n) % COLORS.length];
-      ctx.fillRect(x + 1, y, Math.max(2, bw - 2), baseY - y);
+      ctx.fillRect(bx, y, bwidth, baseY - y);
+      // 호버 히트영역: 막대 폭이 얇아도 잡히게 바닥까지 최소 10px 확보
+      CHART_BARS.push({ x: bx, w: bwidth, top: y, bot: baseY, cx: x + bw / 2, name: n, mins: mins, date: d, color: COLORS[names.indexOf(n) % COLORS.length] });
       x += bw;
     });
   });
@@ -295,6 +306,38 @@ async function doAdd() {
 /* ---------- 렌더 ---------- */
 function refresh() { renderWeekNav(); drawChart(); renderTotals(); renderList(); }
 window.addEventListener("resize", drawChart);
+
+/* ---------- 그래프 막대 호버/탭 툴팁 (사람별 공부시간) ---------- */
+(function () {
+  const canvas = $("[data-chart]"); const tip = $("[data-tip]");
+  if (!canvas || !tip) return;
+  function hitBar(mx, my) {
+    for (let i = CHART_BARS.length - 1; i >= 0; i--) {
+      const b = CHART_BARS[i];
+      if (mx >= b.x - 2 && mx <= b.x + b.w + 2 && my >= b.top - 4 && my <= b.bot) return b;
+    }
+    return null;
+  }
+  function show(b) {
+    const dt = parseYmd(b.date);
+    const md = (dt.getUTCMonth() + 1) + "/" + dt.getUTCDate();
+    tip.innerHTML = `<b>${esc(b.name)}</b><br><i style="background:${b.color}"></i>${md}(${WDAY[weekdayOf(b.date)]}) · ${fmtMin(b.mins)}`;
+    const w = canvas.clientWidth;
+    tip.style.left = Math.max(46, Math.min(w - 46, b.cx)) + "px";
+    tip.style.top = b.top + "px";
+    tip.hidden = false;
+  }
+  const hide = () => { tip.hidden = true; };
+  canvas.addEventListener("mousemove", (e) => { const b = hitBar(e.offsetX, e.offsetY); b ? show(b) : hide(); });
+  canvas.addEventListener("mouseleave", hide);
+  let t = null;
+  canvas.addEventListener("touchstart", (e) => {
+    const touch = e.touches[0]; if (!touch) return;
+    const r = canvas.getBoundingClientRect();
+    const b = hitBar(touch.clientX - r.left, touch.clientY - r.top);
+    if (b) { show(b); clearTimeout(t); t = setTimeout(hide, 2600); } else hide();
+  }, { passive: true });
+})();
 $("[data-search]").addEventListener("input", (e) => { LISTQ = e.target.value; renderList(); });
 
 (async function () {
