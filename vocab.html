@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.194">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.194">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.194">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.195">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.195">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.195">
 <meta property="og:type" content="website">
 <meta property="og:title" content="오늘의 영단어 · 호랑봇 허브">
 <meta property="og:description" content="매일 바뀌는 영단어 30개 + 5지선다 퀴즈. 연속 출석 순위표와 나만의 성적표까지!">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.194"></script>
+<script src="assets/inapp.js?v=20260831.195"></script>
 <title>오늘의 영단어 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.194">
+<link rel="stylesheet" href="assets/style.css?v=20260831.195">
 <style>
   .vc-intro { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
               padding: 14px 16px; margin: 0 0 18px; font-size: 13.5px; line-height: 1.65; color: var(--text-dim); }
@@ -154,10 +154,10 @@
   <section data-adm hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.194"></script>
-<script src="assets/store.js?v=20260831.194"></script>
-<script src="assets/app.js?v=20260831.194"></script>
-<script src="assets/vocab-data.js?v=20260831.194"></script>
+<script src="assets/config.js?v=20260831.195"></script>
+<script src="assets/store.js?v=20260831.195"></script>
+<script src="assets/app.js?v=20260831.195"></script>
+<script src="assets/vocab-data.js?v=20260831.195"></script>
 <script>
 App.header("study.html");
 
@@ -340,7 +340,7 @@ function renderQuiz() {
   function reveal(pick) {
     if (answered) return;
     answered = true;
-    clearQTimer();
+    // 보기를 골라도 타이머는 멈추지 않고 끝까지(0초) 흐르게 둔다.
     const correct = pick === q.answer;
     choiceEls.forEach((b, idx) => {
       b.disabled = true;
@@ -361,8 +361,9 @@ function renderQuiz() {
     const remain = QUIZ_LIMIT * 1000 - (Date.now() - t0);
     if (remain <= 0) {
       if (barEl) barEl.style.width = "0%";
+      reveal(-1);            // 아직 안 골랐으면 시간초과(오답), 이미 골랐으면 무시
       if (tEl) tEl.textContent = "⏱ 0초";
-      reveal(-1);
+      clearQTimer();         // 0초에 도달하면 타이머 정지(계속 돌지 않게)
       return;
     }
     const sec = Math.ceil(remain / 1000);
