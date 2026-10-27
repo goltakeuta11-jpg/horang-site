@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.196">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.196">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.196">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.197">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.197">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.197">
 <meta property="og:type" content="website">
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.196"></script>
+<script src="assets/inapp.js?v=20260831.197"></script>
 <title>작대기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.196">
+<link rel="stylesheet" href="assets/style.css?v=20260831.197">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -67,7 +67,11 @@
   .col__item.is-change   { border-left: 3px solid var(--warn); } /* 변경 = 노랑 */
   .col__item.is-active { background: rgba(255,92,122,.14); color: var(--text); font-weight: 700; }
   .col__item.is-cancel { border-left: 3px solid var(--text-dim); color: var(--text-dim); } /* 취소 = 회색 */
-  .col__item > span:last-child { font-weight: 700; }   /* 상대 닉(오른쪽) 강조 */
+  .col__item > span:last-child { font-weight: 700; }   /* 상대 닉(오른쪽) 강조 — span 중 마지막 */
+  .col__to { margin-left: auto; }                       /* 닉을 오른쪽으로(날짜는 왼쪽 유지) */
+  .col__del { flex: 0 0 auto; border: none; background: transparent; color: var(--text-dim);
+              cursor: pointer; font-size: 12px; line-height: 1; padding: 1px 4px; border-radius: 4px; }
+  .col__del:hover { color: var(--accent); background: rgba(255,92,122,.16); }
   /* 범례 */
   .stk-legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-dim); margin: 0 0 12px; flex-wrap: wrap; }
   .stk-legend span { display: inline-flex; align-items: center; gap: 5px; }
@@ -108,9 +112,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.196"></script>
-<script src="assets/store.js?v=20260831.196"></script>
-<script src="assets/app.js?v=20260831.196"></script>
+<script src="assets/config.js?v=20260831.197"></script>
+<script src="assets/store.js?v=20260831.197"></script>
+<script src="assets/app.js?v=20260831.197"></script>
 <script>
 App.header("sticks.html");
 
@@ -120,6 +124,7 @@ const meEl   = document.querySelector("[data-me]");
 const advEl  = document.querySelector("[data-adminview]");
 let session  = null;   // 로그인 성공 시 { from, pwHash }
 let GENDERS  = {};     // { 닉: "남"|"여" } — 서버가 자소서 탭으로 판별. 관리자 뷰 남/여 줄 분리에 사용.
+let ADMIN_ITEMS = [];  // 관리자 뷰 이력 항목들 { from, to, date } — 삭제 버튼이 인덱스로 참조
 
 /* 이력 항목 종류 판정: 취소(회색) / 등록(초록) / 변경(노랑).
    ★ 취소 후 재등록은 취소일로부터 7일 이내면 '변경', 7일 이후면 '등록'으로 본다. */
@@ -265,6 +270,7 @@ async function loadAdmin() {
 
 function renderAdmin(sticks) {
   advEl.hidden = false;
+  ADMIN_ITEMS = [];   // 삭제 버튼 참조용 재설정
   // 사람별 그룹 (행 순서 = 시간순 유지)
   const by = {}, order = [];
   sticks.forEach(row => {
@@ -300,9 +306,11 @@ function renderAdmin(sticks) {
       const cancel = (x.to === STICK_CANCEL);
       const isActive = !cancel && (idx === by[f].length - 1) && activeOf[f] === x.to;
       const kind = stickKind(by[f], idx); // 취소 후 7일 기준으로 등록/변경 구분
+      const di = ADMIN_ITEMS.push({ from: f, to: x.to, date: x.date }) - 1; // 삭제 버튼이 참조할 인덱스
       return `<div class="col__item ${kind} ${isActive ? "is-active" : ""}">
         <span class="col__date">${App.esc(x.date.slice(0, 10))}</span>
-        <span>${cancel ? "취소" : App.esc(x.to)}</span></div>`;
+        <span class="col__to">${cancel ? "취소" : App.esc(x.to)}</span>
+        <button class="col__del" data-del="${di}" title="이 이력 삭제">✕</button></div>`;
     }).join("");
     return `<div class="col ${matched.has(f) ? "is-match" : ""}">
       <div class="col__head">${App.esc(f)}${matched.has(f) ? " 💞" : ""}</div>
@@ -343,6 +351,24 @@ function renderAdmin(sticks) {
       ? groupHtml("남자", "gender-label--m", male) + groupHtml("여자", "gender-label--f", female) + groupHtml("기타", "gender-label--x", etc)
       : '<p class="muted">아직 등록된 작대기가 없어요.</p>'}`;
 }
+
+/* ---------- 관리자: 이력 1개 삭제 (오래된 기록 정리) ---------- */
+async function onAdminDelete(e) {
+  const btn = e.target.closest("[data-del]");
+  if (!btn || btn.disabled) return;
+  const it = ADMIN_ITEMS[+btn.dataset.del];
+  if (!it) return;
+  const label = (it.to === STICK_CANCEL) ? "취소" : it.to;
+  if (!confirm(`이 작대기 이력을 삭제할까요?\n\n${it.from} → ${label}\n${it.date}\n\n※ 되돌릴 수 없어요.`)) return;
+  btn.disabled = true;
+  try {
+    const r = await Store.stick({ stickAction: "admindelete", key: App.key(), from: it.from, to: it.to, date: it.date });
+    if (!r.ok) { App.toast(r.error || "삭제에 실패했어요.", true); btn.disabled = false; return; }
+    App.toast("이력을 삭제했어요.");
+    loadAdmin();   // 전체 뷰 새로고침
+  } catch (err) { App.toast("네트워크 오류예요.", true); btn.disabled = false; }
+}
+if (admin) advEl.addEventListener("click", onAdminDelete);
 
 /* ---------- 시작 ---------- */
 renderLogin();
