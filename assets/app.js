@@ -138,7 +138,7 @@
   /* 페이지 조회 집계 — 사용자 요청으로 완전 비활성화(서버로 아무것도 안 보냄). */
   function trackHit(page) { /* 조회 집계 중단됨 */ }
 
-  /* 편집잠금 배너 (오목 상시 오픈이라 게임탭은 항상 노출 — nav 배열에 직접 넣음) */
+  /* 편집잠금 배너 */
   function siteFlags() {
     var url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
     if (!url) return;
@@ -169,15 +169,12 @@
       ["calendar.html", "캘린더"],
       ["members.html", "자소서"],
       ["psychtest.html", "심리테스트"],
-      ["saju.html", "사주"],
-      ["sticks.html", "작대기"],
-      ["game.html", "🎮 게임"]
+      ["saju.html", "사주"]
     ];
     // "더보기 ▾" 안에 접히는 탭 (자주 안 보는 것)
     const more = [
       ["commands.html", "명령어"],
       ["donate.html", "후원"],
-      ["ranking.html", "게임랭킹"],
       ["outings.html", "외출"],
       ["patchnotes.html", "패치노트"]
     ];
