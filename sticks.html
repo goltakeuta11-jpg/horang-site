@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.201">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.201">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.201">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.202">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.202">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.202">
 <meta property="og:type" content="website">
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.201"></script>
+<script src="assets/inapp.js?v=20260831.202"></script>
 <title>작대기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.201">
+<link rel="stylesheet" href="assets/style.css?v=20260831.202">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -60,20 +60,19 @@
   .match-cell em { margin-left: auto; font-size: 11px; color: var(--text-dim); font-style: normal;
                    font-variant-numeric: tabular-nums; white-space: nowrap; }
   .cols { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
-  .col { flex: 0 0 auto; width: 168px; background: var(--panel); border: 1px solid var(--line);
+  .col { flex: 0 0 auto; width: 186px; background: var(--panel); border: 1px solid var(--line);
          border-radius: var(--radius-sm); padding: 10px; }
   .col.is-match { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
   .col__head { font-weight: 800; font-size: 14px; text-align: left; padding-bottom: 8px;
                margin-bottom: 8px; border-bottom: 1px solid var(--line);
                display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  .col__item { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px;
-               padding: 4px 6px; border-radius: 6px; }
+  .col__item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px;
+               font-size: 12.5px; padding: 4px 6px; border-radius: 6px; }
   .col__item.is-register { border-left: 3px solid #3FBF6F; }   /* 등록 = 초록 */
   .col__item.is-change   { border-left: 3px solid var(--warn); } /* 변경 = 노랑 */
   .col__item.is-active { background: rgba(255,92,122,.14); color: var(--text); font-weight: 700; }
   .col__item.is-cancel { border-left: 3px solid var(--text-dim); color: var(--text-dim); } /* 취소 = 회색 */
-  .col__item > span:last-child { font-weight: 700; }   /* 상대 닉(오른쪽) 강조 — span 중 마지막 */
-  .col__to { margin-left: auto; }                       /* 닉을 오른쪽으로(날짜는 왼쪽 유지) */
+  .col__to { text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }  /* 가운데 열(라벨) */
   .col__del { flex: 0 0 auto; border: none; background: transparent; color: var(--text-dim);
               cursor: pointer; font-size: 13px; line-height: 1; padding: 1px 5px; border-radius: 4px; }
   .col__del--row { font-size: 11px; padding: 0 3px; }   /* 이력줄 ✕는 더 작게 */
@@ -118,9 +117,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.201"></script>
-<script src="assets/store.js?v=20260831.201"></script>
-<script src="assets/app.js?v=20260831.201"></script>
+<script src="assets/config.js?v=20260831.202"></script>
+<script src="assets/store.js?v=20260831.202"></script>
+<script src="assets/app.js?v=20260831.202"></script>
 <script>
 App.header("sticks.html");
 
