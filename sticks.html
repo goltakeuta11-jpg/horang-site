@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.202">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.202">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.202">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.203">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.203">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.203">
 <meta property="og:type" content="website">
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.202"></script>
+<script src="assets/inapp.js?v=20260831.203"></script>
 <title>작대기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.202">
+<link rel="stylesheet" href="assets/style.css?v=20260831.203">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -107,7 +107,7 @@
     <p>🔒 작대기를 등록하면 <b>즉시 암호화</b>되어 그 누구도 알지 못하게 됩니다.</p>
     <p>💬 <b>대화권 신청 / 캡슐신청</b>은 작대기로 등록한 사람에게만 가능합니다.</p>
     <p>💞 작대기가 서로 통할 경우, <b>서로 통했다고 공주가 전해주고</b> 최근 작대기 변경 날짜가 상대방에게 전달됩니다.</p>
-    <p>🙈 작대기 내용은 <b>관리자도 알 수 없습니다.</b> (작대기가 쌍방일 경우에만 관리자가 알 수 있습니다)</p>
+    <p>작대기 내용은 <b>관리자도 알 수 없습니다.</b> (작대기가 쌍방일 경우에만 관리자가 알 수 있습니다)</p>
   </div>
 
   <!-- 등록 영역 (모두에게) -->
@@ -117,9 +117,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.202"></script>
-<script src="assets/store.js?v=20260831.202"></script>
-<script src="assets/app.js?v=20260831.202"></script>
+<script src="assets/config.js?v=20260831.203"></script>
+<script src="assets/store.js?v=20260831.203"></script>
+<script src="assets/app.js?v=20260831.203"></script>
 <script>
 App.header("sticks.html");
 
@@ -291,7 +291,7 @@ function renderAdmin(data) {
   const KIND_LABEL = { register: "등록", change: "변경", cancel: "취소" };
   const KIND_CLASS = { register: "is-register", change: "is-change", cancel: "is-cancel" };
 
-  // 사람 1명 카드 — 상대 닉은 비공개(🙈). 변경 이력(날짜·종류)만 표시.
+  // 사람 1명 카드 — 상대 닉은 비공개. 변경 이력(날짜·종류)만 표시.
   function colOf(c) {
     const f = c.from;
     const items = (c.items || []).map(it => {
@@ -300,7 +300,7 @@ function renderAdmin(data) {
       const label = KIND_LABEL[it.kind] || "변경";
       return `<div class="col__item ${cls}">
         <span class="col__date">${App.esc(String(it.date).slice(0, 10))}</span>
-        <span class="col__to col__to--hidden">${it.kind === "cancel" ? "취소" : label + " 🙈"}</span>
+        <span class="col__to col__to--hidden">${it.kind === "cancel" ? "취소" : label}</span>
         <button class="col__del col__del--row" data-del="${di}" title="이 이력 삭제">✕</button></div>`;
     }).join("");
     const ci = ADMIN_CARDS.push({ from: f }) - 1;
@@ -308,7 +308,7 @@ function renderAdmin(data) {
       <div class="col__head"><span>${App.esc(f)}${c.matched ? " 💞" : ""}</span>
         <button class="col__del" data-delcard="${ci}" title="이 작대기 카드 삭제">✕</button></div>
       ${items}
-      <div class="col__now">${c.matched ? "💞 성사 (상대는 위 성사쌍 참고)" : "상대 비공개 🙈"}</div>
+      <div class="col__now">${c.matched ? "💞 성사 (상대는 위 성사쌍 참고)" : "상대 비공개"}</div>
     </div>`;
   }
 
@@ -327,7 +327,7 @@ function renderAdmin(data) {
 
   advEl.innerHTML = `
     <h2 class="adv__title">작대기 현황 <span class="badge badge--admin">관리자</span></h2>
-    <div class="stk-privacy">🙈 작대기 내용은 관리자도 알 수 없습니다. <span>(작대기가 쌍방일 경우에만 관리자가 알 수 있습니다)</span></div>
+    <div class="stk-privacy">작대기 내용은 관리자도 알 수 없습니다. <span>(작대기가 쌍방일 경우에만 관리자가 알 수 있습니다)</span></div>
     ${summary}
     <div class="stk-legend">
       <span><i style="background:#3FBF6F"></i>등록</span>
