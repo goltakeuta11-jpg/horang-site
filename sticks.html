@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.199">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.199">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.199">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.200">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.200">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.200">
 <meta property="og:type" content="website">
 <meta property="og:title" content="호랑봇 허브">
 <meta property="og:description" content="봇 명령어 · 자소서 · 작대기 · 외출 · 패치노트를 한 곳에서.">
@@ -14,9 +14,9 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="theme-color" content="#12141B">
-<script src="assets/inapp.js?v=20260831.199"></script>
+<script src="assets/inapp.js?v=20260831.200"></script>
 <title>작대기 · 호랑봇 허브</title>
-<link rel="stylesheet" href="assets/style.css?v=20260831.199">
+<link rel="stylesheet" href="assets/style.css?v=20260831.200">
 <style>
   .stk-notice { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm);
                 padding: 14px 16px; margin: 0 0 20px; }
@@ -114,9 +114,9 @@
   <section data-adminview hidden></section>
 </main>
 
-<script src="assets/config.js?v=20260831.199"></script>
-<script src="assets/store.js?v=20260831.199"></script>
-<script src="assets/app.js?v=20260831.199"></script>
+<script src="assets/config.js?v=20260831.200"></script>
+<script src="assets/store.js?v=20260831.200"></script>
+<script src="assets/app.js?v=20260831.200"></script>
 <script>
 App.header("sticks.html");
 
@@ -327,9 +327,10 @@ function renderAdmin(sticks) {
   // 성별로 줄 나누기 (남자 줄 / 여자 줄, 성별 모르면 기타) — 각 줄은 최근 활동순(마지막 이력 날짜)
   const lastDateOf = f => (by[f][by[f].length - 1] || {}).date || "";
   const byRecent = (a, b) => { const da = lastDateOf(a), db = lastDateOf(b); return da < db ? 1 : da > db ? -1 : 0; };
-  const male   = order.filter(f => GENDERS[f] === "남").sort(byRecent);
-  const female = order.filter(f => GENDERS[f] === "여").sort(byRecent);
-  const etc    = order.filter(f => !GENDERS[f]).sort(byRecent);
+  // 서로 이어진(상호 매칭) 사람만 카드로 표시 — 한쪽만 건 짝사랑은 숨김(프라이버시)
+  const male   = order.filter(f => matched.has(f) && GENDERS[f] === "남").sort(byRecent);
+  const female = order.filter(f => matched.has(f) && GENDERS[f] === "여").sort(byRecent);
+  const etc    = order.filter(f => matched.has(f) && !GENDERS[f]).sort(byRecent);
   function groupHtml(label, cls, list) {
     if (!list.length) return "";
     return `<div class="gender-group">
@@ -345,16 +346,14 @@ function renderAdmin(sticks) {
     : `<div class="match-summary muted">아직 작대기 성사된 쌍이 없어요.</div>`;
 
   advEl.innerHTML = `
-    <h2 class="adv__title">전체 작대기 현황 <span class="badge badge--admin">관리자</span></h2>
+    <h2 class="adv__title">작대기 성사 현황 <span class="badge badge--admin">관리자</span></h2>
     ${summary}
-    <div class="stk-legend">
+    ${matched.size ? `<div class="stk-legend">
       <span><i style="background:#3FBF6F"></i>등록</span>
       <span><i style="background:var(--warn)"></i>변경</span>
       <span><i style="background:var(--text-dim)"></i>취소</span>
     </div>
-    ${order.length
-      ? groupHtml("남자", "gender-label--m", male) + groupHtml("여자", "gender-label--f", female) + groupHtml("기타", "gender-label--x", etc)
-      : '<p class="muted">아직 등록된 작대기가 없어요.</p>'}`;
+    ${groupHtml("남자", "gender-label--m", male) + groupHtml("여자", "gender-label--f", female) + groupHtml("기타", "gender-label--x", etc)}` : ''}`;
 }
 
 /* ---------- 관리자: 작대기 삭제 (이력 1줄 / 카드 통째) ---------- */
