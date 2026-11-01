@@ -167,7 +167,6 @@
     const primary = [
       ["notices.html", "공지"],
       ["calendar.html", "캘린더"],
-      ["study.html", "📚 공부"],
       ["members.html", "자소서"],
       ["psychtest.html", "심리테스트"],
       ["saju.html", "사주"],
