@@ -12,7 +12,7 @@ const ADMIN_KEY = "tiger2026";
 /* 시트 ID.
    시트에서 [확장 프로그램 → Apps Script] 로 만들었다면 비워둬도 됩니다.
    script.google.com 에서 따로 만들었다면 반드시 채워야 합니다. */
-const SHEET_ID = "1aYSJxF7fICdud5SpTIXjQTCIlldru1trP-Hpf_bvrOU";
+const SHEET_ID = "1npwML2NhMYyLsn02xRvZ8zbGmpOJs1m27r95ke4IZBk";   // Bot_Web_v2 (2026-11-02 이전, 구: 1aYSJxF7fICdud5SpTIXjQTCIlldru1trP-Hpf_bvrOU)
 
 /* 한 종류 = 한 탭 (명령어·패치노트·외출). TABS 는 doPost 에서 "관리자만" 쓰기 가능. */
 const TABS = {
@@ -187,12 +187,13 @@ function backfillDates() {
 
 function book() {
   let ss = null;
-  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) { /* 무시 */ }
-  if (!ss && SHEET_ID) {
+  // ★ SHEET_ID 를 우선 (컨테이너 바인딩보다). 시트 이전 시 바인딩된 옛 시트로 새지 않게 명시 ID 우선.
+  if (SHEET_ID) {
     try { ss = SpreadsheetApp.openById(SHEET_ID); } catch (e) {
       throw new Error("SHEET_ID 로 시트를 열지 못했습니다. ID가 맞는지, 이 계정에 권한이 있는지 확인하세요. (" + e + ")");
     }
   }
+  if (!ss) { try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) { /* 무시 */ } }  // SHEET_ID 비었을 때만 활성 시트
   if (!ss) {
     throw new Error("시트를 찾지 못했습니다. 이 스크립트가 시트에 연결돼 있지 않다면 위쪽 SHEET_ID 를 채우세요.");
   }
@@ -279,9 +280,7 @@ function doGet(e) {
   try {
     var p = (e && e.parameter) || {};
     if (p.action === "ping") return json({ ok: true, pong: true }); // 예열용: 시트 안 읽고 런타임만 깨움
-    if (p.action === "hit") return recordHit(p.page);          // 페이지 조회 1건 기록(+1)
-    if (p.action === "viewstats") return json({ ok: true, views: readViews() }); // 조회통계 반환
-    if (p.action === "donorsheet") {          // 가져오기용: '후원' 탭 명단 반환 (서버가 읽어감)
+    if (p.action === "donorsheet" || p.action === "donors") {   // 후원 명단 반환 (donorsheet=서버/가져오기용, donors=사이트 donate.html 직결용)
       var dsh = book().getSheetByName("후원");
       if (!dsh || dsh.getLastRow() < 2) return json({ ok: true, donors: [] });
       var dv = dsh.getRange(2, 1, dsh.getLastRow() - 1, 1).getValues();
@@ -370,197 +369,6 @@ function removeWarmTrigger() {
     if (triggers[i].getHandlerFunction() === "keepWarm") { ScriptApp.deleteTrigger(triggers[i]); n++; }
   }
   return "🗑️ keepWarm 트리거 " + n + "개 삭제";
-}
-
-/* ============================================================
-   조회통계 — "조회통계" 탭 (날짜 · 페이지 · 횟수).
-   페이지 열릴 때 (날짜,페이지) 카운트를 +1. 명령어·자소서와 완전 분리 + Lock 이라 충돌 없음.
-   ============================================================ */
-function viewSheet() {
-  const ss = book();
-  let sh = ss.getSheetByName("조회통계");
-  if (!sh) { sh = ss.insertSheet("조회통계"); sh.appendRow(["날짜", "페이지", "횟수", "일수"]); sh.setFrozenRows(1); }
-  if (sh.getLastRow() === 0) sh.appendRow(["날짜", "페이지", "횟수", "일수"]);
-  else if (String(sh.getRange(1, 4).getValue()).trim() !== "일수") sh.getRange(1, 4).setValue("일수"); // 일수 열 마이그레이션(기존 3열→4열)
-  sh.getRange("A:A").setNumberFormat("@"); // ★ 날짜 열 텍스트 고정 → "2026-08-05"가 Date로 자동변환되는 것 방지
-  return sh;
-}
-function kstToday() {
-  return Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd");
-}
-// 셀 값이 Date(자동변환됨)여도 "yyyy-MM-dd" 문자열로 정규화 (요약된 "yyyy-MM"·일반문자열은 그대로)
-function vdate(v) {
-  if (v instanceof Date) return Utilities.formatDate(v, "Asia/Seoul", "yyyy-MM-dd");
-  var s = String(v == null ? "" : v).trim();
-  if (/^[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/.test(s)) {   // "Wed Aug 05 2026 ..." 형태면 파싱
-    try { return Utilities.formatDate(new Date(s), "Asia/Seoul", "yyyy-MM-dd"); } catch (e) {}
-  }
-  return s;
-}
-function recordHit(page) {
-  page = String(page == null ? "" : page).trim();
-  if (!page) return json({ ok: false, error: "no page" });
-  const lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(10000);                       // 동시 조회여도 카운트 안 섞이게
-    const sh = viewSheet();
-    const today = kstToday();
-    const rows = sh.getDataRange().getValues();
-    for (var i = 1; i < rows.length; i++) {
-      if (vdate(rows[i][0]) === today && String(rows[i][1]).trim() === page) {
-        sh.getRange(i + 1, 3).setValue((Number(rows[i][2]) || 0) + 1);
-        return json({ ok: true });
-      }
-    }
-    sh.appendRow([today, page, 1, 1]);          // 그 날 첫 조회 → 새 줄 (일수=1)
-    return json({ ok: true });
-  } catch (e) {
-    return json({ ok: false, error: String(e) });
-  } finally {
-    try { lock.releaseLock(); } catch (ig) {}
-  }
-}
-function readViews() {
-  const sh = viewSheet();
-  const rows = sh.getDataRange().getValues();
-  const out = [];
-  for (var i = 1; i < rows.length; i++) {
-    const d = vdate(rows[i][0]), pg = String(rows[i][1]).trim();
-    if (!d || !pg) continue;
-    out.push({ date: d, page: pg, count: Number(rows[i][2]) || 0, days: Number(rows[i][3]) || 1 });
-  }
-  return out;
-}
-
-/* ⭐ 월별 요약 — 지난 달들의 "일별 행"을 (달,페이지)당 1줄로 접음. 이번 달은 일별 유지.
-   일수 열에 며칠치인지 저장 → 사이트의 "하루 평균"이 정확히 유지됨. 여러 번 실행해도 안전(멱등).
-   편집기에서 이 함수를 ▶ 실행하거나, setupSummaryTrigger()로 매월 자동. */
-function summarizeViews() {
-  const lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(20000);
-    const sh = viewSheet();
-    const rows = sh.getDataRange().getValues();
-    const curMonth = kstToday().slice(0, 7);   // "yyyy-MM"
-    const monthly = {};                         // "yyyy-MM|page" → count 합
-    const monthDates = {};                      // "yyyy-MM" → {날짜:1} (그 달 전체 활동일, 페이지 무관)
-    const keep = [];                            // 그대로 둘 행(이번 달 일별 + 이미 월요약된 행)
-    for (var i = 1; i < rows.length; i++) {
-      var d = vdate(rows[i][0]), pg = String(rows[i][1]).trim();
-      if (!d || !pg) continue;
-      var c = Number(rows[i][2]) || 0, dy = Number(rows[i][3]) || 1;
-      var isDaily = (d.length === 10);          // yyyy-MM-DD = 일별
-      if (isDaily && d.slice(0, 7) < curMonth) {// 지난 달의 일별 → 접기
-        var mon = d.slice(0, 7), k = mon + "|" + pg;
-        monthly[k] = (monthly[k] || 0) + c;
-        if (!monthDates[mon]) monthDates[mon] = {};
-        monthDates[mon][d] = 1;                  // 그 달 활동일 집계(페이지 상관없이 union)
-      } else {
-        keep.push([d, pg, c, dy]);              // 이번 달 일별 · 이미 월요약(yyyy-MM) 행은 유지
-      }
-    }
-    var summ = [];
-    for (var key in monthly) {
-      var pr = key.split("|"), mon2 = pr[0];
-      summ.push([mon2, pr[1], monthly[key], Object.keys(monthDates[mon2]).length]); // 일수=그 달 전체 활동일(모든 페이지 동일)
-    }
-    if (!summ.length) return "접을 지난 달 일별 기록이 없어요 (이미 요약됨).";
-    var out = [["날짜", "페이지", "횟수", "일수"]].concat(summ).concat(keep);
-    sh.clear();   // ★ 값+서식 함께 초기화 (clearContents 면 옛 배경색이 남아 색이 엉킴)
-    sh.getRange("A:A").setNumberFormat("@");
-    sh.getRange(1, 1, out.length, 4).setValues(out);
-    return "✅ 요약 완료: 월별 " + summ.length + "행 + 최근(이번 달) " + keep.length + "행 (색은 styleViewsByDay 로 다시 입히세요)";
-  } finally { try { lock.releaseLock(); } catch (e) {} }
-}
-
-/* ⭐ 복구 — 날짜가 Date로 자동변환돼 (같은 날·페이지)가 중복 폭증한 걸 병합 + 날짜 텍스트 정규화.
-   한 번만 ▶ repairViews 실행. 권장 순서: 재배포 → repairViews → (원하면) summarizeViews. */
-function repairViews() {
-  const lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(20000);
-    const sh = viewSheet();
-    const rows = sh.getDataRange().getValues();
-    const agg = {}, order = [];
-    for (var i = 1; i < rows.length; i++) {
-      var d = vdate(rows[i][0]), pg = String(rows[i][1]).trim();
-      if (!d || !pg) continue;
-      var c = Number(rows[i][2]) || 0, dy = Number(rows[i][3]) || 1;
-      var k = d + "|" + pg;
-      if (!agg[k]) { agg[k] = { count: 0, days: dy }; order.push(k); }
-      agg[k].count += c;
-      if (dy > agg[k].days) agg[k].days = dy;
-    }
-    var out = [["날짜", "페이지", "횟수", "일수"]];
-    for (var j = 0; j < order.length; j++) { var p = order[j].split("|"); out.push([p[0], p[1], agg[order[j]].count, agg[order[j]].days]); }
-    sh.clearContents();
-    sh.getRange("A:A").setNumberFormat("@");
-    sh.getRange(1, 1, out.length, 4).setValues(out);
-    return "✅ 복구 완료: " + (rows.length - 1) + "행 → " + (out.length - 1) + "행 (중복 병합·날짜 정규화)";
-  } finally { try { lock.releaseLock(); } catch (e) {} }
-}
-
-/* ⭐ 가시성 — "조회통계"를 날짜별로 확실히 구분: 날짜 정렬 + 하루마다 배경색 번갈이 + 날짜 바뀔 때 구분선.
-   (저번에 만든 헷갈리던 "조회요약" 탭·색농도는 자동 제거). ▶ styleViewsByDay 실행(새 기록 쌓이면 다시 실행해 갱신). */
-function styleViewsByDay() {
-  const ss = book();
-  const s2 = ss.getSheetByName("조회요약"); if (s2) ss.deleteSheet(s2);   // 이전 요약 탭 정리
-  const sh = viewSheet();
-  sh.setConditionalFormatRules([]);                                       // 이전 색농도 규칙 제거
-  const nCol = 4;
-  // ★ 이전에 칠한 배경·구분선을 시트 전체(빈 행 포함) 흰색으로 초기화 — 요약 등으로 행수가 줄면 옛 색이 잔존하므로
-  var maxR = sh.getMaxRows();
-  if (maxR >= 2) sh.getRange(2, 1, maxR - 1, nCol).setBackground("#ffffff").setBorder(false, false, false, false, false, false);
-  const last = sh.getLastRow();
-  if (last < 2) return "데이터가 없어요.";
-  const n = last - 1;
-  // 날짜 오름차순 → 같은 페이지 순으로 정렬 (같은 날끼리 뭉침)
-  sh.getRange(2, 1, n, sh.getLastColumn()).sort([{ column: 1, ascending: true }, { column: 2, ascending: true }]);
-  // 정렬된 값 다시 읽어 날짜 그룹 계산
-  const vals = sh.getRange(2, 1, n, nCol).getValues();
-  // 월별 요약행(yyyy-MM)용 색 — 월마다 다른 파스텔(일별의 흰/연파랑과 확실히 구분)
-  var MONTH_COLORS = {
-    "01": "#ffd6d6", "02": "#ffe3c2", "03": "#fff4b3", "04": "#dcf5c0", "05": "#c2f2e0", "06": "#c2e6f5",
-    "07": "#c9d4f7", "08": "#e2c9f5", "09": "#f7c9e6", "10": "#f7cccc", "11": "#e6dcc9", "12": "#cfe8dd"
-  };
-  const bg = [];
-  const groupStarts = [];
-  var curDate = null, tone = false;
-  for (var i = 0; i < n; i++) {
-    var d = vdate(vals[i][0]);
-    var newDate = (d !== curDate);
-    if (newDate) { curDate = d; groupStarts.push(i); }   // 날짜(또는 월) 바뀜 → 그룹 구분선
-    var color;
-    if (String(d).length === 7) {                        // 월별 요약행(yyyy-MM) → 월마다 다른 색
-      color = MONTH_COLORS[d.slice(5, 7)] || "#eeeeee";
-    } else {                                             // 일별행(yyyy-MM-DD) → 날짜별 흰/연파랑 토글
-      if (newDate) tone = !tone;
-      color = tone ? "#eaf1fb" : "#ffffff";
-    }
-    bg.push([color, color, color, color]);
-  }
-  const body = sh.getRange(2, 1, n, nCol);
-  body.setBackgrounds(bg);
-  body.setBorder(false, false, false, false, false, false);               // 안쪽 테두리 초기화
-  for (var g = 0; g < groupStarts.length; g++) {                           // 날짜 그룹 첫 행 위에 굵은 구분선
-    sh.getRange(2 + groupStarts[g], 1, 1, nCol)
-      .setBorder(true, null, null, null, null, null, "#8fa3c0", SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
-  }
-  sh.getRange(1, 1, 1, nCol).setFontWeight("bold").setBackground("#dfe7f5"); // 헤더 강조
-  // ★ 데이터 아래 남은 행을 전부 흰색으로 명시 — 행을 '삭제'하면 '1000행 추가' 버튼이 뜨고
-  //   새로 생기는 행이 바로 위(파란) 행 서식을 상속해 또 파래짐. 그래서 삭제 대신 흰색으로 덮는다.
-  var mr = sh.getMaxRows();
-  if (mr > last) sh.getRange(last + 1, 1, mr - last, nCol)
-                   .setBackground("#ffffff").setBorder(false, false, false, false, false, false);
-  return "✅ 일별 구분 적용: " + groupStarts.length + "일 · " + n + "행";
-}
-
-/* 매월 1일 새벽 자동 요약 트리거 등록 (편집기에서 한 번만 ▶ 실행) */
-function setupSummaryTrigger() {
-  var trs = ScriptApp.getProjectTriggers();
-  for (var i = 0; i < trs.length; i++) if (trs[i].getHandlerFunction() === "summarizeViews") ScriptApp.deleteTrigger(trs[i]);
-  ScriptApp.newTrigger("summarizeViews").timeBased().onMonthDay(1).atHour(4).create();
-  return "✅ 매월 1일 04시 자동 요약 트리거 등록 완료";
 }
 
 /* ============================================================
@@ -865,6 +673,148 @@ function writeStickHistory(rows) {
    쓰기 — 관리자가 사이트에서 저장할 때
    ============================================================ */
 
+/* ============================================================
+   사주 저장 & 궁합 (동의 기반) — server.js handleSaju 이식 (2026-11-02, 서버리스 전환용)
+   - 저장 = "사주" 탭 (A=닉네임, B=프로필JSON). 본인 인증 = 자소서 닉+비번(stickVerifyPw 재활용).
+   - 궁합 = 저장된 프로필끼리 규칙기반 점수 → 이성(자소서 성별 stickGenders)만 Top2, 본인만 열람.
+   - 관리자(adminlist/admindelete) = ADMIN_KEY (서버의 verifyToken 대체).
+   ============================================================ */
+const SAJU_TAB = "사주";
+const SAJU_EL = ['목', '화', '토', '금', '수'];
+const SAJU_ZODIAC = ['쥐', '소', '호랑이', '토끼', '용', '뱀', '말', '양', '원숭이', '닭', '개', '돼지'];
+const SJ_YUKHAP = [[0, 1], [2, 11], [3, 10], [4, 9], [5, 8], [6, 7]];       // 지지 육합
+const SJ_SAMHAP = [[8, 0, 4], [2, 6, 10], [5, 9, 1], [11, 3, 7]];           // 삼합
+const SJ_WONJIN = [[0, 7], [1, 6], [2, 9], [3, 8], [4, 11], [5, 10]];       // 원진
+const SJ_HAP10 = [[0, 5], [1, 6], [2, 7], [3, 8], [4, 9]];                  // 천간합
+function sjPair(tbl, a, b) { return tbl.some(function (p) { return (a === p[0] && b === p[1]) || (a === p[1] && b === p[0]); }); }
+function sjBrHap(a, b) { return sjPair(SJ_YUKHAP, a, b) ? 'yuk' : (a !== b && SJ_SAMHAP.some(function (t) { return t.indexOf(a) !== -1 && t.indexOf(b) !== -1; }) ? 'sam' : null); }
+function sjChung(a, b) { return (a + 6) % 12 === b; }
+function sjSaeng(e, f) { return (e === f ? 'bi' : ((e + 1) % 5 === f || (f + 1) % 5 === e) ? 'saeng' : ((e + 2) % 5 === f || (f + 2) % 5 === e) ? 'geuk' : null); }
+
+function sajuSheet() {
+  const ss = book();
+  let sh = ss.getSheetByName(SAJU_TAB);
+  if (!sh) { sh = ss.insertSheet(SAJU_TAB); sh.appendRow(["닉네임", "프로필JSON"]); sh.setFrozenRows(1); }
+  return sh;
+}
+function sajuAllRows() {   // → [{nick,g,label,factors,input,updated}, ...]
+  const sh = sajuSheet();
+  const vals = sh.getDataRange().getValues();
+  const out = [];
+  for (var i = 1; i < vals.length; i++) {
+    var nick = String(vals[i][0] || "").trim();
+    if (!nick) continue;
+    try { var o = JSON.parse(vals[i][1]); o.nick = nick; out.push(o); } catch (e) {}
+  }
+  return out;
+}
+function sajuGetProfile(nick) { return sajuAllRows().find(function (r) { return r && String(r.nick || '').trim() === nick; }) || null; }
+function sajuUpsertRow(obj) {   // obj = {nick,...}
+  const sh = sajuSheet();
+  const vals = sh.getDataRange().getValues();
+  const row = [obj.nick, JSON.stringify(obj)];
+  for (var i = 1; i < vals.length; i++) {
+    if (String(vals[i][0] || '').trim() === obj.nick) { sh.getRange(i + 1, 1, 1, 2).setValues([row]); return; }
+  }
+  sh.appendRow(row);
+}
+function sajuDeleteProfile(nick) {
+  nick = String(nick || '').trim(); if (!nick) return 0;
+  const sh = sajuSheet();
+  const vals = sh.getDataRange().getValues();
+  var del = 0;
+  for (var i = vals.length - 1; i >= 1; i--) {   // 아래→위(행 인덱스 안 밀리게)
+    if (String(vals[i][0] || '').trim() === nick) { sh.deleteRow(i + 1); del++; }
+  }
+  return del;
+}
+// 두 프로필 궁합 점수(me 입장) → {score, tier, why[]}
+function sajuScore(me, ot) {
+  const f = me.factors, g = ot.factors; let s = 50; const why = [];
+  const supply = function (x, y) { var v = 0; if (y.cnt[x.yong] >= 2) v += 12; else if (y.cnt[x.yong] === 1) v += 6; if (y.cnt[x.hee] >= 2) v += 5; return v; };
+  const su1 = supply(f, g), su2 = supply(g, f); s += su1 * 0.7 + su2 * 0.5;
+  if (su1 >= 12) why.push('상대의 기운이 네게 꼭 필요한 용신(' + SAJU_EL[f.yong] + ')을 든든히 채워 줘');
+  else if (su1 >= 6) why.push('상대가 네 용신(' + SAJU_EL[f.yong] + ') 기운을 어느 정도 보태 줘');
+  if (su2 >= 12) why.push('너도 상대에게 필요한 기운을 채워 주는 서로 보완형 궁합이야');
+  if (sjPair(SJ_HAP10, f.ds, g.ds)) { s += 12; why.push('두 사람의 일간이 천간합 — 서로 끌어당기는 힘이 강해'); }
+  else { var se = sjSaeng(f.de, g.de); if (se === 'saeng') { s += 5; why.push('일간끼리 기운을 살려 주는 상생 관계'); } else if (se === 'bi') { s += 2; } else if (se === 'geuk') { s -= 4; why.push('일간끼리 기운이 부딪히는 면이 있어 조율이 필요해'); } }
+  const dh = sjBrHap(f.dbr, g.dbr);
+  if (dh) { s += 12; why.push('배우자 자리(일지)가 ' + (dh === 'yuk' ? '육합' : '삼합') + ' — 생활·정서 궁합이 잘 맞아'); }
+  else if (sjChung(f.dbr, g.dbr)) { s -= 12; why.push('배우자 자리끼리 충 — 생활 리듬이 부딪혀 서로 맞춰 가는 노력이 필요해'); }
+  else if (sjPair(SJ_WONJIN, f.dbr, g.dbr)) { s -= 7; why.push('배우자 자리에 원진 — 이유 없는 서운함이 생길 수 있어'); }
+  const yh = sjBrHap(f.yb, g.yb);
+  if (yh) { s += 6; why.push(SAJU_ZODIAC[f.yb] + '띠·' + SAJU_ZODIAC[g.yb] + '띠가 ' + (yh === 'yuk' ? '육합' : '삼합') + '띠 — 잘 맞는 띠 궁합'); }
+  else if (sjChung(f.yb, g.yb)) { s -= 5; why.push(SAJU_ZODIAC[f.yb] + '띠·' + SAJU_ZODIAC[g.yb] + '띠는 충띠 — 처음엔 티격태격할 수 있어'); }
+  else if (sjPair(SJ_WONJIN, f.yb, g.yb)) s -= 3;
+  var fill = 0; for (var e = 0; e < 5; e++) if (f.cnt[e] === 0 && g.cnt[e] >= 1) fill++;
+  if (fill) { s += Math.min(fill, 3) * 2; if (fill >= 2) why.push('네 사주에 없는 오행을 상대가 여럿 채워 줘 균형이 좋아져'); }
+  s = Math.max(8, Math.min(98, Math.round(s)));
+  const tier = s >= 85 ? '천생연분' : s >= 72 ? '아주 좋은 궁합' : s >= 58 ? '무난한 궁합' : '노력이 필요한 궁합';
+  return { score: s, tier: tier, why: why.slice(0, 3) };
+}
+function sajuValidFactors(f) {
+  return f && Array.isArray(f.cnt) && f.cnt.length === 5 && f.cnt.every(function (n) { return typeof n === 'number'; })
+    && [f.ds, f.de, f.yong, f.hee, f.dbr, f.yb].every(function (n) { return typeof n === 'number'; });
+}
+function handleSaju(body) {
+  const act = String(body.sajuAction || '');
+  if (act === 'adminlist') {
+    if (body.key !== ADMIN_KEY) return json({ ok: false, error: '권한이 없어요.' });
+    var g = stickGenders();
+    var list = sajuAllRows().filter(function (r) { return r && r.nick; }).map(function (r) {
+      return { nick: r.nick, g: r.g, gender: g[String(r.nick).trim()] || (r.g === 'm' ? '남' : '여'), label: r.label || '', updated: r.updated || '' };
+    }).sort(function (a, b) { return String(b.updated).localeCompare(String(a.updated)); });
+    return json({ ok: true, count: list.length, list: list });
+  }
+  if (act === 'admindelete') {
+    if (body.key !== ADMIN_KEY) return json({ ok: false, error: '권한이 없어요.' });
+    var t = String(body.nick || '').trim();
+    if (!t) return json({ ok: false, error: '닉네임이 필요해요.' });
+    var n = sajuDeleteProfile(t);
+    return json({ ok: true, deleted: n, nick: t });
+  }
+  const nick = String(body.nick || '').trim();
+  const pwHash = String(body.pwHash || '').trim();
+  if (!nick) return json({ ok: false, error: '닉네임을 입력해주세요.' });
+  var vr = stickVerifyPw(nick, pwHash);
+  if (vr !== 'ok') {
+    var m = vr === 'no_member' ? '자소서를 먼저 등록해야 이용할 수 있어요.'
+      : vr === 'no_pw' ? '자소서에 비밀번호가 없어요. 자소서에서 비번을 먼저 설정해주세요.'
+        : '비밀번호가 틀렸어요.';
+    return json({ ok: false, error: m, reason: vr });
+  }
+  if (act === 'get') {
+    var p = sajuGetProfile(nick);
+    return json({ ok: true, saved: !!p, profile: p ? { label: p.label, g: p.g, updated: p.updated, input: p.input || null } : null });
+  }
+  if (act === 'delete') { var dn = sajuDeleteProfile(nick); return json({ ok: true, deleted: dn }); }
+  if (act === 'save') {
+    var f = body.factors;
+    if (!sajuValidFactors(f)) return json({ ok: false, error: '사주 계산값이 올바르지 않아요. 먼저 사주를 조회해주세요.' });
+    var clean = { ds: f.ds, de: f.de, cnt: f.cnt.map(function (n) { return +n || 0; }), yong: f.yong, hee: f.hee, gi: typeof f.gi === 'number' ? f.gi : null, dbr: f.dbr, yb: f.yb, mb: typeof f.mb === 'number' ? f.mb : null };
+    var bi = body.input && typeof body.input === 'object' ? body.input : null;
+    var input = bi ? { g: bi.g === 'm' ? 'm' : 'f', lunar: !!bi.lunar, leap: !!bi.leap, y: +bi.y || 0, m: +bi.m || 0, d: +bi.d || 0, noTime: !!bi.noTime, hh: +bi.hh || 0, mi: +bi.mi || 0, city: String(bi.city || '').slice(0, 30) } : null;
+    sajuUpsertRow({ nick: nick, g: body.g === 'm' ? 'm' : 'f', label: String(body.label || '').slice(0, 40), factors: clean, input: input, updated: new Date().toISOString() });
+    return json({ ok: true, saved: true });
+  }
+  if (act === 'match') {
+    var me = sajuGetProfile(nick);
+    if (!me) return json({ ok: false, needSave: true, error: '먼저 사주를 저장(동의)해야 궁합을 볼 수 있어요.' });
+    var gmap = stickGenders();
+    var myGender = gmap[nick];
+    if (!myGender) return json({ ok: false, error: '자소서에 성별 정보가 없어요.' });
+    var cands = sajuAllRows().filter(function (r) {
+      if (!r || String(r.nick || '').trim() === nick) return false;
+      var gg = gmap[String(r.nick || '').trim()];
+      return gg && gg !== myGender && sajuValidFactors(r.factors);
+    });
+    var ranked = cands.map(function (c) { var sc = sajuScore(me, c); return { nick: c.nick, label: c.label || '', score: sc.score, tier: sc.tier, why: sc.why }; })
+      .sort(function (a, b) { return b.score - a.score; }).slice(0, 2);
+    return json({ ok: true, count: cands.length, matches: ranked, myGender: myGender });
+  }
+  return json({ ok: false, error: '알 수 없는 요청이에요.' });
+}
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   try {
@@ -875,6 +825,17 @@ function doPost(e) {
     // ★ 작대기(매칭): 별도 흐름으로 처리하고 즉시 반환 (자소서/명령어 저장과 무관)
     if (body.stickAction) return handleStick(body);
 
+    // ★ 사주 저장/조회/삭제/궁합: 별도 흐름 (server.js handleSaju 이식)
+    if (body.sajuAction) return handleSaju(body);
+
+    // ★ 후원 명단 저장 (donate.html 관리자 저장 — 서버리스 직결용). 관리자 키 필수.
+    if (body.donorAction === "save") {
+      if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
+      var dn = (Array.isArray(body.donors) ? body.donors : []).map(function (x) { return String(x || "").trim(); }).filter(String);
+      writeTab("후원", ["닉네임"], dn.map(function (n) { return [n]; }));
+      return json({ ok: true, count: dn.length });
+    }
+
     // ★ 내보내기용 bulk 쓰기: 서버가 작대기·후원명단을 통째로 시트에 씀 (관리자만)
     if (body.bulkTabs) {
       if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
@@ -882,23 +843,6 @@ function doPost(e) {
       if (Array.isArray(bt.sticks)) writeStickHistory(bt.sticks);   // [[보낸,받는,날짜],...] → 사람별 가로 이력(stickAll 이 읽는 포맷)
       if (Array.isArray(bt.donors)) writeTab("후원", ["닉네임"], bt.donors);         // [[닉],...]
       return json({ ok: true });
-    }
-
-    // ★ 조회통계 백업: 서버(horangbot)가 주기적으로 view_hits 를 통째로 밀어넣음(백업용)
-    if (body.action === "syncviews") {
-      if (body.key !== ADMIN_KEY) return json({ ok: false, error: "권한이 없어요." });
-      var vsh = viewSheet();
-      var views = body.views || [];
-      vsh.clear();
-      vsh.getRange("A:A").setNumberFormat("@");
-      var vout = [["날짜", "페이지", "횟수", "일수"]];
-      for (var vi = 0; vi < views.length; vi++) {
-        var v = views[vi];
-        vout.push([String(v.date), String(v.page), Number(v.count) || 0, Number(v.days) || 1]);
-      }
-      vsh.getRange(1, 1, vout.length, 4).setValues(vout);
-      try { styleViewsByDay(); } catch (e) { /* 색 입히기 실패해도 백업 자체는 성공 */ }  // ★ 매 백업이 clear로 서식을 지우므로 색을 다시 입힘(안 하면 매시간 컬러코딩 풀림)
-      return json({ ok: true, synced: views.length });
     }
 
     const isAdmin = (body.key === ADMIN_KEY);

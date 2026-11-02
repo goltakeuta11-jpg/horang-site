@@ -138,31 +138,9 @@
   /* 페이지 조회 집계 — 사용자 요청으로 완전 비활성화(서버로 아무것도 안 보냄). */
   function trackHit(page) { /* 조회 집계 중단됨 */ }
 
-  /* 편집잠금 배너 */
-  function siteFlags() {
-    var url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
-    if (!url) return;
-    fetch(url + "?action=siteflags&_=" + Date.now(), { cache: "no-store" })
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        if (!j || !j.locked || document.querySelector("[data-maint-banner]")) return;
-        var run = function () {
-          var b = document.createElement("div");
-          b.setAttribute("data-maint-banner", "");
-          b.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99998;background:#FFAB40;color:#17070C;"
-            + "font:700 14px/1.5 -apple-system,sans-serif;padding:11px 16px;text-align:center;"
-            + "box-shadow:0 2px 14px rgba(0,0,0,.35)";
-          b.textContent = "🔧 현재 데이터 업데이트 중입니다. 잠시 후에 이용 바랍니다.";
-          document.body.appendChild(b);
-          document.body.style.paddingTop = "44px";
-        };
-        if (document.body) run(); else document.addEventListener("DOMContentLoaded", run);
-      })
-      .catch(function () {});
-  }
+  /* (편집잠금 배너 siteFlags 제거됨 — 서버리스 전환으로 서버 lock 개념 자체가 사라짐) */
 
   function header(active) {
-    siteFlags();   // 잠금 배너
     // 항상 보이는 탭 (홈은 좌측 로고가 대신함)
     const primary = [
       ["notices.html", "공지"],
@@ -249,22 +227,16 @@
 
   /* 주소를 새로 만들어 이동하지 않고 그 자리에서 로그인합니다.
      파일을 직접 열어본 경우 주소 이동이 실패하는 일이 있어서입니다. */
-  /* 서버에 비밀번호로 로그인 → 임시 토큰 발급받아 저장. 비동기(Promise) 반환. */
+  /* 비밀번호를 CONFIG.ADMIN_KEY 와 대조하는 로컬 로그인(서버리스).
+     맞으면 그 키를 저장 → 이후 쓰기 요청의 key 로 전송되어 Apps Script가 key===ADMIN_KEY 로 검증.
+     (예전엔 서버 /api/login 에서 토큰을 받았지만 서버를 없앴음) */
   async function signIn(password) {
-    const url = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
-    if (!url) return "wrong";
-    let j;
-    try {
-      const r = await fetch(url.replace(/\/api\/gs$/, "") + "/api/login", {
-        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ password: String(password || "") })
-      });
-      j = await r.json();
-    } catch (e) { return "neterr"; }
-    if (!j || !j.ok || !j.token) return "wrong";
+    const key = (window.CONFIG && CONFIG.ADMIN_KEY || "").trim();
+    if (!key) return "wrong";
+    if (String(password || "") !== key) return "wrong";
     try {
       sessionStorage.setItem(SESSION, "1");
-      sessionStorage.setItem("horang.key", j.token);
+      sessionStorage.setItem("horang.key", key);
       return "ok";
     } catch (e) { return "nostorage"; }
   }

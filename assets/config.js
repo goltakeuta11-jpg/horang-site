@@ -7,10 +7,10 @@ window.CONFIG = {
   ROOM_NAME: "호랑봇",
   BOT_NAME: "호랑봇",
 
-  /* 관리자 인증은 서버에서 처리합니다(비번은 서버에만 저장).
-     홈 화면에서 비밀번호로 로그인 → 서버가 임시 토큰 발급 → 그 토큰으로 저장 권한 검증.
-     ※ 여기(브라우저)에는 더 이상 관리자 비번이 들어있지 않습니다. */
-  ADMIN_KEY: "",
+  /* 관리자 인증 = 이 키를 Apps Script(Code.gs)의 ADMIN_KEY 와 대조.
+     홈 화면에서 이 비밀번호로 로그인하면 이후 저장 요청에 key 로 실려 Apps Script가 검증.
+     ※ 서버리스(Apps Script 직결)라 브라우저에 키가 들어있음 — Code.gs 의 ADMIN_KEY 와 반드시 동일하게 유지. */
+  ADMIN_KEY: "tiger2026",
 
   /* ============================================================
      구글 시트 연동 — 아래 두 가지 중 하나를 고르면 됩니다.
@@ -23,15 +23,12 @@ window.CONFIG = {
         SHEETS.md 의 "Apps Script 붙이기" 를 먼저 하세요.
      ============================================================ */
 
-  /* 시트 주소 가운데 부분 */
-  SHEET_ID: "1aYSJxF7fICdud5SpTIXjQTCIlldru1trP-Hpf_bvrOU",
+  /* 시트 주소 가운데 부분 (Bot_Web_v2 — 2026-11-02 새 파일 이전) */
+  SHEET_ID: "1npwML2NhMYyLsn02xRvZ8zbGmpOJs1m27r95ke4IZBk",
 
-  /* Apps Script 주소.
-     - horangbot.co.kr(자체 서버): 같은 출처 프록시(/api/gs) → 브라우저 CORS·리다이렉트·간헐 인터스티셜 회피
-     - 그 외(GitHub Pages 등): Apps Script 직접 호출 */
-  SCRIPT_URL: (typeof location !== "undefined" && location.hostname === "horangbot.co.kr")
-    ? "/api/gs"
-    : "https://script.google.com/macros/s/AKfycbyRlMLzUFwhUi8q7j969nH86iTWZNT-G8DWovAh40Jqya2grTuqugClRLU67BpIiK90/exec",
+  /* Apps Script 주소 — 서버리스(VPS 제거) 전환으로 어디서든 Apps Script 직결 고정.
+     (예전엔 horangbot.co.kr에서 /api/gs 서버 프록시를 탔지만 서버를 없앴음) */
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyRlMLzUFwhUi8q7j969nH86iTWZNT-G8DWovAh40Jqya2grTuqugClRLU67BpIiK90/exec",
 
   /* 각 화면이 쓸 탭(시트) 이름 — 시트의 탭 이름과 정확히 같아야 합니다 */
   SHEETS: {
