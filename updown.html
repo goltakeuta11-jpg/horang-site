@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.206">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.206">
+<meta property="og:type" content="website">
+<meta property="og:title" content="진실게임 · 호랑봇 허브">
+<meta property="og:description" content="턴제 업다운 + 진실게임 (1~99 숫자 맞히기)">
+<meta property="og:url" content="https://horangbot.co.kr/updown.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.206"></script>
+<title>진실게임 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.206">
+<style>
+  .ud-wrap { max-width: 980px; }
+  .ud-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
+  @media (max-width: 620px) { .ud-setup { grid-template-columns: 1fr; } }
+  .ud-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px; }
+  .ud-box h2 { font-size: 16px; font-weight: 800; margin: 0 0 12px; }
+  .ud-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line);
+    color: var(--text); border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 15px; margin-bottom: 10px; }
+  .ud-input:focus { outline: none; border-color: var(--accent); }
+  /* 상태바 */
+  .ud-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--panel);
+    border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; }
+  .ud-bar .t { font-weight: 800; font-size: 15px; }
+  .ud-code { font-weight: 800; letter-spacing: 2px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px 9px; cursor: pointer; font-size: 13px; }
+  .ud-leave { background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+  .ud-leave:hover { border-color: var(--accent); }
+  .ud-close { background: rgba(255,92,122,.14); border: 1px solid rgba(255,92,122,.5); color: #FF6B81;
+    border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+  /* 순서 바 */
+  .ud-order { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; }
+  .ud-order__h { font-size: 12.5px; color: var(--text-dim); font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ud-order__list { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ud-turn { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 700; }
+  .ud-turn.cur { background: var(--accent); color: #10131a; border-color: var(--accent); }
+  .ud-turn__n { opacity: .6; font-size: 11px; }
+  .ud-turn button { background: none; border: 0; color: inherit; cursor: pointer; font-size: 11px; padding: 0 1px; opacity: .7; }
+  /* 2열 레이아웃 */
+  .ud-cols { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
+  @media (max-width: 760px) { .ud-cols { grid-template-columns: 1fr; } }
+  .ud-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; }
+  .ud-panel h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; }
+  /* 채팅 (고정 배너 + 스크롤 영역 + 입력) */
+  .ud-chat { display: flex; flex-direction: column; height: 460px; padding: 0; overflow: hidden; }
+  .ud-chat__body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; padding: 12px 14px; }
+  /* 카톡식 상단 고정 메시지 */
+  .ud-pin { flex: 0 0 auto; background: rgba(255,171,64,.12); border-bottom: 1px solid var(--line); padding: 9px 12px; }
+  .ud-pin__row { display: flex; align-items: flex-start; gap: 8px; }
+  .ud-pin__ico { font-size: 15px; line-height: 1.5; }
+  .ud-pin__text { flex: 1; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; max-height: 3em; overflow: hidden; }
+  .ud-pin.open .ud-pin__text { max-height: none; }
+  .ud-pin__text .ud-msg__from { font-weight: 800; margin-right: 4px; }
+  .ud-pin__btn { background: none; border: 0; color: var(--text-dim); cursor: pointer; font-size: 13px; padding: 0 2px; line-height: 1.4; flex: 0 0 auto; }
+  .ud-pin__btn:hover { color: var(--text); }
+  .ud-pin [data-pin-toggle] { transition: transform .15s; }
+  .ud-pin.open [data-pin-toggle] { transform: rotate(180deg); }
+  .ud-msg { font-size: 13.5px; line-height: 1.45; word-break: break-word; display: flex; align-items: baseline; gap: 4px; }
+  .ud-msg__from { font-weight: 800; flex: 0 0 auto; }
+  .ud-msg__t { flex: 1; min-width: 0; }
+  .ud-msg.sys { color: var(--text-dim); font-size: 12px; display: block; }
+  /* 메시지 고정 버튼 (진행자에게만 보임) */
+  .ud-msg__pin { display: none; background: none; border: 0; cursor: pointer; font-size: 12px; padding: 0 2px; opacity: .4; flex: 0 0 auto; }
+  .ud-msg__pin:hover { opacity: 1; }
+  .ud-chat.is-mc .ud-msg:not(.sys):hover .ud-msg__pin, .ud-chat.is-mc .ud-msg__pin.on { display: inline; }
+  .ud-msg__pin.on { opacity: 1; }
+  .ud-chat__foot { display: flex; gap: 6px; flex: 0 0 auto; padding: 10px 12px; border-top: 1px solid var(--line); }
+  .ud-chat__foot input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 8px 10px; font: inherit; font-size: 13.5px; }
+  /* 게임 영역 */
+  .ud-range { text-align: center; padding: 16px; }
+  .ud-range__cur { font-size: 14px; color: var(--accent); font-weight: 800; margin-bottom: 8px; }
+  .ud-range__nums { font-size: 32px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .ud-range__nums b { color: var(--accent); }
+  .ud-miss { margin-top: 10px; font-size: 18px; letter-spacing: 3px; }
+  .ud-guess { display: flex; gap: 8px; margin-top: 12px; }
+  .ud-guess input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    border-radius: 10px; padding: 12px 14px; font: inherit; font-size: 18px; font-weight: 800; text-align: center; }
+  .ud-guess input:disabled { opacity: .5; }
+  .ud-hist { max-height: 160px; overflow-y: auto; }
+  .ud-g { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .ud-g:last-child { border-bottom: 0; }
+  .ud-g__num { font-weight: 900; font-variant-numeric: tabular-nums; min-width: 38px; }
+  .ud-g__nick { color: var(--text-dim); font-size: 12px; }
+  .ud-g__tag { margin-left: auto; font-weight: 800; font-size: 13px; }
+  .ud-up { color: #FF9E6B; } .ud-down { color: #7FA8FF; } .ud-hit { color: #34D399; }
+  /* 질문/답변 무대 */
+  .ud-stage { background: linear-gradient(180deg, rgba(255,171,64,.08), var(--panel)); border: 1.5px solid var(--accent); }
+  .ud-stage__head { font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+  .ud-ask-btn { width: 100%; font-size: 17px; font-weight: 900; padding: 16px; animation: udpulse 1.2s ease-in-out infinite; }
+  @keyframes udpulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+  .ud-qa { margin-top: 10px; }
+  .ud-qa label { font-size: 12.5px; color: var(--text-dim); font-weight: 700; display: block; margin: 8px 0 4px; }
+  .ud-qa textarea { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical; min-height: 54px; }
+  .ud-qa__show { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .ud-qa__row { display: flex; gap: 8px; margin-top: 6px; }
+  .ud-reconnect { background: rgba(255,92,122,.16); border: 1px solid #FF6B81; color: #FF6B81; border-radius: 10px; padding: 9px 14px; margin-bottom: 12px; font-size: 13px; font-weight: 700; text-align: center; }
+  /* 참여자 명단 */
+  .ud-roster { display: flex; flex-wrap: wrap; gap: 7px; }
+  .ud-roster span { background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
+  .ud-roster span.cur { background: var(--accent); color: #10131a; border-color: var(--accent); }
+  .ud-mc-btn { background: none; border: 0; cursor: pointer; font-size: 13px; padding: 0 0 0 4px; opacity: .35; filter: grayscale(1); }
+  .ud-mc-btn.on { opacity: 1; filter: none; }
+  .ud-kick-btn { background: none; border: 0; cursor: pointer; font-size: 12px; padding: 0 0 0 4px; color: #FF6B81; opacity: .55; }
+  .ud-kick-btn:hover { opacity: 1; }
+  /* 현재 차례(핑크 배경) 칩에선 ✖이 핑크끼리 묻혀 안 보임 → 진한 색+굵게로 대비 */
+  .ud-roster span.cur .ud-kick-btn { color: #4A0410; font-weight: 900; opacity: .85; }
+  .ud-roster span.cur .ud-kick-btn:hover { opacity: 1; }
+  .ud-roster span.cur .ud-mc-btn { filter: none; }
+  /* 질문·답변 기록 서랍 (오른쪽 슬라이드) */
+  .ud-fab { position: fixed; right: 0; top: 46%; transform: translateY(-50%); z-index: 50;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font: inherit;
+    background: var(--accent); color: #10131a; border: 0; border-radius: 16px 0 0 16px; padding: 14px 8px 14px 10px; box-shadow: -3px 3px 14px rgba(0,0,0,.4); }
+  .ud-fab__arrow { font-size: 20px; font-weight: 900; line-height: 1; }
+  .ud-fab__label { font-size: 11px; font-weight: 800; writing-mode: vertical-rl; letter-spacing: 2px; }
+  .ud-drawer__backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 60; }
+  .ud-drawer { position: fixed; top: 0; right: 0; height: 100%; width: min(90vw, 380px); z-index: 61;
+    background: var(--panel); border-left: 1px solid var(--line); box-shadow: -6px 0 24px rgba(0,0,0,.5);
+    transform: translateX(100%); transition: transform .22s ease; display: flex; flex-direction: column; }
+  .ud-drawer.is-open { transform: translateX(0); }
+  .ud-drawer__head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
+  .ud-drawer__head h3 { margin: 0; font-size: 14px; font-weight: 800; flex: 1; }
+  .ud-drawer__close { background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 8px; width: 34px; height: 34px; font-size: 15px; cursor: pointer; }
+  .ud-drawer__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px 24px; }
+  .ud-recgrp { margin-bottom: 8px; }
+  .ud-recname { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 10px 12px;
+    font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+  .ud-recname:hover { border-color: var(--accent); }
+  .ud-qrec { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 8px 0 0; }
+  .ud-qrec__who { font-size: 13.5px; font-weight: 800; margin-bottom: 6px; }
+  .ud-qrec__who .r { font-weight: 400; color: var(--text-dim); font-size: 12px; }
+  .ud-qrec__q { font-size: 13.5px; line-height: 1.5; }
+  .ud-qrec__q b { color: var(--accent); }
+  .ud-qrec__a { font-size: 13.5px; line-height: 1.5; margin-top: 4px; }
+  .ud-qrec__a b { color: #34D399; }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page ud-wrap">
+  <p class="page__eyebrow"><a href="game.html" style="color:inherit;text-decoration:none">🎮 게임</a> › 진실게임</p>
+  <h1 class="page__title">🎯 진실게임 <span style="font-size:13px;color:var(--text-dim)">업다운</span></h1>
+
+  <div data-noserver hidden class="empty" style="padding:30px"><strong>이 게임은 호랑봇 서버에서만 돌아가요</strong>horangbot.co.kr 에서 접속해주세요.</div>
+
+  <!-- 셋업 -->
+  <section data-setup hidden>
+    <p class="page__desc">진행자가 순서를 정하고, 순서대로 1~99 숨은 숫자를 맞혀요. 틀리면 업/다운 힌트! <b>5번 틀리면 질문</b>을 받아요(진실게임). 먼저 맞히면 다음 사람으로.</p>
+    <p class="mf-hint" data-create-note hidden style="margin:-4px 0 12px;color:var(--text-dim)">💡 방 생성은 진행자(관리자)만 할 수 있어요. 받은 코드로 참가해주세요.</p>
+    <div class="ud-setup">
+      <div class="ud-box" data-create-box>
+        <h2>➕ 방 만들기 (진행자)</h2>
+        <input class="ud-input" data-create-nick maxlength="16" placeholder="내 닉네임">
+        <button class="btn btn--primary" data-create style="width:100%">방 만들기</button>
+      </div>
+      <div class="ud-box">
+        <h2>🚪 방 참가</h2>
+        <input class="ud-input" data-join-code maxlength="4" placeholder="방 코드 (4자리)" style="text-transform:uppercase">
+        <input class="ud-input" data-join-nick maxlength="16" placeholder="내 닉네임">
+        <button class="btn btn--primary" data-join style="width:100%">참가하기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 게임 -->
+  <section data-game hidden>
+    <div class="ud-reconnect" data-reconnect hidden>🔄 서버와 연결이 잠깐 끊겼어요. 다시 연결 중…</div>
+    <div class="ud-bar">
+      <span class="t" data-phase>🔢 업다운</span>
+      <span class="t" data-qa-timer hidden style="color:var(--accent)"></span>
+      <span class="ud-code" data-code title="코드 복사"></span>
+      <button class="ud-leave" data-leave style="margin-left:auto">🚪 나가기</button>
+      <button class="ud-close" data-closeroom hidden>💥 방 닫기</button>
+    </div>
+
+    <!-- 순서 바 -->
+    <div class="ud-order">
+      <div class="ud-order__h">
+        <span>🎯 순서 <span style="font-weight:400">(진행자가 정해요)</span></span>
+        <button class="btn btn--ghost btn--sm" data-shuffle hidden style="padding:2px 10px;font-size:12px">🔀 섞기</button>
+      </div>
+      <div class="ud-order__list" data-order></div>
+    </div>
+
+    <div class="ud-cols">
+      <!-- 왼쪽: 채팅 (진행자가 고정한 메시지는 맨 위 배너로) -->
+      <div>
+        <div class="ud-panel ud-chat">
+          <!-- 카톡식 상단 고정 메시지 (진행자가 채팅 하나를 고정, 최대 1건) -->
+          <div class="ud-pin" data-pin hidden>
+            <div class="ud-pin__row">
+              <span class="ud-pin__ico">📌</span>
+              <div class="ud-pin__text" data-pin-text></div>
+              <button class="ud-pin__btn" data-pin-toggle title="접기/펼치기">▾</button>
+              <button class="ud-pin__btn" data-pin-unpin hidden title="고정 해제">✖</button>
+            </div>
+          </div>
+          <div class="ud-chat__body" data-chat></div>
+          <div class="ud-chat__foot">
+            <input data-chat-input maxlength="300" placeholder="메시지…">
+            <button class="btn btn--primary btn--sm" data-chat-send>전송</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 오른쪽: 게임 + 질문/답변 무대 -->
+      <div>
+        <div class="ud-panel">
+          <div class="ud-range">
+            <div class="ud-range__cur" data-cur></div>
+            <div class="ud-range__nums" data-range></div>
+            <div class="ud-miss" data-miss></div>
+          </div>
+          <div class="ud-guess">
+            <input data-guess-input type="number" min="1" max="99" inputmode="numeric" placeholder="1~99">
+            <button class="btn btn--primary" data-guess-btn>입력</button>
+          </div>
+        </div>
+
+        <!-- 질문/답변 무대 (5번 틀렸을 때) -->
+        <div class="ud-panel ud-stage" data-stage hidden></div>
+      </div>
+    </div>
+
+    <!-- 하단: 진행자 + 현재 게임 참여자 명단 -->
+    <div class="ud-panel">
+      <h3 data-mcs-h>🎙️ 진행자</h3>
+      <div class="ud-roster" data-mcs style="margin-bottom:12px"></div>
+      <h3 data-roster-h>👥 현재 참여자</h3>
+      <div class="ud-roster" data-roster></div>
+    </div>
+
+    <!-- 질문·답변 기록 서랍 (오른쪽 슬라이드) -->
+    <button class="ud-fab" data-rec-toggle aria-label="질문 기록 열기">
+      <span class="ud-fab__arrow" data-rec-arrow>‹</span>
+      <span class="ud-fab__label">질문기록</span>
+    </button>
+    <div class="ud-drawer__backdrop" data-rec-backdrop hidden></div>
+    <aside class="ud-drawer" data-rec-drawer>
+      <div class="ud-drawer__head">
+        <h3>🎤 질문·답변 기록</h3>
+        <button class="ud-drawer__close" data-rec-close aria-label="닫기">✕</button>
+      </div>
+      <div class="ud-drawer__body" data-rec-body></div>
+    </aside>
+  </section>
+</main>
+
+<script src="assets/config.js?v=20260831.206"></script>
+<script src="assets/store.js?v=20260831.206"></script>
+<script src="assets/app.js?v=20260831.206"></script>
+<script>
+App.header("game.html");
+
+const UD_URL = ((window.CONFIG && CONFIG.SCRIPT_URL) === "/api/gs") ? "/api/updown" : null;
+const LS = "horang.updown";
+const $ = s => document.querySelector(s);
+const esc = (App && App.esc) ? App.esc : (s => ("" + s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])));
+
+let sess = null, sinceId = 0, pollTimer = null, polling = false, S = null;
+let qaTyping = false;   // 입력 중엔 폴링이 안 덮게
+try { sess = JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) {}
+function saveSess(s) { sess = s; try { localStorage.setItem(LS, JSON.stringify(s)); } catch (e) {} }
+function clearSess() { sess = null; try { localStorage.removeItem(LS); } catch (e) {} }
+
+async function api(op, extra) {
+  const body = Object.assign({ op }, sess ? { code: sess.code, pid: sess.pid } : {}, extra || {});
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const r = await fetch(UD_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body), signal: ctrl.signal });
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+function show(which) {
+  $("[data-noserver]").hidden = which !== "noserver";
+  $("[data-setup]").hidden = which !== "setup";
+  $("[data-game]").hidden = which !== "game";
+}
+
+/* 셋업 */
+$("[data-create]").onclick = async () => {
+  const nick = $("[data-create-nick]").value.trim();
+  if (!nick) return App.toast("닉네임을 입력해주세요.");
+  const j = await api("create", { nick, key: App.key() });
+  if (!j.ok) return App.toast(j.error || "방 생성 실패");
+  saveSess({ code: j.code, pid: j.pid }); sinceId = 0; startGame();
+};
+$("[data-join]").onclick = async () => {
+  const code = $("[data-join-code]").value.trim().toUpperCase();
+  const nick = $("[data-join-nick]").value.trim();
+  if (!code || !nick) return App.toast("코드와 닉네임을 입력해주세요.");
+  const j = await api("join", { code, nick });
+  if (!j.ok) return App.toast(j.error || "참가 실패");
+  saveSess({ code: j.code, pid: j.pid }); sinceId = 0; startGame();
+};
+
+/* 폴링 */
+function startGame() { show("game"); startPoll(); }
+function startPoll() { stopPoll(); poll(); pollTimer = setInterval(poll, 1500); }
+function stopPoll() { clearInterval(pollTimer); pollTimer = null; }
+let pollFails = 0;
+async function poll() {
+  if (polling) return;
+  polling = true;
+  let j;
+  try { j = await api("state", { since: sinceId }); }
+  catch (e) { pollFails++; if (pollFails >= 2) { const rc = $("[data-reconnect]"); if (rc) rc.hidden = false; } return; }
+  finally { polling = false; }
+  if (pollFails) { pollFails = 0; const rc = $("[data-reconnect]"); if (rc) rc.hidden = true; }
+  if (!j.ok) { if (j.gone) { clearSess(); stopPoll(); show("setup"); App.toast(j.error || "다시 입장해주세요."); } return; }
+  S = j;
+  if (j.msgs) { appendChat(j.msgs); for (const m of j.msgs) if (m.id > sinceId) sinceId = m.id; }
+  try { render(j); } catch (e) { console.error("[updown] render error:", e); }
+}
+
+/* 채팅 append */
+const seenMsg = new Set();
+function appendChat(msgs) {
+  const body = $("[data-chat]");
+  const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 50;
+  let added = 0;
+  for (const m of msgs) {
+    if (seenMsg.has(m.id)) continue; seenMsg.add(m.id);
+    const d = document.createElement("div");
+    if (m.sys) { d.className = "ud-msg sys"; d.textContent = m.text; }
+    else {
+      d.className = "ud-msg";
+      const col = (S && S.colors && S.colors[m.from]) ? ` style="color:${S.colors[m.from]}"` : "";   // 닉별 색상
+      d.innerHTML = `<span class="ud-msg__from"${col}>${esc(m.from)}</span><span class="ud-msg__t">${esc(m.text)}</span><button class="ud-msg__pin" data-pinmsg="${m.id}" title="상단 고정">📌</button>`;
+    }
+    body.appendChild(d); added++;
+  }
+  if (added && atBottom) body.scrollTop = body.scrollHeight;
+}
+
+/* 렌더 */
+function render(j) {
+  const phaseTxt = j.phase === "ask" ? "❓ 질문 대기" : j.phase === "qa" ? "🎤 질문/답변" : "🔢 추측 중";
+  $("[data-phase]").textContent = phaseTxt + (j.round ? " · " + j.round + "턴" : "");
+  if (j.phase !== "qa") qaTyping = false;   // qa 벗어나면 타이핑 가드 해제(자동 넘김 등으로 단계가 바뀌어도 다음 qa 렌더 안 막히게)
+  const codeEl = $("[data-code]"); codeEl.textContent = j.code;
+  codeEl.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(j.code); App.toast("코드 복사됨: " + j.code); };
+  const amMC = !!(j.isMC || j.isHost);   // 진행자 권한(순서·공지·다음)
+  $("[data-closeroom]").hidden = !j.isHost;
+  $("[data-shuffle]").hidden = !amMC;
+
+  // 순서 바
+  $("[data-order]").innerHTML = (j.turnOrder || []).map((p, i) => {
+    const cur = p.pid === j.curPid;
+    const arrows = amMC ? `<button data-mv="${p.pid}" data-dir="-1" title="앞으로">◀</button><button data-mv="${p.pid}" data-dir="1" title="뒤로">▶</button>` : "";
+    return `<span class="ud-turn ${cur ? "cur" : ""}"><span class="ud-turn__n">${i + 1}</span>${esc(p.nick)}${arrows}</span>`;
+  }).join("") || `<span class="ud-turn">아직 없음</span>`;
+
+  // 상단 고정 메시지 (진행자가 채팅 하나를 고정) — 고정된 게 있을 때만 표시
+  const pin = $("[data-pin]"), pt = $("[data-pin-text]");
+  if (j.pinned) {
+    pin.hidden = false;
+    const col = (j.colors && j.colors[j.pinned.from]) ? ` style="color:${j.colors[j.pinned.from]}"` : "";
+    pt.innerHTML = `<span class="ud-msg__from"${col}>${esc(j.pinned.from)}</span>${esc(j.pinned.text)}`;
+    $("[data-pin-unpin]").hidden = !amMC;
+  } else {
+    pin.hidden = true;
+  }
+  // 채팅박스에 진행자 표시(메시지 고정 버튼 노출) + 현재 고정된 메시지 버튼 강조
+  const chatBox = document.querySelector(".ud-chat");
+  if (chatBox) chatBox.classList.toggle("is-mc", amMC);
+  document.querySelectorAll(".ud-msg__pin.on").forEach(b => b.classList.remove("on"));
+  if (j.pinned) { const pb = document.querySelector(`[data-pinmsg="${j.pinned.id}"]`); if (pb) pb.classList.add("on"); }
+
+  // 범위 + 현재 차례 + 미스
+  $("[data-cur]").textContent = j.curNick ? (j.isMyTurn ? "🟢 내 차례! 숫자를 맞혀봐요" : `지금 ${j.curNick}님 차례`) : "";
+  $("[data-range]").innerHTML = (j.phase === "ask" || j.phase === "qa")
+    ? `정답은 <b>${j.secret}</b> 였어요`
+    : `<b>${j.lo}</b> ~ <b>${j.hi}</b>`;
+  let miss = "";
+  for (let i = 0; i < j.missLimit; i++) miss += i < j.misses ? "❌" : "⚪";
+  $("[data-miss]").innerHTML = miss + ` <span style="font-size:12px;color:var(--text-dim)">${j.misses}/${j.missLimit}</span>`;
+
+  // 추측 입력
+  const inp = $("[data-guess-input]"), gbtn = $("[data-guess-btn]");
+  inp.disabled = !j.isMyTurn; gbtn.disabled = !j.isMyTurn;
+  inp.placeholder = j.isMyTurn ? "1~99 입력!" : (j.curNick ? j.curNick + "님 차례…" : "대기 중");
+
+  // 질문/답변 무대
+  renderStage(j);
+  renderRecords(j);
+
+  // 진행자 목록 (진행자는 🎙️로 다른 진행자 해제 가능)
+  $("[data-mcs]").innerHTML = (j.mcs || []).map(m => {
+    const toggle = (amMC && !m.host) ? `<button class="ud-mc-btn on" data-mc="${m.pid}" data-on="0" title="진행자 해제">🎙️</button>` : "";
+    return `<span>🎙️ ${esc(m.nick)}${m.host ? " 👑" : ""}${m.isMe ? " (나)" : ""}${toggle}</span>`;
+  }).join("") || `<span style="color:var(--text-dim);background:none;border:0;padding:0">없음</span>`;
+
+  // 참여자 명단 (진행자 제외, 닉 색상). 진행자는 🎙️로 지정.
+  $("[data-roster-h]").textContent = `👥 현재 참여자 (${(j.players || []).length}명)` + (amMC ? "  —  🎙️ 눌러 진행자 지정" : "");
+  $("[data-roster]").innerHTML = (j.players || []).map(p => {
+    const cur = p.pid === j.curPid;
+    const col = (!cur && p.color) ? ` style="color:${p.color}"` : "";
+    const toggle = (amMC && !p.isMe) ? `<button class="ud-mc-btn" data-mc="${p.pid}" data-on="1" title="진행자로 지정">🎙️</button><button class="ud-kick-btn" data-kick="${p.pid}" title="강퇴">✖</button>` : (amMC ? `<button class="ud-mc-btn" data-mc="${p.pid}" data-on="1" title="진행자로 지정">🎙️</button>` : "");
+    return `<span class="${cur ? "cur" : ""}">${cur ? "🎯 " : ""}<b${col}>${esc(p.nick)}</b>${p.isMe ? " (나)" : ""}${toggle}</span>`;
+  }).join("") || `<span style="color:var(--text-dim);background:none;border:0;padding:0">아직 참가자가 없어요</span>`;
+}
+
+function renderStage(j) {
+  const st = $("[data-stage]");
+  // 질문/답변 타이핑 중엔 무대를 다시 그리지 않음(입력창 리셋 방지). 단계(qa)가 유지되는 동안만.
+  if (qaTyping && j.phase === "qa") return;
+  if (j.phase === "ask") {
+    st.hidden = false;
+    const amMC2 = !!(j.isMC || j.isHost);
+    const skipBtn = amMC2 ? `<div class="ud-qa__row" style="margin-top:10px"><button class="btn btn--ghost btn--sm" data-next style="flex:1">⏭️ 질문할 사람 없으면 다음 사람으로</button></div>` : "";
+    if (j.canAsk) {
+      st.innerHTML = `<div class="ud-stage__head">😵 ${esc(j.targetNick)}님이 ${j.missLimit}번 틀렸어요!</div>
+        <p class="mf-hint" style="margin-bottom:10px">먼저 <b>질문</b> 버튼을 누른 사람이 ${esc(j.targetNick)}님에게 진실게임 질문을 할 수 있어요!</p>
+        <button class="btn btn--primary ud-ask-btn" data-ask>🙋 질문하기!</button>${skipBtn}`;
+      st.querySelector("[data-ask]").onclick = async () => { const r = await api("ask"); if (!r.ok) App.toast(r.error); else poll(); };
+    } else {
+      st.innerHTML = `<div class="ud-stage__head">😵 ${esc(j.targetNick)}님이 ${j.missLimit}번 틀렸어요!</div>
+        <p class="mf-hint">당신이 지목됐어요. 누군가 질문을 할 거예요. 잠시 기다려주세요 😬</p>${skipBtn}`;
+    }
+    const nx0 = st.querySelector("[data-next]");
+    if (nx0) nx0.onclick = async () => { if (!confirm("질문 없이 다음 사람으로 넘길까요?")) return; const r = await api("next"); if (!r.ok) App.toast(r.error); else poll(); };
+    return;
+  }
+  if (j.phase === "qa") {
+    st.hidden = false;
+    const amAsker = j.me.pid === j.asker, amTarget = j.me.pid === j.target;
+    let h = `<div class="ud-stage__head">🎤 ${esc(j.askerNick)} → ${esc(j.targetNick)} 진실게임</div>`;
+    // 질문
+    if (!j.qDone && amAsker) {
+      h += `<div class="ud-qa"><label>Q. 질문 (당신이 질문자)</label><textarea data-q maxlength="300" placeholder="${esc(j.targetNick)}님에게 물어볼 질문">${qaTyping ? "" : ""}</textarea>
+        <div class="ud-qa__row"><button class="btn btn--primary btn--sm" data-q-save style="flex:1">질문 확정</button></div></div>`;
+    } else if (j.qDone) {
+      h += `<div class="ud-qa"><label>Q. 질문</label><div class="ud-qa__show">${esc(j.question)}</div></div>`;
+    } else {
+      h += `<div class="ud-qa"><label>Q. 질문</label><div class="ud-qa__show" style="color:var(--text-dim)">${esc(j.askerNick)}님이 질문을 작성 중…</div></div>`;
+    }
+    // 답변
+    if (j.qDone) {
+      if (!j.aDone && amTarget) {
+        h += `<div class="ud-qa"><label>A. 답변 (당신이 지목됨)</label><textarea data-a maxlength="500" placeholder="답변시 짧막한 이유를 덧붙여서 답변하시면 소소한 웃음 포인트가 될 수 있습니다!"></textarea>
+          <div class="ud-qa__row"><button class="btn btn--primary btn--sm" data-a-save style="flex:1">답변 확정</button></div></div>`;
+      } else if (j.aDone) {
+        h += `<div class="ud-qa"><label>A. 답변</label><div class="ud-qa__show">${esc(j.answer)}</div></div>`;
+      } else {
+        h += `<div class="ud-qa"><label>A. 답변</label><div class="ud-qa__show" style="color:var(--text-dim)">${esc(j.targetNick)}님이 답변 중…</div></div>`;
+      }
+    }
+    // 진행자/방장: 다시받기 + 다음으로
+    if (j.isMC || j.isHost) {
+      h += `<div class="ud-qa__row" style="margin-top:10px">`;
+      if (j.qDone) h += `<button class="btn btn--ghost btn--sm" data-redoq style="flex:1">🔁 질문 다시받기</button>`;   // 질문자 유지, 질문만 다시
+      if (j.aDone) h += `<button class="btn btn--ghost btn--sm" data-redoa style="flex:1">🔁 답변 다시받기</button>`;   // 답변자 유지, 답변만 다시
+      h += `</div><div class="ud-qa__row" style="margin-top:6px"><button class="btn btn--ghost btn--sm" data-next style="flex:1">▶️ 다음 사람으로</button></div>`;
+    }
+    st.innerHTML = h;
+    const qs = st.querySelector("[data-q-save]"), as = st.querySelector("[data-a-save]"), nx = st.querySelector("[data-next]");
+    const qt = st.querySelector("[data-q]"), at = st.querySelector("[data-a]");
+    const rq = st.querySelector("[data-redoq]"), ra = st.querySelector("[data-redoa]");
+    if (qt) { qt.onfocus = () => qaTyping = true; qt.onblur = () => qaTyping = false; }
+    if (at) { at.onfocus = () => qaTyping = true; at.onblur = () => qaTyping = false; }
+    if (qs) qs.onclick = async () => { const v = qt.value.trim(); if (!v) return App.toast("질문을 입력해주세요."); qaTyping = false; const r = await api("question", { text: v }); if (!r.ok) App.toast(r.error); else poll(); };
+    if (as) as.onclick = async () => { const v = at.value.trim(); if (!v) return App.toast("답변을 입력해주세요."); qaTyping = false; const r = await api("answer", { text: v }); if (!r.ok) App.toast(r.error); else poll(); };
+    if (rq) rq.onclick = async () => { if (!confirm("질문을 다시 받을까요? (질문자는 그대로, 질문·답변 초기화)")) return; const r = await api("redoq"); if (!r.ok) App.toast(r.error); else { App.toast("🔁 질문 다시받기"); poll(); } };
+    if (ra) ra.onclick = async () => { if (!confirm("답변을 다시 받을까요? (답변자는 그대로, 답변만 초기화)")) return; const r = await api("redoa"); if (!r.ok) App.toast(r.error); else { App.toast("🔁 답변 다시받기"); poll(); } };
+    if (nx) nx.onclick = async () => { const r = await api("next"); if (!r.ok) App.toast(r.error); else poll(); };
+    return;
+  }
+  st.hidden = true;
+}
+
+/* 질문·답변 기록 서랍 — 이름만 뜨고, 이름 누르면 그 사람 질문/답변 펼침 */
+let recOpenNick = null;   // 현재 펼친 사람
+function renderRecords(j) {
+  const body = $("[data-rec-body]");
+  const hist = j.qaHistory || [];
+  if (!hist.length) { body.innerHTML = `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">아직 질문·답변 기록이 없어요. 누군가 5번 틀려서 질문을 받으면 여기에 쌓여요!</p>`; recOpenNick = null; return; }
+  const byNick = {}, order = [];
+  hist.forEach(h => { if (!byNick[h.target]) { byNick[h.target] = []; order.push(h.target); } byNick[h.target].push(h); });
+  if (recOpenNick && !byNick[recOpenNick]) recOpenNick = null;
+  body.innerHTML = order.map(nick => {
+    const open = recOpenNick === nick;
+    const items = open ? byNick[nick].map(h =>
+      `<div class="ud-qrec">
+        <div class="ud-qrec__who"><span class="r">${h.round}턴 · ${esc(h.asker)} 질문</span></div>
+        <div class="ud-qrec__q"><b>Q.</b> ${esc(h.question)}</div>
+        <div class="ud-qrec__a"><b>A.</b> ${esc(h.answer) || "<span style='color:var(--text-dim)'>(답변 없음)</span>"}</div>
+      </div>`).join("") : "";
+    return `<div class="ud-recgrp">
+      <button class="ud-recname" data-recname="${esc(nick)}">
+        <span>${open ? "▾" : "▸"} 🙋 ${esc(nick)}</span>
+        <span style="color:var(--text-dim);font-size:12px;font-weight:400">${byNick[nick].length}개</span>
+      </button>${items}</div>`;
+  }).join("");
+}
+function recDrawer(on) {
+  const d = $("[data-rec-drawer]"), bd = $("[data-rec-backdrop]"), ar = $("[data-rec-arrow]");
+  const open = on === undefined ? !d.classList.contains("is-open") : on;
+  d.classList.toggle("is-open", open);
+  bd.hidden = !open; ar.textContent = open ? "›" : "‹";
+}
+$("[data-rec-toggle]").onclick = () => recDrawer();
+$("[data-rec-close]").onclick = () => recDrawer(false);
+$("[data-rec-backdrop]").onclick = () => recDrawer(false);
+$("[data-rec-body]").addEventListener("click", e => {
+  const b = e.target.closest("[data-recname]"); if (!b) return;
+  const nick = b.dataset.recname;
+  recOpenNick = (recOpenNick === nick) ? null : nick;   // 같은 이름 다시 누르면 접기
+  if (S) renderRecords(S);
+});
+
+/* 추측 */
+async function doGuess() {
+  const inp = $("[data-guess-input]");
+  const n = parseInt(inp.value, 10);
+  if (!(n >= 1 && n <= 99)) return App.toast("1~99 사이 숫자를 입력해주세요.");
+  inp.value = "";
+  const r = await api("guess", { num: n });
+  if (!r.ok) { App.toast(r.error || "입력 실패"); return; }
+  if (r.hint === "hit") App.toast("🎯 정답! 다음 사람으로");
+  else App.toast(r.hint === "down" ? "⬇️ 다운!" : "⬆️ 업!");
+  poll(); inp.focus();
+}
+$("[data-guess-btn]").onclick = doGuess;
+$("[data-guess-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doGuess(); } });
+
+/* 채팅 */
+async function sendChat() {
+  const inp = $("[data-chat-input]"); const t = inp.value.trim(); if (!t) return;
+  inp.value = "";
+  try { const r = await api("chat", { text: t }); if (!r.ok) { inp.value = t; App.toast(r.error); } else poll(); }
+  catch (e) { inp.value = t; App.toast("전송이 안 됐어요."); }
+}
+$("[data-chat-send]").onclick = sendChat;
+$("[data-chat-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
+
+/* 상단 고정 메시지 */
+$("[data-pin-toggle]").onclick = () => { $("[data-pin]").classList.toggle("open"); };   // 고정 메시지 접기/펼치기
+$("[data-pin-unpin]").onclick = async () => { const r = await api("pin", { off: true }); if (!r.ok) App.toast(r.error); else { App.toast("📌 고정을 해제했어요."); poll(); } };
+// 채팅 메시지의 📌 버튼 → 그 메시지를 상단 고정 (진행자만)
+$("[data-chat]").addEventListener("click", async e => {
+  const b = e.target.closest("[data-pinmsg]"); if (!b) return;
+  if (!S || !(S.isMC || S.isHost)) return;
+  if (S.pinned && S.pinned.id === Number(b.dataset.pinmsg)) {   // 이미 고정된 걸 또 누르면 해제
+    const r = await api("pin", { off: true }); if (!r.ok) App.toast(r.error); else { App.toast("📌 고정을 해제했어요."); poll(); }
+    return;
+  }
+  const r = await api("pin", { msgId: Number(b.dataset.pinmsg) });
+  if (!r.ok) App.toast(r.error); else { App.toast("📌 메시지를 상단에 고정했어요."); poll(); }
+});
+
+/* 순서 섞기 + 이동 */
+$("[data-shuffle]").onclick = async () => { const r = await api("shuffle"); if (!r.ok) App.toast(r.error); else poll(); };
+async function onMcClick(e) {
+  if (!S || !(S.isMC || S.isHost)) return;
+  const k = e.target.closest("[data-kick]");
+  if (k) {
+    const p = (S.players || []).find(x => x.pid === k.dataset.kick);
+    if (!confirm(`${p ? p.nick : "이 사람"}님을 강퇴할까요?`)) return;
+    const r = await api("kick", { target: k.dataset.kick });
+    if (!r.ok) App.toast(r.error); else { App.toast("🚪 강퇴했어요."); poll(); }
+    return;
+  }
+  const b = e.target.closest("[data-mc]"); if (!b) return;
+  const r = await api("setmc", { target: b.dataset.mc, on: b.dataset.on === "1" });
+  if (!r.ok) App.toast(r.error); else poll();
+}
+$("[data-roster]").addEventListener("click", onMcClick);
+$("[data-mcs]").addEventListener("click", onMcClick);
+$("[data-order]").addEventListener("click", async e => {
+  const b = e.target.closest("[data-mv]"); if (!b || !S || !(S.isMC || S.isHost)) return;
+  const pid = b.dataset.mv, dir = parseInt(b.dataset.dir, 10);
+  const order = (S.turnOrder || []).map(p => p.pid);
+  const i = order.indexOf(pid), ni = i + dir;
+  if (i < 0 || ni < 0 || ni >= order.length) return;
+  order.splice(ni, 0, order.splice(i, 1)[0]);
+  const r = await api("setorder", { order }); if (!r.ok) App.toast(r.error); else poll();
+});
+
+$("[data-leave]").onclick = async () => {
+  if (!confirm("방에서 나갈까요?")) return;
+  try { if (sess) await api("leave"); } catch (e) {}
+  clearSess(); stopPoll(); location.href = "game.html";
+};
+$("[data-closeroom]").onclick = async () => {
+  if (!confirm("방을 닫을까요? 모두 나가집니다.")) return;
+  const r = await api("closeroom");
+  if (r && !r.ok && !r.gone) { App.toast(r.error || "방을 닫지 못했어요."); return; }
+  clearSess(); stopPoll(); show("setup"); App.toast("💥 방을 닫았어요.");
+};
+
+/* 시작 */
+if (!App.isAdmin()) {
+  const cb = $("[data-create-box]"), note = $("[data-create-note]");
+  if (cb) cb.hidden = true;
+  if (note) note.hidden = false;
+  const setup = document.querySelector(".ud-setup");
+  if (setup) setup.style.gridTemplateColumns = "1fr";
+}
+if (!UD_URL) show("noserver");
+else if (sess) startGame();
+else show("setup");
+/* 질문/답변 카운트다운 (폴링과 독립 — 답변 타이핑 중에도 계속 돌아감) */
+setInterval(() => {
+  const el = $("[data-qa-timer]"); if (!el) return;
+  if (S && S.phase === "qa" && S.aDone && S.qaDeadline) {   // 답변 확정 후 자동 넘김 카운트다운만(답변 제한시간 없음)
+    const s = Math.max(0, Math.ceil((S.qaDeadline - Date.now()) / 1000));
+    el.hidden = false;
+    el.textContent = `⏭ ${s}초 뒤 다음`;
+    el.style.color = s <= 5 ? "#FF5C7A" : "var(--accent)";
+  } else { el.hidden = true; }
+}, 500);
+
+window.addEventListener("beforeunload", stopPoll);
+</script>
+</body>
+</html>

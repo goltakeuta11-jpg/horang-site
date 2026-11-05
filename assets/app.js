@@ -169,7 +169,8 @@
       ["calendar.html", "캘린더"],
       ["members.html", "자소서"],
       ["psychtest.html", "심리테스트"],
-      ["saju.html", "사주"]
+      ["saju.html", "사주"],
+      ["game.html", "🎮 게임"]
     ];
     // "더보기 ▾" 안에 접히는 탭 (자주 안 보는 것)
     const more = [

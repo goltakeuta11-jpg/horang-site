@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.206">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.206">
+<meta property="og:type" content="website">
+<meta property="og:title" content="오목 랭크 · 호랑봇 허브">
+<meta property="og:description" content="1대1 오목으로 티어를 올려라! 배치고사 5판 + 실력·승패 랭킹.">
+<meta property="og:url" content="https://horangbot.co.kr/omok.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.206"></script>
+<title>오목 랭크 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.206">
+<style>
+  .ok-wrap { max-width: 720px; }
+  .ok-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 15px; margin-bottom: 10px; }
+  .ok-input:focus { outline: none; border-color: var(--accent); }
+  .ok-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 14px; }
+  .ok-prof { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .ok-prof__tier { font-size: 40px; line-height: 1; }
+  .ok-prof__info b { font-size: 19px; font-weight: 800; }
+  .ok-prof__info span { color: var(--text-dim); font-size: 13px; }
+  .ok-prof__mmr { margin-left: auto; text-align: right; }
+  .ok-prof__mmr .n { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .ok-prof__mmr .l { font-size: 11.5px; color: var(--text-dim); }
+  .ok-season { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; }
+  .ok-status { text-align: center; padding: 20px; font-weight: 700; }
+  /* 보드 */
+  .ok-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .ok-who { font-size: 13.5px; font-weight: 700; }
+  .ok-who .t { color: var(--text-dim); font-weight: 600; }
+  .ok-turn { margin-left: auto; font-weight: 800; }
+  .ok-time { font-variant-numeric: tabular-nums; font-weight: 800; color: var(--accent); }
+  .ok-board { display: grid; grid-template-columns: repeat(15, 1fr); background: #d9b06b; border: 6px solid #b98a44;
+    border-radius: 8px; aspect-ratio: 1/1; max-width: 480px; margin: 0 auto; box-sizing: border-box; }
+  .ok-cell { position: relative; border: 0.5px solid rgba(90,60,20,.55); cursor: pointer; }
+  .ok-cell.mine:hover::after { content: ""; position: absolute; inset: 18%; border-radius: 50%; background: rgba(0,0,0,.18); }
+  .ok-stone { position: absolute; inset: 8%; border-radius: 50%; }
+  .ok-stone.b { background: radial-gradient(circle at 35% 30%, #555, #000); }
+  .ok-stone.w { background: radial-gradient(circle at 35% 30%, #fff, #bbb); }
+  .ok-last { position: absolute; inset: 38%; border-radius: 50%; background: #ff4444; }
+  .ok-stone.preview { opacity: .45; box-shadow: 0 0 0 2px var(--accent); }
+  .ok-result { text-align: center; padding: 18px; border-radius: var(--radius-sm); margin: 14px 0; font-weight: 800; }
+  .res-win { background: rgba(52,211,153,.16); color: #34D399; border: 1px solid #34D399; }
+  .res-lose { background: rgba(255,92,122,.16); color: #FF6B81; border: 1px solid #FF6B81; }
+  .res-draw { background: rgba(180,180,190,.16); color: #C7CAD1; border: 1px solid #999; }
+  .res-mmr { font-size: 15px; margin-top: 6px; }
+  /* 리더보드 */
+  .lb { width: 100%; border-collapse: collapse; }
+  .lb th { text-align: left; font-size: 12px; color: var(--text-dim); font-weight: 700; padding: 7px 8px; border-bottom: 1px solid var(--line); }
+  .lb td { padding: 9px 8px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .lb tr:last-child td { border-bottom: 0; }
+  .lb .rk { width: 34px; font-weight: 800; color: var(--text-dim); }
+  .lb .me { background: rgba(255,171,64,.1); }
+  .lb-num { font-variant-numeric: tabular-nums; }
+  .lb-btn { border: 0; background: none; cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 6px; opacity: .7; }
+  .lb-btn:hover { opacity: 1; background: rgba(255,92,122,.15); }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page ok-wrap">
+  <p class="page__eyebrow"><a href="game.html" style="color:inherit;text-decoration:none">🎮 게임</a> › 오목 랭크</p>
+  <h1 class="page__title">⚫ 오목 랭크</h1>
+
+  <div data-noserver hidden class="empty" style="padding:30px"><strong>이 게임은 호랑봇 서버에서만 돌아가요</strong>horangbot.co.kr 에서 접속해주세요.</div>
+
+  <!-- 로그인 -->
+  <section data-login hidden>
+    <p class="page__desc">자소서에 등록한 <b>닉네임과 비밀번호</b>로 로그인하세요. (닉·비번이 일치해야 플레이 가능) 1대1 오목으로 <b>티어</b>를 올려보세요! 첫 <b>5판은 배치고사</b>(실력+승패로 티어 결정) · 매 시즌 소프트리셋, 5시즌마다 전체 초기화.</p>
+    <div class="ok-card">
+      <input class="ok-input" data-nick maxlength="16" placeholder="자소서 닉네임">
+      <input class="ok-input" data-pw type="password" maxlength="40" placeholder="자소서 비밀번호">
+      <button class="btn btn--primary" data-enter style="width:100%">로그인</button>
+      <p class="mf-hint" style="font-size:12.5px;color:var(--text-dim);margin-top:8px">※ 자소서가 없거나 비번 미설정이면 <a href="members.html" style="color:var(--accent)">자소서</a>에서 먼저 등록·설정해주세요.</p>
+    </div>
+  </section>
+
+  <!-- 홈 (프로필 + 매칭 + 리더보드) -->
+  <section data-home hidden>
+    <div class="ok-card" data-profile></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn btn--primary" data-find style="flex:1">⚔️ 대전 찾기</button>
+      <button class="btn btn--ghost btn--sm" data-logout>닉 변경</button>
+    </div>
+    <div class="ok-card">
+      <h3 style="font-size:15px;font-weight:800;margin:0 0 4px">🏆 시즌 랭킹</h3>
+      <div class="ok-season" data-lbseason></div>
+      <div data-lb style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <!-- 매칭 대기 -->
+  <section data-queued hidden>
+    <div class="ok-card ok-status">
+      <div style="font-size:30px">⏳</div>
+      <div style="margin:8px 0">상대를 찾는 중…</div>
+      <div style="font-size:12.5px;color:var(--text-dim);margin-bottom:4px">1분 안에 상대가 없으면 🤖 AI와 매칭돼요 (배치고사 중엔 AI전도 실력·승패 반영 · 배치 완료 후엔 이겨도 소소한 보상만)</div>
+      <div class="ok-season" data-qinfo></div>
+      <button class="btn btn--ghost btn--sm" data-cancel style="margin-top:12px">취소</button>
+    </div>
+  </section>
+
+  <!-- 게임 -->
+  <section data-game hidden>
+    <div class="ok-bar">
+      <span class="ok-who" data-opp></span>
+      <span class="ok-turn" data-turn></span>
+      <span class="ok-time" data-time></span>
+    </div>
+    <div data-result hidden></div>
+    <div class="ok-board" data-board></div>
+    <button class="btn btn--primary" data-place hidden style="width:100%;margin-top:12px">돌을 놓을 곳을 선택하세요</button>
+    <div class="ok-bar" style="margin-top:12px">
+      <span class="ok-who" data-mewho></span>
+      <button class="btn btn--ghost btn--sm" data-resign style="margin-left:auto">기권</button>
+    </div>
+    <div data-postgame hidden style="text-align:center;margin-top:12px">
+      <button class="btn btn--primary" data-again>⚔️ 다시 찾기</button>
+    </div>
+  </section>
+</main>
+
+<script src="assets/config.js?v=20260831.206"></script>
+<script src="assets/store.js?v=20260831.206"></script>
+<script src="assets/app.js?v=20260831.206"></script>
+<script>
+App.header("game.html");
+
+const OMOK_URL = ((window.CONFIG && CONFIG.SCRIPT_URL) === "/api/gs") ? "/api/omok" : null;
+const $ = s => document.querySelector(s);
+const esc = App.esc;
+let nick = "", pwHash = "";
+try { nick = localStorage.getItem("horang.omok.nick") || ""; pwHash = localStorage.getItem("horang.omok.pw") || ""; } catch (e) {}
+let gameId = null, poll = null, timeTimer = null, gDeadline = 0, mode = "", sel = null, lastState = null;
+
+async function api(op, extra) {
+  const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const r = await fetch(OMOK_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(Object.assign({ op, nick, pwHash }, extra || {})), signal: ctrl.signal });
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+function show(m) {
+  mode = m;
+  ["login", "home", "queued", "game"].forEach(x => { const el = $("[data-" + x + "]"); if (el) el.hidden = x !== m; });
+  $("[data-noserver]").hidden = m !== "noserver";
+}
+function stopLoops() { clearInterval(poll); clearInterval(timeTimer); poll = timeTimer = null; }
+function seasonText(j) {
+  if (!j.endsAt) return "";
+  const ms = j.endsAt - (j.now || Date.now()); const d = Math.floor(ms / 86400000), h = Math.floor((ms % 86400000) / 3600000);
+  return `시즌 ${j.season} · 리셋까지 ${d}일 ${h}시간`;
+}
+
+/* 로그인 (자소서 닉+비번 검증) */
+async function doEnter() {
+  const v = $("[data-nick]").value.trim(), pw = $("[data-pw]").value;
+  if (!v || !pw) return App.toast("닉네임과 비밀번호를 입력해주세요.");
+  const btn = $("[data-enter]"); btn.disabled = true; btn.textContent = "확인 중…";
+  try {
+    nick = v.slice(0, 16); pwHash = await App.sha256(pw);
+    const j = await api("login");
+    if (!j.ok) { nick = ""; pwHash = ""; App.toast(j.error || "로그인 실패"); return; }
+    try { localStorage.setItem("horang.omok.nick", nick); localStorage.setItem("horang.omok.pw", pwHash); } catch (e) {}
+    goHome();
+  } catch (e) { nick = ""; pwHash = ""; App.toast("오류가 났어요"); }
+  finally { btn.disabled = false; btn.textContent = "로그인"; }
+}
+$("[data-enter]").onclick = doEnter;
+$("[data-pw]").addEventListener("keydown", e => { if (e.key === "Enter") doEnter(); });
+$("[data-logout]").onclick = () => { nick = ""; pwHash = ""; try { localStorage.removeItem("horang.omok.nick"); localStorage.removeItem("horang.omok.pw"); } catch (e) {} stopLoops(); show("login"); };
+
+/* 홈 */
+async function goHome() {
+  stopLoops(); show("home");
+  const p = await api("profile");
+  if (p.ok) renderProfile(p);
+  loadLeaderboard();
+}
+function renderProfile(j) {
+  const pr = j.profile;
+  // 점수는 비공개 — 티어만. 배치 중이면 진행도(n/N) 표시.
+  const right = pr.placing
+    ? `<div class="ok-prof__mmr"><div class="n">${pr.pgames}/${pr.pneed}</div><div class="l">배치고사</div></div>`
+    : `<div class="ok-prof__mmr"><div class="n" style="font-size:30px">${pr.emoji}</div><div class="l">${pr.name}</div></div>`;
+  const warn = j.hardResetNext ? `<div style="background:rgba(255,92,122,.16);border:1px solid #FF6B81;color:#FF6B81;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:700;margin-top:8px">⚠️ 이번 시즌 종료 후 <b>전체 초기화(하드리셋)</b> — 다음 시즌 전원 재배치돼요</div>` : "";
+  $("[data-profile]").innerHTML = `<div class="ok-prof">
+    <div class="ok-prof__tier">${pr.placing ? "🎯" : pr.emoji}</div>
+    <div class="ok-prof__info"><b>${esc(pr.nick)}</b><br><span>${pr.placing ? `🎯 배치고사 진행 중 (${pr.pgames}/${pr.pneed})` : pr.emoji + " " + pr.name} · ${pr.wins}승 ${pr.losses}패${pr.draws ? " " + pr.draws + "무" : ""}</span></div>
+    ${right}
+  </div>${warn}<div class="ok-season">${seasonText(j)}</div>`;
+}
+async function loadLeaderboard() {
+  const j = await api("leaderboard");
+  if (!j.ok) return;
+  $("[data-lbseason]").textContent = seasonText(j) + (j.myRank ? ` · 내 순위 ${j.myRank}위` : " · 아직 순위 없음") + (j.hardResetNext ? " · ⚠️ 시즌 종료 후 전체 초기화" : "");
+  if (!j.list.length) { $("[data-lb]").innerHTML = `<p class="mf-hint" style="color:var(--text-dim);font-size:13px">아직 이번 시즌 배치를 마친 사람이 없어요. 배치고사(5판)를 끝내면 랭킹에 올라요!</p>`; return; }
+  const admin = App.isAdmin();
+  $("[data-lb]").innerHTML = `<table class="lb"><thead><tr><th>#</th><th>닉</th><th>티어</th><th class="lb-num">전적</th>${admin ? "<th></th>" : ""}</tr></thead><tbody>${
+    j.list.map(r => `<tr class="${r.nick === nick ? "me" : ""}"><td class="rk">${r.rank <= 3 ? ["🥇","🥈","🥉"][r.rank - 1] : r.rank}</td><td>${esc(r.nick)}</td><td>${r.emoji} ${r.name}</td><td class="lb-num">${r.wins}승 ${r.losses}패</td>${admin ? `<td style="white-space:nowrap"><button class="lb-btn" data-rn="${esc(r.nick)}" title="닉 수정">✏️</button><button class="lb-btn" data-del="${esc(r.nick)}" title="랭킹에서 삭제">🗑️</button></td>` : ""}</tr>`).join("")
+  }</tbody></table>`;
+}
+/* 관리자: 랭킹 닉 수정 / 삭제 */
+$("[data-lb]").addEventListener("click", async e => {
+  if (!App.isAdmin()) return;
+  const rn = e.target.closest("[data-rn]"), del = e.target.closest("[data-del]");
+  if (rn) {
+    const cur = rn.dataset.rn;
+    const nn = prompt(`'${cur}' 의 새 닉네임을 입력하세요:`, cur);
+    if (nn === null) return;
+    const v = nn.trim(); if (!v || v === cur) return;
+    const r = await api("adminrename", { target: cur, newNick: v, key: App.key() });
+    if (r.ok) { App.toast("닉 변경 완료"); loadLeaderboard(); } else App.toast(r.error || "실패");
+  } else if (del) {
+    const cur = del.dataset.del;
+    if (!confirm(`'${cur}' 님을 이번 시즌 랭킹에서 삭제할까요?`)) return;
+    const r = await api("admindelete", { target: cur, key: App.key() });
+    if (r.ok) { App.toast("삭제 완료"); loadLeaderboard(); } else App.toast(r.error || "실패");
+  }
+});
+
+/* 매칭 */
+$("[data-find]").onclick = findMatch;
+$("[data-again]").onclick = findMatch;
+$("[data-cancel]").onclick = async () => { stopLoops(); await api("cancel"); goHome(); };   // 폴링 먼저 정지(재등록 레이스 방지)
+async function findMatch() {
+  stopLoops();
+  const j = await api("queue");
+  if (!j.ok) { App.toast(j.error || "오류"); if (j.auth === false) $("[data-logout]").onclick(); return; }
+  if (j.inGame) { enterGame(j); return; }
+  show("queued"); $("[data-qinfo]").textContent = seasonText(j);
+  poll = setInterval(async () => {
+    const q = await api("queue", { poll: true });   // 폴링은 재등록 안 함
+    if (q.ok && q.inGame) { enterGame(q); }
+  }, 1500);
+}
+
+/* 게임 */
+function enterGame(j) {
+  stopLoops(); gameId = j.id; sel = null; show("game");
+  $("[data-postgame]").hidden = true;
+  renderGame(j);
+  poll = setInterval(async () => { const s = await api("state", { id: gameId }); if (s.ok && s.inGame) renderGame(s); }, 1200);
+  timeTimer = setInterval(renderTime, 250);
+}
+function renderTime() {
+  if (!gDeadline) { $("[data-time]").textContent = ""; return; }
+  const rem = Math.max(0, Math.ceil((gDeadline - Date.now()) / 1000));
+  $("[data-time]").textContent = "⏳ " + rem + "초";
+}
+function renderGame(j) {
+  lastState = j;
+  if (j.over || !j.myTurn) sel = null;   // 내 차례 아니거나 끝나면 선택 해제
+  if (sel && (sel.x < 0 || j.board[sel.y][sel.x] !== 0)) sel = null;   // 이미 채워진 칸이면 해제
+  gDeadline = (!j.over && j.deadline) ? Date.now() + (j.deadline - j.now) : 0;
+  const oc = j.myColor === 1 ? 2 : 1;
+  const myC = j.myColor === 1 ? "b" : "w";
+  $("[data-opp]").innerHTML = j.opponent.isAI
+    ? `<span class="t">상대</span> 🤖 <b>오목 AI</b> <span class="t">(배치 땐 실력 반영)</span> ${oc === 1 ? "⚫" : "⚪"}`
+    : `<span class="t">상대</span> ${j.opponent.emoji} ${esc(j.opponent.nick)} <span class="t">(${j.opponent.name})</span> ${oc === 1 ? "⚫" : "⚪"}`;
+  $("[data-mewho]").innerHTML = `<span class="t">나</span> ${esc(j.me.nick)} ${j.myColor === 1 ? "⚫" : "⚪"} <span class="t">(${j.me.name})</span>`;
+  const afk = (!j.over && j.miss > 0) ? (j.myTurn ? ` ⚠️ 경고 ${j.miss}/2 — 또 15초 넘기면 기권패!` : ` ⚠️ 상대 경고 ${j.miss}/2 (2회면 기권패)`) : "";
+  $("[data-turn]").textContent = (j.over ? "게임 종료" : (j.myTurn ? "🟢 내 차례!" : "상대 차례…")) + afk;
+
+  // 보드
+  const board = $("[data-board]");
+  let html = "";
+  for (let y = 0; y < 15; y++) for (let x = 0; x < 15; x++) {
+    const v = j.board[y][x];
+    let stone = v ? `<span class="ok-stone ${v === 1 ? "b" : "w"}"></span>` : "";
+    if (!v && sel && sel.x === x && sel.y === y) stone = `<span class="ok-stone ${myC} preview"></span>`;   // 착수 미리보기
+    const lastMark = (j.last && j.last.x === x && j.last.y === y) ? `<span class="ok-last"></span>` : "";
+    const mine = (!j.over && j.myTurn && v === 0) ? "mine" : "";
+    html += `<div class="ok-cell ${mine}" data-x="${x}" data-y="${y}">${stone}${lastMark}</div>`;
+  }
+  board.innerHTML = html;
+
+  // 착수 버튼
+  const pb = $("[data-place]");
+  if (!j.over && j.myTurn) {
+    pb.hidden = false;
+    pb.disabled = !sel;
+    pb.textContent = sel ? "✓ 여기 착수!" : "돌을 놓을 곳을 선택하세요";
+  } else pb.hidden = true;
+
+  // 결과
+  const rEl = $("[data-result]");
+  if (j.over && j.result) {
+    const r = j.result;
+    const cls = r.res === "win" ? "res-win" : r.res === "loss" ? "res-lose" : "res-draw";
+    const label = r.res === "win" ? "🎉 승리!" : r.res === "loss" ? "😢 패배" : "🤝 무승부";
+    rEl.hidden = false; rEl.className = "ok-result " + cls;
+    // 점수 숫자는 비공개 — 티어/배치 진행만 표시
+    let sub;
+    if (r.justPlaced) sub = `🎯 배치고사 완료! 티어 결정 → <b>${r.emoji} ${r.name}</b>`;
+    else if (r.placing) sub = `🎯 배치고사 진행 중 (${r.pgames}/${r.pneed})`;
+    else sub = `${r.emoji} <b>${r.name}</b>${r.tierUp ? " ⬆️ 승급!" : r.tierDown ? " ⬇️ 강등" : ""}`;
+    if (r.afkLoss) sub = `⏱️ <b>잠수 패배</b> — 최대 감점! · ` + sub;
+    rEl.innerHTML = `${label}<div class="res-mmr">${sub}</div>`;
+    $("[data-postgame]").hidden = false;
+    $("[data-resign]").hidden = true;
+  } else { rEl.hidden = true; $("[data-resign]").hidden = false; }
+}
+// 칸 클릭 = 선택(미리보기), 착수 버튼으로 확정
+$("[data-board]").addEventListener("click", e => {
+  const cell = e.target.closest(".ok-cell.mine"); if (!cell || !gameId || !lastState) return;
+  sel = { x: +cell.dataset.x, y: +cell.dataset.y };
+  renderGame(lastState);
+});
+$("[data-place]").addEventListener("click", async () => {
+  if (!sel || !gameId) return;
+  const mv = sel; sel = null;
+  const s = await api("move", { id: gameId, x: mv.x, y: mv.y });
+  if (!s.ok) { App.toast(s.error); if (lastState) renderGame(lastState); }
+  else renderGame(s);
+});
+$("[data-resign]").onclick = async () => { if (!gameId || !confirm("기권할까요? 패배로 기록돼요.")) return; await api("resign", { id: gameId }); const s = await api("state", { id: gameId }); if (s.ok) renderGame(s); };
+
+/* 시작 — 저장된 자소서 인증이 있으면 재검증 후 홈, 아니면 로그인 */
+async function init() {
+  if (!OMOK_URL) { show("noserver"); return; }
+  if (nick && pwHash) {
+    const j = await api("login");
+    if (j.ok) { goHome(); return; }
+    nick = ""; pwHash = ""; try { localStorage.removeItem("horang.omok.nick"); localStorage.removeItem("horang.omok.pw"); } catch (e) {}
+  }
+  show("login");
+}
+init();
+window.addEventListener("beforeunload", stopLoops);
+</script>
+</body>
+</html>

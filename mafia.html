@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.206">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.206">
+<meta property="og:type" content="website">
+<meta property="og:title" content="마피아 · 호랑봇 허브">
+<meta property="og:description" content="웹에서 자동 진행되는 마피아 게임 (최대 15명)">
+<meta property="og:url" content="https://horangbot.co.kr/mafia.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.206"></script>
+<title>마피아 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.206">
+<style>
+  .mf-wrap { max-width: 900px; }
+  /* 셋업 */
+  .mf-setup { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
+  @media (max-width: 620px) { .mf-setup { grid-template-columns: 1fr; } }
+  .mf-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px; }
+  .mf-box h2 { font-size: 16px; font-weight: 800; margin: 0 0 12px; }
+  .mf-input { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--line);
+    color: var(--text); border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 15px; margin-bottom: 10px; }
+  .mf-input:focus { outline: none; border-color: var(--accent); }
+  /* 상태바 */
+  .mf-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--panel);
+    border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 14px; }
+  .mf-phase { font-size: 17px; font-weight: 800; }
+  .mf-timer { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 18px; color: var(--accent); }
+  .mf-code { font-weight: 800; letter-spacing: 2px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  .mf-close { background: rgba(255,92,122,.14); border: 1px solid rgba(255,92,122,.5); color: #FF6B81;
+    border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+  .mf-close:hover { background: rgba(255,92,122,.28); }
+  .mf-role { font-weight: 800; padding: 3px 10px; border-radius: 999px; font-size: 13px; }
+  .role-mafia { background: rgba(255,92,122,.18); color: #FF6B81; }
+  .role-citizen { background: rgba(120,160,255,.16); color: #7FA8FF; }
+  .role-doctor { background: rgba(52,211,153,.16); color: #34D399; }
+  .role-police { background: rgba(255,196,75,.18); color: #FFC24B; }
+  .role-spy { background: rgba(180,180,190,.18); color: #C7CAD1; }
+  .role-politician { background: rgba(255,140,90,.18); color: #FF9E6B; }
+  .role-gay { background: rgba(255,120,200,.16); color: #FF8AD4; }
+  .role-orator { background: rgba(120,220,255,.16); color: #6BD5FF; }
+  .role-reporter { background: rgba(120,255,180,.16); color: #4FE0A0; }
+  .role-mute { background: rgba(255,92,122,.18); color: #FF6B81; }
+  .role-thief { background: rgba(180,180,190,.2); color: #C7CAD1; }
+  .rv-orator { background: rgba(120,220,255,.13); }
+  .rv-spy { background: rgba(180,180,190,.14); }
+  .rv-politician { background: rgba(255,140,90,.13); }
+  .rv-gay { background: rgba(255,120,200,.13); }
+  .rv-reporter { background: rgba(120,255,180,.12); }
+  .rv-mute { background: rgba(255,92,122,.14); }
+  .rv-thief { background: rgba(180,180,190,.16); }
+  .spy-pick { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .spy-pick button { flex: 1; min-width: 90px; }
+  .mf-cols { display: grid; grid-template-columns: 1fr 340px; gap: 14px; align-items: start; }
+  @media (max-width: 760px) { .mf-cols { grid-template-columns: 1fr; } }
+  /* 플레이어 */
+  .mf-players { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .pl { position: relative; background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 12px 10px; text-align: center; }
+  .pl.able { cursor: pointer; } .pl.able:hover { border-color: var(--accent); }
+  .pl.picked { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+  .pl.dead { opacity: .5; }
+  .pl__nick { font-weight: 700; font-size: 14px; word-break: break-all; }
+  .pl__sub { font-size: 11.5px; color: var(--text-dim); margin-top: 3px; min-height: 14px; }
+  .pl__votes { position: absolute; top: 6px; right: 8px; font-size: 12px; font-weight: 800; color: var(--accent); }
+  .pl__x { position: absolute; top: 6px; left: 8px; font-size: 14px; }
+  .pl__host { position: absolute; bottom: 5px; right: 6px; background: rgba(255,196,75,.16); border: 1px solid rgba(255,196,75,.45);
+    color: #FFC24B; border-radius: 7px; font-size: 12px; line-height: 1; padding: 3px 6px; cursor: pointer; }
+  .pl__host:hover { background: rgba(255,196,75,.3); }
+  /* 패널 */
+  .mf-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 14px; }
+  .mf-hint { font-size: 13.5px; color: var(--text-dim); line-height: 1.55; }
+  .mf-win { text-align: center; padding: 18px; border-radius: var(--radius-sm); font-weight: 800; font-size: 20px; margin-bottom: 14px; }
+  .win-mafia { background: rgba(255,92,122,.16); color: #FF6B81; border: 1px solid #FF6B81; }
+  .win-citizen { background: rgba(52,211,153,.16); color: #34D399; border: 1px solid #34D399; }
+  .mf-judge-count { margin-top: 10px; padding: 8px 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); font-size: 15px; font-weight: 800; text-align: center; }
+  .mf-invest { font-size: 13px; margin-top: 8px; }
+  .mf-invest div { padding: 3px 0; }
+  .mf-reveal { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .rv { padding: 8px 12px; border-radius: 10px; font-size: 14px; }
+  .rv-mafia { background: rgba(255,92,122,.14); }
+  .rv-doctor { background: rgba(52,211,153,.13); }
+  .rv-police { background: rgba(255,196,75,.14); }
+  .rv-citizen { background: rgba(120,160,255,.12); }
+  /* 채팅 */
+  .mf-chat { display: flex; flex-direction: column; height: 560px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+  .mf-chat__head { padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: 800; font-size: 13.5px; }
+  .mf-chat__body { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .msg { font-size: 14px; line-height: 1.5; word-break: break-word; font-weight: 600; }
+  .msg__from { font-weight: 900; }
+  .msg.sys { color: var(--text-dim); text-align: center; font-size: 12.5px; padding: 2px 0; font-weight: 500; }
+  .msg.mafia .msg__from { color: #FF6B81; } .msg.mafia { color: #ffb3bf; }
+  .msg.ghost .msg__from { color: #C79BFF; } .msg.ghost { color: #d9c2ff; }
+  .msg.seduce .msg__from { color: #FF8AD4; } .msg.seduce { color: #ffc2e6; }
+  .msg.spec .msg__from { color: #4DD0E1; } .msg.spec { color: #A7E8F0; }   /* 관전자 채팅 */
+  .mf-chat__foot { display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--line); }
+  .mf-chat__foot input { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    border-radius: 8px; padding: 9px 11px; font: inherit; font-size: 14px; }
+  .mf-chat__foot input:disabled { opacity: .5; }
+  .mf-chat__foot [data-chat-send] { flex: 0 0 auto; padding: 10px 18px; font-size: 14px; font-weight: 800; }
+  .mf-players-wrap h3 { font-size: 13px; color: var(--text-dim); font-weight: 700; margin: 0 0 8px; }
+  .mf-reconnect { background: rgba(255,92,122,.16); border: 1px solid #FF6B81; color: #FF6B81; border-radius: 10px; padding: 9px 14px; margin-bottom: 12px; font-size: 13px; font-weight: 700; text-align: center; }
+  /* 참여자 서랍 토글 (오른쪽 가장자리) */
+  .mf-fab { position: fixed; right: 0; top: 46%; transform: translateY(-50%); z-index: 50;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font: inherit;
+    background: var(--accent); color: #10131a; border: 0; border-radius: 16px 0 0 16px;
+    padding: 14px 8px 14px 10px; box-shadow: -3px 3px 14px rgba(0,0,0,.4); }
+  .mf-fab__arrow { font-size: 22px; font-weight: 900; line-height: 1; }
+  .mf-fab__label { font-size: 11px; font-weight: 800; writing-mode: vertical-rl; letter-spacing: 2px; }
+  .mf-fab__dot { position: absolute; top: -5px; left: -5px; width: 14px; height: 14px; border-radius: 50%; background: #FF5C7A; border: 2px solid var(--bg); }
+  .mf-fab.act { animation: mfFab 1.3s ease-in-out infinite; }
+  @keyframes mfFab { 0%,100% { box-shadow: -3px 3px 14px rgba(0,0,0,.4); } 50% { box-shadow: -3px 3px 14px rgba(0,0,0,.4), 0 0 0 7px rgba(255,92,122,.28); } }
+  .mf-drawer__backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 60; }
+  .mf-drawer { position: fixed; top: 0; right: 0; height: 100%; width: min(90vw, 380px); z-index: 61;
+    background: var(--bg); border-left: 1px solid var(--line); box-shadow: -8px 0 28px rgba(0,0,0,.45);
+    transform: translateX(100%); transition: transform .25s ease; display: flex; flex-direction: column; }
+  .mf-drawer.is-open { transform: translateX(0); }
+  .mf-drawer__head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
+  .mf-drawer__head h3 { margin: 0; font-size: 14px; font-weight: 800; flex: 1; color: var(--text); }
+  .mf-drawer__close { background: var(--panel); border: 1px solid var(--line); color: var(--text); border-radius: 8px; width: 34px; height: 34px; font-size: 15px; cursor: pointer; flex: 0 0 auto; }
+  .mf-drawer__hint { margin: 12px 16px 0; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 700; flex: 0 0 auto;
+    background: rgba(255,196,75,.15); color: #FFC24B; border: 1px solid rgba(255,196,75,.35); }
+  .mf-drawer .mf-players { padding: 14px 16px 24px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+  .mf-legend { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 16px; }
+  .mf-legend summary { cursor: pointer; font-weight: 800; font-size: 13.5px; }
+  .mf-legend .lg { font-size: 13px; line-height: 1.5; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .mf-legend .lg:last-child { border-bottom: 0; }
+  .mf-legend .lg b { font-weight: 800; }
+  .mf-legend .lg .tm { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; margin-left: 4px; }
+  .tm-maf { background: rgba(255,92,122,.18); color: #FF6B81; }
+  .tm-cit { background: rgba(120,160,255,.16); color: #7FA8FF; }
+  .tm-neu { background: rgba(180,180,190,.18); color: #C7CAD1; }
+  .lg-when { font-size: 10.5px; font-weight: 700; color: var(--text-dim); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page mf-wrap">
+  <p class="page__eyebrow"><a href="game.html" style="color:inherit;text-decoration:none">🎮 게임</a> › 마피아</p>
+  <h1 class="page__title">🕵️ 마피아</h1>
+
+  <!-- 서버 필요 안내 -->
+  <div data-noserver hidden class="empty" style="padding:30px"><strong>이 게임은 호랑봇 서버에서만 돌아가요</strong>horangbot.co.kr 에서 접속해주세요.</div>
+
+  <!-- 셋업 -->
+  <section data-setup hidden>
+    <p class="page__desc">방을 만들어 코드를 공유하거나, 받은 코드로 참가하세요. 최소 4명 · 최대 15명.</p>
+    <p class="mf-hint" data-create-note hidden style="margin:-4px 0 12px">💡 방 생성은 관리자만 할 수 있어요. 관리자가 만든 방 코드를 받아 참가해주세요.</p>
+    <div class="mf-setup">
+      <div class="mf-box" data-create-box>
+        <h2>➕ 방 만들기</h2>
+        <input class="mf-input" data-create-nick maxlength="16" placeholder="내 닉네임">
+        <button class="btn btn--primary" data-create style="width:100%">방 만들기</button>
+      </div>
+      <div class="mf-box">
+        <h2>🚪 방 참가</h2>
+        <input class="mf-input" data-join-code maxlength="4" placeholder="방 코드 (4자리)" style="text-transform:uppercase">
+        <input class="mf-input" data-join-nick maxlength="16" placeholder="내 닉네임">
+        <button class="btn btn--primary" data-join style="width:100%">참가하기</button>
+      </div>
+      <div class="mf-box">
+        <h2>👀 관전하기</h2>
+        <p class="mf-hint" style="margin:-4px 0 10px;font-size:12.5px">진행 중인 게임을 구경만 해요. <b>모든 사람의 역할이 다 보이고</b>, 채팅·투표는 할 수 없어요.</p>
+        <input class="mf-input" data-spec-code maxlength="4" placeholder="방 코드 (4자리)" style="text-transform:uppercase">
+        <button class="btn btn--ghost" data-spectate style="width:100%">관전 입장</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 게임 -->
+  <section data-game hidden>
+    <div class="mf-reconnect" data-reconnect hidden>🔄 서버와 연결이 잠깐 끊겼어요. 다시 연결 중… (업데이트 중이면 잠시 후 자동 복구)</div>
+    <div class="mf-bar">
+      <span class="mf-phase" data-phase>—</span>
+      <span class="mf-code" data-code title="코드 복사"></span>
+      <span class="mf-role" data-myrole hidden></span>
+      <span class="mf-timer" data-timer></span>
+      <button class="mf-close" data-closeroom hidden title="방 폭파(모두 내보내고 게임 종료)">💥 방 폭파</button>
+    </div>
+
+    <div data-win hidden></div>
+
+    <div class="mf-cols">
+      <div>
+        <div class="mf-panel" data-context></div>
+      </div>
+      <div class="mf-chat">
+        <div class="mf-chat__head" data-chat-head>💬 채팅</div>
+        <div class="mf-chat__body" data-chat-body></div>
+        <div class="mf-chat__foot">
+          <input data-chat-input maxlength="300" placeholder="메시지 입력…">
+          <button class="btn btn--primary btn--sm" data-chat-send>전송</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 참여자 서랍 토글 (오른쪽 가장자리) -->
+    <button class="mf-fab" data-players-toggle aria-label="참여자 목록 열기">
+      <span class="mf-fab__dot" data-fab-dot hidden></span>
+      <span class="mf-fab__arrow" data-fab-arrow>‹</span>
+      <span class="mf-fab__label" data-fab-label>참여자</span>
+    </button>
+    <div class="mf-drawer__backdrop" data-players-backdrop hidden></div>
+    <aside class="mf-drawer" data-players-drawer>
+      <div class="mf-drawer__head">
+        <h3 data-players-label>참가자</h3>
+        <button class="mf-drawer__close" data-players-close aria-label="닫기">✕</button>
+      </div>
+      <div class="mf-drawer__hint" data-drawer-hint hidden></div>
+      <div class="mf-players" data-players></div>
+    </aside>
+
+    <details class="mf-legend" style="margin-top:14px">
+      <summary>📖 역할 설명 보기</summary>
+      <div data-legend></div>
+    </details>
+
+    <div style="margin-top:14px">
+      <button class="btn btn--ghost btn--sm" data-leave>나가기</button>
+    </div>
+  </section>
+</main>
+
+<script src="assets/config.js?v=20260831.206"></script>
+<script src="assets/store.js?v=20260831.206"></script>
+<script src="assets/app.js?v=20260831.206"></script>
+<script>
+App.header("game.html");
+
+const MAFIA_URL = ((window.CONFIG && CONFIG.SCRIPT_URL) === "/api/gs") ? "/api/mafia" : null;
+const LS = "horang.mafia";
+const $ = s => document.querySelector(s);
+const esc = App.esc;
+const ROLE = { mafia: ["🔪", "마피아", "role-mafia"], citizen: ["🙂", "시민", "role-citizen"],
+  doctor: ["🩺", "의사", "role-doctor"], police: ["🔎", "경찰", "role-police"],
+  spy: ["🕶️", "스파이", "role-spy"], politician: ["🏛️", "정치인", "role-politician"],
+  gay: ["🌈", "게이", "role-gay"], orator: ["🎤", "연설가", "role-orator"], reporter: ["📰", "기자", "role-reporter"], mute: ["🚫", "빨딱", "role-mute"], thief: ["🦝", "도둑", "role-thief"] };
+// 서버·클라 버전 불일치 등으로 모르는 역할 키가 와도 render가 throw하지 않도록 폴백
+function RL(k) { return ROLE[k] || ["❓", "(역할?)", "role-citizen"]; }
+const ROLE_LEGEND = [
+  ["🔪", "마피아", "maf", "마피아", "밤에 함께 한 명을 지목해 제거해요. 낮엔 시민인 척! <b>마피아 수 ≥ 나머지</b>가 되면 승리.", "항상 등장 (12명↑ 3명)"],
+  ["🚫", "빨딱", "maf", "마피아팀", "밤에 한 명에게 <b>빨딱</b>을 선사해요. 빨딱을 받은 사람은 <b>다음 낮 발언·투표가 모두 봉쇄</b>! 단 <b>어젯밤 준 사람에겐 연속 불가</b>(하루 지나면 다시 가능). 마피아와 한편(밤 대화 공유).", "9명 이상"],
+  ["🙂", "시민", "cit", "시민", "특별한 능력은 없지만, 토론·투표로 마피아를 찾아내면 승리해요.", "항상 등장"],
+  ["🩺", "의사", "cit", "시민", "밤마다 한 명을 지목해 그날 밤 습격에서 <b>살려요</b> (자기 자신도 가능).", "6명 이상"],
+  ["🔎", "경찰", "cit", "시민", "밤마다 한 명을 <b>조사</b>해 마피아인지 아닌지 바로 확인해요.", "6명 이상"],
+  ["🏛️", "정치인", "cit", "시민", "낮 투표에서 <b>표가 2개</b>로 계산돼요. 게다가 <b>투표로는 처형되지 않아요!</b> (밤 습격엔 죽어요)", "8명 이상"],
+  ["🕶️", "스파이", "neu", "접선하기 나름", "밤마다 한 명 <b>접선</b>. 마피아면 마피아편+마피아 대화, 경찰·의사면 시민편+야간 대화. 한번 접선하면 고정!", "12명 이상"],
+  ["📰", "기자", "cit", "시민", "<b>3일차 밤</b>에 한 명을 취재해 <b>그 사람의 직업을 특종으로 전체 공개</b>해요! (기자 정체는 안 밝혀져요)", "9명 이상"],
+  ["🦝", "도둑", "neu", "훔치기 나름", "게임에서 <b>맨 처음 죽는 사람의 직업을 그대로 가져와요!</b> 훔친 직업의 능력·소속(마피아/시민)을 이어받아요. 첫 사망 전엔 밤 능력이 없어요.", "10명 이상"],
+  ["🌈", "게이", "cit", "시민", "밤에 한 명 유혹. <b>마피아</b>를 유혹하면 그 밤 그 마피아의 행동·마피아채팅을 막고 둘만 대화해요. 대신 <b>다음 낮엔 게이가 발언 불가</b>(체력 소모).", "9명 이상"],
+  ["🎤", "연설가", "cit", "시민", "살아있으면 낮 시간이 <b>+10초</b>, 그 <b>첫 10초는 연설가만</b> 발언할 수 있어요.", "11명 이상"],
+];
+(function fillLegend() {
+  const el = document.querySelector("[data-legend]"); if (!el) return;
+  el.innerHTML = ROLE_LEGEND.map(r => `<div class="lg">${r[0]} <b>${r[1]}</b> <span class="tm tm-${r[2]}">${r[3]}</span> <span class="lg-when">👥 ${r[5]}</span><br>${r[4]}</div>`).join("");
+})();
+function rolePreview(n) {   // 서버 배정 공식과 동일 (대기실 미리보기용)
+  const mafia = n >= 12 ? 3 : 2, doctor = n >= 6 ? 1 : 0, police = n >= 6 ? 1 : 0, politician = n >= 8 ? 1 : 0, spy = n >= 12 ? 1 : 0, gay = n >= 9 ? 1 : 0, orator = n >= 11 ? 1 : 0, reporter = n >= 9 ? 1 : 0, mute = n >= 9 ? 1 : 0, thief = n >= 10 ? 1 : 0;
+  return { mafia, doctor, police, politician, spy, gay, orator, reporter, mute, thief, citizen: Math.max(0, n - mafia - doctor - police - politician - spy - gay - orator - reporter - mute - thief) };
+}
+
+let sess = null, sinceId = 0, pollTimer = null, tickTimer = null, phaseDeadline = 0, S = null;
+let polling = false;           // 동시 폴링 방지
+const seenMsgs = new Set();    // 이미 그린 메시지 id (중복 렌더 방지)
+try { sess = JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) {}
+function saveSess(s) { sess = s; try { localStorage.setItem(LS, JSON.stringify(s)); } catch (e) {} }
+function clearSess() { sess = null; try { localStorage.removeItem(LS); } catch (e) {} }
+
+async function api(op, extra) {
+  const body = Object.assign({ op }, sess ? { code: sess.code, pid: sess.pid } : {}, extra || {});
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);   // 8초 타임아웃 (요청 무한대기·쌓임 방지)
+  try {
+    const r = await fetch(MAFIA_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body), signal: ctrl.signal });
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+function show(which) {
+  $("[data-noserver]").hidden = which !== "noserver";
+  $("[data-setup]").hidden = which !== "setup";
+  $("[data-game]").hidden = which !== "game";
+}
+
+/* ---------- 셋업 ---------- */
+$("[data-create]").onclick = async () => {
+  const nick = $("[data-create-nick]").value.trim();
+  if (!nick) return App.toast("닉네임을 입력해주세요.");
+  const j = await api("create", { nick, key: App.key() });
+  if (!j.ok) return App.toast(j.error || "방 생성 실패");
+  saveSess({ code: j.code, pid: j.pid }); sinceId = 0; startGame();
+};
+$("[data-join]").onclick = async () => {
+  const code = $("[data-join-code]").value.trim().toUpperCase();
+  const nick = $("[data-join-nick]").value.trim();
+  if (!code || !nick) return App.toast("코드와 닉네임을 입력해주세요.");
+  const j = await api("join", { code, nick });
+  if (!j.ok) return App.toast(j.error || "참가 실패");
+  saveSess({ code: j.code, pid: j.pid }); sinceId = 0; startGame();
+};
+$("[data-spectate]").onclick = async () => {
+  const code = $("[data-spec-code]").value.trim().toUpperCase();
+  if (!code) return App.toast("방 코드를 입력해주세요.");
+  const j = await api("spectate", { code });
+  if (!j.ok) return App.toast(j.error || "관전 입장 실패");
+  saveSess({ code: j.code, pid: j.pid, spectator: true }); sinceId = 0; startGame();
+};
+$("[data-leave]").onclick = async () => {
+  const isSpec = sess && sess.spectator;
+  if (!isSpec && S && S.phase !== "lobby" && S.phase !== "ended" && !confirm("게임 도중 나가면 다시 못 들어와요. 나갈까요?")) return;
+  try { if (sess) await api("leave"); } catch (e) {}
+  clearSess(); stopPoll(); location.href = "game.html";
+};
+
+/* ---------- 폴링 ---------- */
+function startGame() { show("game"); startPoll(); }
+function startPoll() { stopPoll(); poll(); pollTimer = setInterval(poll, 1500); tickTimer = setInterval(tick, 250); }
+function stopPoll() { clearInterval(pollTimer); clearInterval(tickTimer); pollTimer = tickTimer = null; }
+let pollFails = 0;
+let disconnected = false;   // 서버 응답 실패로 화면이 멈춘 상태인지
+function setReconnect(on) { const rc = $("[data-reconnect]"); if (rc) rc.hidden = !on; }
+async function poll() {
+  if (polling) return;   // 이전 폴링이 아직 안 끝났으면 건너뜀 (타임아웃 8초로 무한대기 방지)
+  polling = true;
+  let j;
+  try { j = await api("state", { since: sinceId }); }
+  catch (e) { pollFails++; if (pollFails >= 2) { disconnected = true; setReconnect(true); } return; }
+  finally { polling = false; }
+  if (pollFails || disconnected) { pollFails = 0; disconnected = false; setReconnect(false); }   // 복구되면 배너 숨김
+  if (!j.ok) { if (j.gone) { clearSess(); stopPoll(); show("setup"); App.toast(j.error || "다시 입장해주세요."); } return; }
+  S = j;
+  if (j.msgs && j.msgs.length) appendMsgs(j.msgs);
+  // ★ render 안에서 예외가 나도 폴링·타이머·채팅이 통째로 얼어붙지 않게 격리 (한 판 전체 freeze 방지)
+  try { render(j); }
+  catch (e) {
+    console.error("[mafia] render error:", e);
+    const rc = $("[data-reconnect]");
+    if (rc) { rc.hidden = false; rc.textContent = "⚠️ 화면 표시 오류가 났어요(자동 복구 시도 중). 계속되면 새로고침 해주세요. [" + (e && e.message ? e.message : e) + "]"; }
+  }
+}
+function tick() {
+  if (disconnected) { $("[data-timer]").textContent = "🔌 연결 끊김"; return; }   // 멈춘 게 아니라 재연결 중임을 명확히
+  if (!phaseDeadline) { $("[data-timer]").textContent = ""; return; }
+  const rem = Math.max(0, Math.ceil((phaseDeadline - Date.now()) / 1000));
+  const m = Math.floor(rem / 60), s = rem % 60;
+  $("[data-timer]").textContent = "⏳ " + (m ? m + ":" + String(s).padStart(2, "0") : s + "초");
+}
+
+/* ---------- 렌더 ---------- */
+const PHASE_LABEL = { lobby: "🕗 대기실", night: "🌙 밤", day: "☀️ 낮 (토론·투표)", defense: "🗣️ 최후변론", judgment: "⚖️ 찬반 투표", ended: "🏁 게임 종료" };
+function render(j) {
+  phaseDeadline = j.deadline ? Date.now() + (j.deadline - j.now) : 0;
+  $("[data-phase]").textContent = (PHASE_LABEL[j.phase] || j.phase) + (j.day ? " · " + j.day + "일차" : "");
+  const codeEl = $("[data-code]"); codeEl.textContent = j.code;
+  codeEl.onclick = () => { navigator.clipboard && navigator.clipboard.writeText(j.code); App.toast("코드 복사됨: " + j.code); };
+
+  const spec = !!(j.spectator || (j.me && j.me.spectator));   // 관전 모드
+
+  // 방장 전용: 방 폭파 버튼 (게임 종료 후엔 숨김 · 관전자에겐 숨김)
+  const closeBtn = $("[data-closeroom]");
+  closeBtn.hidden = !(j.isHost && j.phase !== "ended");
+
+  const rEl = $("[data-myrole]");
+  if (spec) { rEl.hidden = false; rEl.className = "mf-role role-spy"; rEl.textContent = "👀 관전 모드"; }
+  else if (j.me.role) { const r = RL(j.me.role); rEl.hidden = false; rEl.className = "mf-role " + r[2]; rEl.textContent = r[0] + " " + r[1]; }
+  else rEl.hidden = true;
+
+  // 승리 배너
+  const winEl = $("[data-win]");
+  if (j.phase === "ended" && j.winner) {
+    winEl.hidden = false;
+    winEl.className = "mf-win " + (j.winner === "mafia" ? "win-mafia" : "win-citizen");
+    winEl.textContent = j.winner === "mafia" ? "🔪 마피아 승리!" : "🎉 시민 승리!";
+  } else winEl.hidden = true;
+
+  renderPlayers(j);
+  renderContext(j);
+  // 채팅 입력 가능 여부 / 채널 안내
+  const myMafiaTeam = j.me.role === "mafia" || j.me.role === "mute" || (j.me.role === "spy" && j.me.spyTeam === "mafia");
+  const spyCh = j.me.role === "spy" ? j.me.spyContact : null;
+  const night = j.phase === "night";
+  const nightMafia = night && myMafiaTeam;
+  const nightPolice = night && j.canChat && (j.me.role === "police" || spyCh === "police");
+  const nightDoctor = night && j.canChat && (j.me.role === "doctor" || spyCh === "doctor");
+  const defense = j.phase === "defense", judgment = j.phase === "judgment";
+  const inp = $("[data-chat-input]");
+  inp.disabled = spec || !j.canChat;   // 관전자는 채팅 불가(구경만)
+  inp.placeholder = spec ? "👀 관전 모드 — 채팅할 수 없어요 (구경만 가능)"
+    : j.canChat
+    ? (!j.me.alive ? "👻 유령 채팅…" : defense && j.me.isAccused ? "🗣️ 최후변론 — 지금은 당신만 발언 가능…" : judgment ? "⚖️ 찬반 토론…" : j.me.sedChat ? "💘 유혹 대화 (둘만)…" : nightMafia ? "🔪 마피아 채팅…" : nightPolice ? "🔎 경찰팀 채팅…" : nightDoctor ? "🩺 의사팀 채팅…" : (j.speech ? "🎤 연설 중! 지금은 당신만 발언 가능…" : (!j.me.alive ? "👻 유령 채팅…" : "메시지 입력…")))
+    : (defense ? "🗣️ 지목된 사람의 최후변론을 듣는 중이에요…" : j.me.muted && judgment ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.muted && j.phase === "day" ? "🚫 빨딱! 오늘은 말할 수 없어요…" : j.me.exhausted && (j.phase === "day" || judgment) ? "😵 유혹 성공! 오늘은 체력 소모로 발언 불가…" : night ? "밤에는 대화할 수 없어요 (특수 역할만)" : j.speech ? "🎤 연설가가 발언 중이에요… 곧 말할 수 있어요" : "지금은 채팅할 수 없어요");
+  $("[data-chat-head]").textContent = spec ? "👀 관전 (모든 대화 열람만)"
+    : !j.me.alive ? "👻 유령 채팅 (관전)"
+    : defense ? (j.me.isAccused ? "🗣️ 최후변론 (당신 차례)" : "🗣️ 최후변론 (듣는 중)")
+    : judgment ? "⚖️ 찬반 토론"
+    : (j.me.muted && j.phase === "day") ? "🚫 발언 불가 (빨딱)"
+    : (j.me.exhausted && j.phase === "day") ? "😵 발언 불가 (체력 소모)"
+    : j.me.sedChat ? "💘 유혹 대화 (둘만)"
+    : nightMafia ? "🔪 마피아 채팅"
+    : nightPolice ? "🔎 경찰팀 채팅"
+    : nightDoctor ? "🩺 의사팀 채팅"
+    : j.speech ? "🎤 연설 시간"
+    : "💬 채팅";
+}
+
+function renderPlayers(j) {
+  const wrap = $("[data-players]");
+  const spec = !!(j.spectator || (j.me && j.me.spectator));   // 관전자는 행동 불가·전원 역할 공개
+  const night = j.phase === "night", day = j.phase === "day";
+  const canSeduce = !spec && j.me.role === "gay" && !j.seduced;
+  const canReport = !spec && j.me.role === "reporter" && j.day === 3 && !j.me.reporterUsed;
+  const iCanNight = !spec && night && j.me.alive && !j.me.blocked && (["mafia", "doctor", "police", "mute"].includes(j.me.role) || (j.me.role === "spy" && !j.me.spyContact) || canSeduce || canReport);
+  const iCanVote = !spec && day && j.me.alive && !j.me.muted;   // 빨딱 맞으면 투표 불가
+  let label = `참가자 ${j.players.filter(p => p.alive).length}/${j.players.length}명 생존`;
+  if (j.counts) label += ` · 🔪 마피아 ${j.counts.mafia}명`;
+  $("[data-players-label]").textContent = label;
+
+  // 오른쪽 서랍 토글(FAB) 상태 — 투표/지목할 수 있을 땐 강조
+  const canAct = iCanNight || iCanVote;
+  const fab = $("[data-players-toggle]");
+  fab.classList.toggle("act", canAct);
+  $("[data-fab-dot]").hidden = !canAct;
+  $("[data-fab-label]").textContent = iCanVote ? "투표하기" : iCanNight ? "지목하기" : "참여자";
+  const hint = $("[data-drawer-hint]");
+  if (iCanVote) { hint.hidden = false; hint.textContent = "🗳️ 처형할 사람을 눌러 투표하세요. (다시 누르면 취소)"; }
+  else if (iCanNight) { hint.hidden = false; hint.textContent = "🌙 밤 대상을 눌러 선택하세요."; }
+  else { hint.hidden = true; }
+
+  wrap.innerHTML = j.players.map(p => {
+    const roleTag = p.role ? `<span class="mf-role ${RL(p.role)[2]}" style="font-size:10px;padding:1px 6px">${RL(p.role)[0]}${RL(p.role)[1]}</span>` : "";
+    let sub = "";
+    if (spec) sub = (p.role ? roleTag : "") + (p.alive ? "" : " 💀");   // 관전: 전원 역할 상시 공개
+    else if (!p.alive) sub = "💀 사망";
+    else if (j.me.role === "mafia" && night && p.role === "mafia") sub = roleTag;
+    else if (p.role && (j.phase === "ended")) sub = roleTag;
+    else if (p.host && j.phase === "lobby") sub = "👑 방장";
+    // 표시용 선택 여부
+    let picked = false, able = false;
+    if (iCanNight && p.alive) {
+      // 의사만 자기자신 가능 / 빨딱은 우리편(역할 보이는 마피아팀)·어제 준 사람 제외하고 시민에게만
+      able = (j.me.role === "doctor") ? true : (j.me.role === "mute") ? (p.pid !== j.me.pid && !p.role && p.pid !== j.me.muteBlocked) : (p.pid !== j.me.pid);
+      picked = j.myNightTarget === p.pid;
+    } else if (iCanVote && p.alive) { able = true; picked = j.myVote === p.pid; }
+    const votes = (day && j.voteCounts && j.voteCounts[p.pid]) ? `<span class="pl__votes">🗳️${j.voteCounts[p.pid]}</span>` : "";
+    const mpick = (night && j.mafiaPicks) ? Object.values(j.mafiaPicks).filter(t => t === p.pid).length : 0;
+    const mpickBadge = mpick ? `<span class="pl__votes">🔪${mpick}</span>` : "";
+    const hostBtn = (j.isHost && !p.isMe && j.phase !== "ended") ? `<button class="pl__host" data-makehost="${p.pid}" title="방장 넘기기">👑</button>` : "";
+    return `<div class="pl ${p.alive ? "" : "dead"} ${able ? "able" : ""} ${picked ? "picked" : ""}" data-pid="${p.pid}">
+      ${!p.alive ? '<span class="pl__x">💀</span>' : ""}${votes || mpickBadge}
+      <div class="pl__nick">${esc(p.nick)}${p.role === "mafia" ? " <span style='color:#FF6B81;font-weight:800'>(마피아)</span>" : ""}${p.role === "mute" ? " <span style='color:#FF6B81;font-weight:800'>(빨딱)</span>" : ""}${p.role === "spy" ? " <span style='color:#C7CAD1;font-weight:800'>(스파이)</span>" : ""}${p.isMe ? " <span style='color:var(--accent)'>(나)</span>" : ""}</div>
+      <div class="pl__sub">${sub}</div>
+      ${hostBtn}
+    </div>`;
+  }).join("");
+
+  wrap.querySelectorAll(".pl.able").forEach(el => el.onclick = async () => {
+    const pid = el.dataset.pid;
+    if (night) {
+      // 낙관적 표시: 서버 응답 전에 즉시 선택 하이라이트(연타 방지)
+      wrap.querySelectorAll(".pl").forEach(c => c.classList.remove("picked"));
+      el.classList.add("picked");
+      const r = await api("action", { target: pid }); if (!r.ok) App.toast(r.error); else poll();   // 유혹 결과는 토스트 대신 보드 '유혹 기록'에 고정 표시
+    }
+    else if (day) {
+      const same = j.myVote === pid;
+      el.classList.toggle("picked", !same);   // 즉시 반영
+      const r = await api("vote", { target: same ? null : pid });
+      if (!r.ok) App.toast(r.error); else poll();
+    }
+  });
+  wrap.querySelectorAll("[data-makehost]").forEach(b => b.onclick = async (e) => {
+    e.stopPropagation();   // 카드 투표/지목 클릭과 겹치지 않게
+    const pid = b.dataset.makehost, tp = j.players.find(x => x.pid === pid);
+    if (!confirm(`${tp ? tp.nick : "이 사람"}님에게 방장을 넘길까요?`)) return;
+    const r = await api("transferhost", { target: pid });
+    if (!r.ok) App.toast(r.error); else { App.toast("👑 방장을 넘겼어요."); poll(); }
+  });
+}
+
+function renderContext(j) {
+  const el = $("[data-context]");
+  const isSpec = !!(j.spectator || (j.me && j.me.spectator));
+  if (isSpec && j.phase !== "ended") {   // 관전 모드 안내(행동 없음) — 종료 시엔 아래 결과화면으로
+    const phaseTxt = { lobby: "대기실이에요. 방장이 시작하길 기다리는 중.", night: "🌙 밤 — 특수 역할들이 행동 중이에요.", day: "☀️ 낮 — 토론하고 처형할 사람을 투표해요.", defense: "🗣️ 최후변론 — 지목된 사람이 변론 중.", judgment: "⚖️ 찬반 투표 — 처형할지 정하는 중." }[j.phase] || "";
+    let extra = "";
+    if ((j.phase === "defense" || j.phase === "judgment") && j.accusedNick) extra += `<p class="mf-hint">🎯 지목: <b>${esc(j.accusedNick)}</b></p>`;
+    if (j.phase === "judgment" && j.judgeCounts) extra += `<div class="mf-judge-count">👍 찬성 <b>${j.judgeCounts.approve}</b> · 👎 반대 <b>${j.judgeCounts.reject}</b></div>`;
+    el.innerHTML = `<div style="font-weight:800;font-size:16px;margin-bottom:6px">👀 관전 모드</div>
+      <p class="mf-hint">모든 사람의 <b>역할</b>과 <b>밤 마피아 채팅까지 다 보여요.</b> (오른쪽 참여자 목록·채팅) 채팅·투표는 할 수 없고 구경만 가능해요.</p>
+      <p class="mf-hint" style="margin-top:8px">${phaseTxt}</p>${extra}`;
+    return;
+  }
+  if (j.phase === "lobby") {
+    const n = j.players.length;
+    const canStart = j.isHost && n >= 4;
+    const pv = rolePreview(n);
+    const pvLine = n >= 4
+      ? `이 인원이면 → 🔪 마피아 <b>${pv.mafia}</b>${pv.doctor ? " · 🩺 의사 1" : ""}${pv.police ? " · 🔎 경찰 1" : ""}${pv.politician ? " · 🏛️ 정치인 1" : ""}${pv.spy ? " · 🕶️ 스파이 1" : ""}${pv.gay ? " · 🌈 게이 1" : ""}${pv.orator ? " · 🎤 연설가 1" : ""}${pv.reporter ? " · 📰 기자 1" : ""}${pv.mute ? " · 🚫 빨딱 1" : ""}${pv.thief ? " · 🦝 도둑 1" : ""} · 🙂 시민 ${pv.citizen}`
+      : "4명부터 시작할 수 있어요.";
+    el.innerHTML = `
+      <div style="font-weight:800;font-size:16px;margin-bottom:6px">대기실 · ${n}명</div>
+      <p class="mf-hint">코드 <b>${j.code}</b> 를 친구들에게 공유하세요. 최소 4명 · 최대 15명.<br>
+      ${pvLine}<br>
+      ${n >= 6 ? "6명 이상이라 의사·경찰이 등장해요." : "6명이 되면 의사·경찰도 등장해요."}</p>
+      ${j.isHost
+        ? `<button class="btn btn--primary" data-start ${canStart ? "" : "disabled"} style="margin-top:10px">${canStart ? "게임 시작 🎬" : `시작하려면 ${4 - n}명 더 필요`}</button>`
+        : `<p class="mf-hint" style="margin-top:10px">👑 방장이 시작하기를 기다리는 중…</p>`}`;
+    const sb = el.querySelector("[data-start]");
+    if (sb) sb.onclick = async () => { const r = await api("start"); if (!r.ok) App.toast(r.error); else poll(); };
+    return;
+  }
+  if (j.phase === "ended") {
+    const by = r => j.players.filter(p => p.role === r && !p.wasThief).map(p => esc(p.nick)).join(", ") || "—";   // 도둑은 별도 표기(훔친 직업 밑에 안 섞이게)
+    const thieves = j.players.filter(p => p.role === "thief" || p.wasThief)
+      .map(p => p.wasThief ? `${esc(p.nick)} (→ ${(ROLE[p.stolen] && ROLE[p.stolen][1]) || "훔친 직업 없음"})` : `${esc(p.nick)} (훔치기 전)`).join(", ") || "—";
+    const spyList = j.players.filter(p => p.role === "spy").map(p =>
+      `${esc(p.nick)} (${p.spyTeam === "mafia" ? "🔪마피아편" : p.spyTeam === "citizen" ? "🙂시민편" : "미정"})`).join(", ") || "—";
+    const c = j.counts || {};
+    const reveal = `<div class="mf-reveal">
+      <div class="rv rv-mafia">🔪 마피아 <b>${by("mafia")}</b></div>
+      ${c.doctor ? `<div class="rv rv-doctor">🩺 의사 <b>${by("doctor")}</b></div>` : ""}
+      ${c.police ? `<div class="rv rv-police">🔎 경찰 <b>${by("police")}</b></div>` : ""}
+      ${c.politician ? `<div class="rv rv-politician">🏛️ 정치인 <b>${by("politician")}</b></div>` : ""}
+      ${c.orator ? `<div class="rv rv-orator">🎤 연설가 <b>${by("orator")}</b></div>` : ""}
+      ${c.spy ? `<div class="rv rv-spy">🕶️ 스파이 <b>${spyList}</b></div>` : ""}
+      ${c.gay ? `<div class="rv rv-gay">🌈 게이 <b>${by("gay")}</b></div>` : ""}
+      ${c.reporter ? `<div class="rv rv-reporter">📰 기자 <b>${by("reporter")}</b></div>` : ""}
+      ${c.mute ? `<div class="rv rv-mute">🚫 빨딱 <b>${by("mute")}</b></div>` : ""}
+      ${c.thief ? `<div class="rv rv-thief">🦝 도둑 <b>${thieves}</b></div>` : ""}
+      <div class="rv rv-citizen">🙂 시민 <b>${by("citizen")}</b></div>
+    </div>`;
+    const winTxt = j.winner === "mafia" ? "🔪 마피아팀 승리!" : j.winner === "citizen" ? "🎉 시민팀 승리!" : "";
+    if (isSpec) {   // 관전자: 결과+역할 공개만(참여 버튼 없음)
+      el.innerHTML = `<div style="font-weight:800;font-size:16px;margin-bottom:6px">👀 관전 — 게임 종료</div>
+        <p class="mf-hint">${winTxt} 최종 역할을 공개할게요.</p>${reveal}
+        <p class="mf-hint" style="margin-top:10px">방장이 새 게임을 시작하면 대기실이 다시 보여요. 관전을 마치려면 "나가기"를 눌러요.</p>`;
+    } else if (j.isHost) {
+      el.innerHTML = `<p class="mf-hint">게임 끝! 역할을 공개할게요.</p>${reveal}
+        <button class="btn btn--primary" data-again style="margin-top:12px">🔄 새 게임 (같은 방)</button>
+        <button class="btn btn--ghost btn--sm" data-newroom style="margin-top:12px;margin-left:8px">새 방 만들기</button>`;
+      el.querySelector("[data-again]").onclick = async () => { const r = await api("restart"); if (!r.ok) App.toast(r.error); else poll(); };
+      el.querySelector("[data-newroom]").onclick = () => { clearSess(); stopPoll(); location.reload(); };
+    } else {
+      el.innerHTML = `<p class="mf-hint">게임 끝! 역할을 공개할게요.</p>${reveal}
+        <p class="mf-hint" style="margin-top:10px">👑 방장이 새 게임을 시작하면 자동으로 대기실로 이동해요.</p>`;
+    }
+    return;
+  }
+  // 진행 중
+  let html = "";
+  // 🦝 도둑: 훔친 직업 알림 배너(본인만) — 페이즈 html과 별개로 항상 맨 위에 붙임
+  const stolenR = j.me.stolen && ROLE[j.me.stolen];
+  const banner = (j.me.wasThief && stolenR)
+    ? `<div style="background:rgba(180,180,190,.15);border:1px solid #C7CAD1;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-weight:800;font-size:13.5px">🦝 당신은 <b>도둑</b>! 첫 사망자의 직업 <span class="mf-role ${stolenR[2]}">${stolenR[0]} ${stolenR[1]}</span> 을(를) 훔쳤어요. 이제 그 역할로 플레이해요!</div>`
+    : "";
+  if (!j.me.alive) {
+    html = `<p class="mf-hint">💀 당신은 탈락했어요. 이제 관전만 가능하고, 유령 채팅으로 다른 탈락자와 대화할 수 있어요.</p>`;
+  } else if (j.phase === "night") {
+    if (j.me.role === "spy") {
+      html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — 🕶️ 스파이</div>`;
+      if (j.me.spyContact) {
+        const lbl = j.me.spyContact === "mafia" ? "🔪 마피아와 접선 (마피아편)" : j.me.spyContact === "police" ? "🔎 경찰과 접선 (시민편)" : "🩺 의사와 접선 (시민편)";
+        html += `<p class="mf-hint">이미 <b>${lbl}</b> 했어요. (이 판 동안 고정) 밤에 해당 팀과 대화할 수 있어요.</p>`;
+      } else {
+        html += `<p class="mf-hint">밤마다 <b>한 명을 접선</b>하세요 (아래에서 선택). 상대가 <b>🔪마피아면 마피아편+마피아 채팅</b>, <b>🔎경찰/🩺의사면 시민편+야간 대화</b>가 열려요. 시민이면 접선 실패(다음 밤 재시도). 한번 접선하면 고정!</p>`;
+      }
+      if ((j.contactLog || []).length) html += `<div class="mf-invest"><b>🕶️ 접선 기록</b>` + j.contactLog.map(x =>
+        `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.result === "mafia" ? "🔪 마피아!" : x.result === "police" ? "🔎 경찰" : x.result === "doctor" ? "🩺 의사" : "🙂 시민(실패)"}</div>`).join("") + `</div>`;
+    } else if (j.me.blocked) {   // 유혹당한 마피아
+      html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — 💘 유혹당함</div><p class="mf-hint">오늘 밤 <b>누군가에게 유혹당했어요.</b> 살해 등 <b>행동은 할 수 없고</b>, <b>마피아 채팅도 안 보여요.</b> 대신 아래 채팅으로 <b>당신을 유혹한 사람과 둘만</b> 대화할 수 있어요. 💘</p>`;
+    } else if (j.me.role === "gay") {
+      html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — ${ROLE.gay[0]} ${ROLE.gay[1]}</div>`;
+      if (j.seduced) html += `<p class="mf-hint">💘 오늘 밤 유혹을 마쳤어요. <b>마피아</b>를 유혹했다면 그 마피아와 둘만 대화할 수 있고, 대신 <b>다음 낮엔 체력 소모로 발언이 불가</b>해요.</p>`;
+      else html += `<p class="mf-hint">밤마다 <b>한 명을 유혹</b>하세요(아래 선택). <b>마피아</b>를 유혹하면 그 마피아는 그 밤 행동·마피아채팅이 막히고 둘만 대화하게 돼요. 대신 <b>다음 낮엔 당신이 발언 불가</b>(체력 소모)! 마피아가 아니면 효과 없어요.</p>`;
+      if ((j.seduceLog || []).length) html += `<div class="mf-invest"><b>💘 유혹 기록</b>` + j.seduceLog.map(x =>
+        `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.result === "mafia" ? "🔪 <b style='color:#FF6B81'>마피아! 행동 차단 성공</b>" : "🙂 시민 (효과 없음)"}</div>`).join("") + `</div>`;
+    } else {
+      const guide = { mafia: "제거할 사람을 골라요. (마피아끼리 상의 가능)", doctor: "오늘 밤 살릴 사람을 골라요. (자기 자신도 가능)",
+        police: "정체를 조사할 사람을 골라요. 결과는 바로 알려드려요.",
+        politician: "밤 행동은 없어요. 하지만 낮 투표에서 <b>당신의 표는 2표</b>예요! 🏛️",
+        orator: "밤 행동은 없어요. 낮이 되면 <b>첫 10초간 당신만 발언</b>할 수 있어요! 🎤",
+        reporter: j.day === 3 ? (j.me.reporterUsed ? "📰 이미 특종을 냈어요." : "📰 <b>3일차 밤!</b> 취재할 사람을 골라 <b>직업을 특종으로 전체 공개</b>하세요! (당신 정체는 안 밝혀져요)") : "📰 특종은 <b>3일차 밤</b>에만 낼 수 있어요. 그날을 기다려요.",
+        mute: "🚫 <b>빨딱</b>을 줄 사람을 골라요(아래 선택). 그 사람은 <b>다음 낮에 발언·투표를 못 해요!</b> 단, <b>어젯밤 준 사람에겐 연속으로 못 줘요</b>(하루 지나면 다시 가능). 당신은 마피아와 한편이에요.",
+        thief: "🦝 밤 능력은 없어요. <b>맨 처음 죽는 사람의 직업을 자동으로 훔쳐</b> 그 역할이 돼요. 첫 사망을 기다려요!",
+        citizen: "밤이에요. 마피아의 선택을 기다려요. 아침에 만나요." }[j.me.role] || "밤이에요.";
+      html = `<div style="font-weight:800;margin-bottom:4px">🌙 밤 — ${RL(j.me.role)[1]}</div><p class="mf-hint">${guide}</p>`;
+      if (j.me.role === "mute" && j.me.muteBlocked) {   // 오늘 밤 연속 불가 대상 안내
+        const bp = (j.players || []).find(p => p.pid === j.me.muteBlocked);
+        if (bp) html += `<p class="mf-hint" style="color:#FF9E6B">⛔ 어젯밤 <b>${esc(bp.nick)}</b>님에게 빨딱을 줬어요. 오늘 밤은 <b>${esc(bp.nick)}</b>님에게 줄 수 없어요. (다른 사람은 가능)</p>`;
+      }
+      if (j.me.role === "police" && j.investLog.length) {
+        html += `<div class="mf-invest"><b>🔎 조사 기록</b>` + j.investLog.map(x =>
+          `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.isMafia ? "🔪 <b style='color:#FF6B81'>마피아!</b>" : "🙂 마피아 아님"}</div>`).join("") + `</div>`;
+      }
+    }
+  } else if (j.phase === "day") {
+    html = `<div style="font-weight:800;margin-bottom:4px">☀️ 낮 — 토론 & 투표</div>
+      <p class="mf-hint">토론하고, 처형할 사람을 눌러 투표하세요. 시간이 끝나면 <b>최다 득표자가 최후변론</b> 후 <b>찬반 투표</b>로 처형 여부가 정해져요. (다시 누르면 취소, 동표면 지목 없이 밤)${j.me.role === "politician" ? " <b style='color:#FF9E6B'>🏛️ 당신의 표는 2표!</b>" : ""}</p>`;
+    if (j.me.exhausted) html += `<p class="mf-hint" style="color:#FF8AD4">😵 지난밤 마피아 유혹에 성공했어요. 오늘 낮은 <b>체력 소모로 발언할 수 없어요</b> (투표는 가능).</p>`;
+    if (j.me.muted) html += `<p class="mf-hint" style="color:#FF6B81">🚫 <b>빨딱을 받았어요!</b> 오늘 낮은 <b>발언도 투표도 할 수 없어요.</b></p>`;
+    if (j.me.role === "citizen" && j.me.alive) {   // 시민: 낮 시간 ±30초 (하루 1번)
+      html += j.me.dayAdjustUsed
+        ? `<p class="mf-hint" style="color:#7FA8FF">⏱️ 오늘은 이미 낮 시간이 조절됐어요. (하루 한 번, 방 전체 공용)</p>`
+        : `<div style="margin-top:8px"><span class="mf-hint">⏱️ 시민 능력 — 낮 시간 조절 (하루 한 번 · 방 전체 공용, 먼저 누른 사람 것만 적용):</span>
+             <div style="display:flex;gap:8px;margin-top:6px">
+               <button class="btn btn--ghost btn--sm" data-day-extend>➕ 30초 연장</button>
+               <button class="btn btn--ghost btn--sm" data-day-shorten>➖ 30초 단축</button>
+             </div></div>`;
+    }
+    if (j.me.role === "police" && j.investLog.length) {
+      html += `<div class="mf-invest"><b>🔎 내 조사 기록</b>` + j.investLog.map(x =>
+        `<div>${x.day}일차: <b>${esc(x.nick)}</b> → ${x.isMafia ? "🔪 <b style='color:#FF6B81'>마피아!</b>" : "🙂 마피아 아님"}</div>`).join("") + `</div>`;
+    }
+  } else if (j.phase === "defense") {   // 🗣️ 최후변론 — 지목된 사람만 발언
+    const nm = esc(j.accusedNick || "");
+    if (j.me.isAccused) {
+      html = `<div style="font-weight:800;margin-bottom:4px">🗣️ 최후변론</div>
+        <p class="mf-hint">당신이 처형 대상으로 지목됐어요. <b>지금은 당신만 발언할 수 있어요.</b> 20초 안에 마지막 변론을 해주세요! (변론 후 다른 사람들이 찬반 투표를 합니다)</p>`;
+    } else {
+      html = `<div style="font-weight:800;margin-bottom:4px">🗣️ 최후변론</div>
+        <p class="mf-hint"><b>${nm}</b>님이 처형 대상으로 지목됐어요. 지금은 <b>${nm}님의 변론을 듣는 시간</b>이에요. 잠시 후 찬반 투표가 시작돼요.</p>`;
+    }
+  } else if (j.phase === "judgment") {   // ⚖️ 찬반 투표
+    const nm = esc(j.accusedNick || "");
+    const jc = j.judgeCounts || { approve: 0, reject: 0 };
+    html = `<div style="font-weight:800;margin-bottom:4px">⚖️ 찬반 투표 — ${nm}님을 처형할까요?</div>
+      <p class="mf-hint">토론하고 투표하세요. <b>찬성(처형)이 반대(생존)보다 많을 때만</b> 처형돼요. (동수·반대 다수는 생존 · 다시 누르면 취소)</p>
+      <div class="mf-judge-count">👍 찬성 <b>${jc.approve}</b> · 👎 반대 <b>${jc.reject}</b></div>`;
+    if (j.me.isAccused) {
+      html += `<p class="mf-hint" style="margin-top:8px">🗣️ 당신은 지목된 본인이라 투표할 수 없어요. 결과를 기다려요.</p>`;
+    } else if (!j.me.alive) {
+      html += `<p class="mf-hint" style="margin-top:8px">👻 유령은 투표할 수 없어요.</p>`;
+    } else if (j.me.muted) {
+      html += `<p class="mf-hint" style="margin-top:8px;color:#FF6B81">🚫 빨딱을 받아 오늘은 투표할 수 없어요.</p>`;
+    } else {
+      html += `<div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn--sm ${j.me.myJudge === "approve" ? "btn--primary" : "btn--ghost"}" data-judge="approve" style="flex:1">👍 찬성 (처형)</button>
+          <button class="btn btn--sm ${j.me.myJudge === "reject" ? "btn--primary" : "btn--ghost"}" data-judge="reject" style="flex:1">👎 반대 (생존)</button>
+        </div>`;
+    }
+  }
+  el.innerHTML = banner + html;
+  const ext = el.querySelector("[data-day-extend]"), sht = el.querySelector("[data-day-shorten]");
+  if (ext) ext.onclick = async () => { const r = await api("dayadjust", { dir: "extend" }); if (!r.ok) App.toast(r.error); else { App.toast("⏱️ 낮 시간 +30초"); poll(); } };
+  if (sht) sht.onclick = async () => { const r = await api("dayadjust", { dir: "shorten" }); if (!r.ok) App.toast(r.error); else { App.toast("⏱️ 낮 시간 -30초"); poll(); } };
+  el.querySelectorAll("[data-judge]").forEach(b => b.onclick = async () => {   // 찬반 투표(다시 누르면 취소)
+    const v = b.dataset.judge, same = j.me.myJudge === v;
+    b.classList.toggle("btn--primary", !same);   // 즉시 반영
+    const r = await api("judge", { vote: same ? null : v });
+    if (!r.ok) App.toast(r.error); else poll();
+  });
+}
+
+/* ---------- 채팅 ---------- */
+// 서버가 매 판 랜덤 배정한 닉 색을 사용(없으면 해시 폴백). S.players에서 닉→색 맵.
+const NICK_COLORS = ["#FF8A80","#FFD54F","#82D8FA","#A5D6A7","#F48FB1","#CE93D8","#80CBC4","#FFAB91","#90CAF9","#C5E1A5","#FFCC80","#B39DDB","#F06292","#4DD0E1","#AED581","#FF8A65"];
+function hashColor(name) { let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return NICK_COLORS[h % NICK_COLORS.length]; }
+function nickColorOf(name) {
+  const p = (S && S.players || []).find(x => x.nick === name);
+  return (p && p.color) ? p.color : hashColor(name);
+}
+function appendMsgs(msgs) {
+  const body = $("[data-chat-body]");
+  const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+  let added = 0;
+  msgs.forEach(m => {
+    if (seenMsgs.has(m.id)) return;   // 이미 그린 메시지면 건너뜀 (중복 방지)
+    seenMsgs.add(m.id);
+    if (m.id > sinceId) sinceId = m.id;
+    const d = document.createElement("div");
+    const cls = m.ch && m.ch.indexOf("sed_") === 0 ? "seduce" : (m.ch || "all");
+    if (m.sys) { d.className = "msg sys" + (cls === "seduce" ? " seduce" : ""); d.textContent = m.text; }
+    else {
+      d.className = "msg " + cls;
+      const col = (cls === "all") ? ` style="color:${nickColorOf(m.from)}"` : "";   // 일반 채팅은 닉별 색상(특수채널은 채널색 유지)
+      const tag = cls === "spec" ? "👀 " : "";   // 관전자 채팅 표시
+      d.innerHTML = `<span class="msg__from"${col}>${tag}${esc(m.from)}</span> ${esc(m.text)}`;
+    }
+    body.appendChild(d); added++;
+  });
+  if (added && atBottom) body.scrollTop = body.scrollHeight;
+}
+async function sendChat() {
+  const inp = $("[data-chat-input]");
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = "";
+  try {
+    const r = await api("chat", { text });
+    if (!r.ok) { inp.value = text; App.toast(r.error || "전송 실패"); }   // 서버가 거절하면 글 복원
+    else poll();
+  } catch (e) {   // 네트워크/타임아웃이면 글이 사라지지 않게 복원 + 안내
+    inp.value = text;
+    App.toast("전송이 안 됐어요. 연결을 확인하고 다시 눌러주세요.");
+  }
+}
+$("[data-chat-send]").onclick = sendChat;
+$("[data-chat-input]").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
+
+/* ---------- 방장: 방 폭파 ---------- */
+$("[data-closeroom]").onclick = async () => {
+  if (!confirm("정말 방을 폭파할까요? 진행 중인 게임이 끝나고 모두 대기 화면으로 나가요. (되돌릴 수 없어요)")) return;
+  const r = await api("closeroom");
+  if (r && !r.ok && !r.gone) { App.toast(r.error || "방을 닫지 못했어요."); return; }
+  clearSess(); stopPoll(); show("setup"); App.toast("💥 방을 폭파했어요.");
+};
+
+/* ---------- 참여자 서랍 ---------- */
+function drawer(on) {
+  const d = $("[data-players-drawer]"), bd = $("[data-players-backdrop]"), arw = $("[data-fab-arrow]");
+  const open = on === undefined ? !d.classList.contains("is-open") : on;
+  d.classList.toggle("is-open", open);
+  bd.hidden = !open;
+  arw.textContent = open ? "›" : "‹";
+}
+$("[data-players-toggle]").onclick = () => drawer();
+$("[data-players-close]").onclick = () => drawer(false);
+$("[data-players-backdrop]").onclick = () => drawer(false);
+
+/* ---------- 시작 ---------- */
+if (!App.isAdmin()) {   // 방 생성은 관리자만 — 비관리자는 생성 박스 숨기고 참가만
+  const cb = $("[data-create-box]"), note = $("[data-create-note]");
+  if (cb) cb.hidden = true;
+  if (note) note.hidden = false;
+  const setup = document.querySelector(".mf-setup");
+  if (setup) setup.style.gridTemplateColumns = "1fr";
+}
+if (!MAFIA_URL) show("noserver");
+else if (sess) startGame();
+else show("setup");
+window.addEventListener("beforeunload", stopPoll);
+</script>
+</body>
+</html>

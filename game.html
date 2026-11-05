@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=20260831.206">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png?v=20260831.206">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=20260831.206">
+<meta property="og:type" content="website">
+<meta property="og:title" content="게임 · 호랑봇 허브">
+<meta property="og:description" content="이벤트 미니게임 — 마피아">
+<meta property="og:url" content="https://horangbot.co.kr/game.html">
+<meta property="og:image" content="https://horangbot.co.kr/assets/og-image.png">
+<meta name="theme-color" content="#12141B">
+<script src="assets/inapp.js?v=20260831.206"></script>
+<title>게임 · 호랑봇 허브</title>
+<link rel="stylesheet" href="assets/style.css?v=20260831.206">
+<style>
+  .gm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-top: 8px; }
+  .gm-card { display: block; text-decoration: none; color: inherit; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); padding: 20px; transition: transform .12s, border-color .12s; }
+  .gm-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .gm-card__emoji { font-size: 40px; line-height: 1; }
+  .gm-card__title { font-size: 18px; font-weight: 800; margin: 12px 0 4px; }
+  .gm-card__desc { color: var(--text-dim); font-size: 13.5px; line-height: 1.5; }
+  .gm-card__meta { margin-top: 12px; font-size: 12.5px; color: var(--accent); font-weight: 700; }
+  .gm-admin { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    background: var(--panel); border: 1px dashed var(--line); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 18px; }
+  .gm-admin__txt { font-size: 13.5px; }
+  .gm-admin__txt b { font-weight: 800; }
+  .gm-on { color: #34D399; } .gm-off { color: var(--text-dim); }
+  [hidden] { display: none !important; }   /* hidden 속성이 .gm-admin/.gm-grid display 규칙에 안 먹던 버그 수정 */
+</style>
+</head>
+<body>
+
+<header class="header"><div class="header__inner" data-header></div></header>
+
+<main class="wrap page">
+  <p class="page__eyebrow">게임 로비</p>
+  <h1 class="page__title">🎮 게임 로비</h1>
+  <p class="page__desc">언제든 즐기는 오목부터, 이벤트 때 열리는 마피아까지. 원하는 게임을 골라 입장하세요!</p>
+
+  <div class="gm-grid">
+    <a class="gm-card" href="omok.html">
+      <div class="gm-card__emoji">⚫</div>
+      <div class="gm-card__title">오목 랭크 <span style="font-size:11px;color:#34D399;font-weight:800">상시 오픈</span></div>
+      <div class="gm-card__desc">1대1 오목으로 MMR·티어를 올려요. 이길 때마다 랭크 상승, <b>2주마다 시즌 랭킹 리셋</b>. 턴당 15초!</div>
+      <div class="gm-card__meta">지금 바로 플레이 →</div>
+    </a>
+  </div>
+
+  <h2 data-event-h hidden style="font-size:16px;font-weight:800;margin:24px 0 4px">🎪 이벤트 게임</h2>
+  <div class="gm-admin" data-admin hidden>
+    <div class="gm-admin__txt">
+      이벤트 게임 상태: <b data-state class="gm-off">불러오는 중…</b><br>
+      <span style="color:var(--text-dim)">비활성화하면 마피아가 일반 이용자에게 안 보여요. (오목은 상시)</span>
+    </div>
+    <button class="btn btn--primary" data-toggle disabled>불러오는 중…</button>
+  </div>
+  <p class="page__desc" data-event-note hidden style="color:var(--text-dim)">지금은 닫혀 있어요. 이벤트 때 관리자가 열면 여기에 나타나요!</p>
+  <div class="gm-grid" data-event-grid hidden>
+    <a class="gm-card" href="mafia.html">
+      <div class="gm-card__emoji">🕵️</div>
+      <div class="gm-card__title">마피아</div>
+      <div class="gm-card__desc">밤엔 마피아가 시민을 제거하고, 낮엔 토론·투표로 마피아를 찾아내는 심리 게임. 최대 15명.</div>
+      <div class="gm-card__meta">방 만들기 · 참가하기 →</div>
+    </a>
+    <a class="gm-card" href="updown.html">
+      <div class="gm-card__emoji">🎯</div>
+      <div class="gm-card__title">진실게임</div>
+      <div class="gm-card__desc">순서대로 1~99 숨은 숫자를 맞혀요(업/다운). 5번 틀리면 질문을 받는 업다운+진실게임! 진행자가 순서를 정해요.</div>
+      <div class="gm-card__meta">방 만들기 · 참가하기 →</div>
+    </a>
+    <a class="gm-card" href="wordchain.html">
+      <div class="gm-card__emoji">🔗</div>
+      <div class="gm-card__title">끝말잇기</div>
+      <div class="gm-card__desc">국어사전에 등록된 명사만! 두음법칙 적용·30초 제한·마지막 1명 생존. 실시간 사전 검증으로 공정하게. 3~15명.</div>
+      <div class="gm-card__meta">방 만들기 · 참가하기 →</div>
+    </a>
+  </div>
+</main>
+
+<script src="assets/config.js?v=20260831.206"></script>
+<script src="assets/store.js?v=20260831.206"></script>
+<script src="assets/app.js?v=20260831.206"></script>
+<script>
+App.header("game.html");
+
+/* 이벤트 게임(마피아) 노출 제어 + (관리자면) 활성화 토글 */
+(function () {
+  const URL_ = (window.CONFIG && CONFIG.SCRIPT_URL || "").trim();
+  const admin = App.isAdmin();
+  const grid = document.querySelector("[data-event-grid]");
+  const note = document.querySelector("[data-event-note]");
+  const heading = document.querySelector("[data-event-h]");
+  const box = document.querySelector("[data-admin]");
+  const stateEl = box.querySelector("[data-state]");
+  const btn = box.querySelector("[data-toggle]");
+  let on = false;
+
+  function paint() {
+    // 이벤트 섹션(제목·카드): 활성화됐거나 관리자일 때만 노출. 비활성 + 비관리자는 아예 안 보임(오목만)
+    const visible = on || admin;
+    heading.hidden = !visible;
+    grid.hidden = !visible;
+    note.hidden = true;   // "닫혀있어요" 안내 제거 — 비관리자는 이벤트 섹션 자체가 안 뜸
+    if (admin) {
+      box.hidden = false;
+      stateEl.textContent = on ? "활성화 (모두에게 보임)" : "비활성화 (관리자만 보임)";
+      stateEl.className = on ? "gm-on" : "gm-off";
+      btn.textContent = on ? "비활성화하기" : "활성화하기";
+      btn.disabled = false;
+    }
+  }
+  paint();   // 먼저 기본 상태(비활성)로 즉시 렌더 — 네트워크가 느려도 "불러오는 중…"에 안 걸림
+  fetch(URL_ + "?action=siteflags&_=" + Date.now()).then(r => r.json())
+    .then(j => { on = !!(j && j.gameOn); paint(); })
+    .catch(() => { paint(); });
+
+  if (admin) btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = "처리 중…";
+    try {
+      const r = await fetch(URL_, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ gameToggle: !on, key: App.key() }) });
+      const j = await r.json();
+      if (j && j.ok) { on = !!j.gameOn; paint(); App.toast(on ? "이벤트 게임 활성화됨" : "이벤트 게임 비활성화됨"); }
+      else { paint(); App.toast((j && j.error) || "변경 실패"); }
+    } catch (e) { paint(); App.toast("오류가 났어요"); }
+  };
+})();
+</script>
+</body>
+</html>
