@@ -277,15 +277,15 @@
   async function load() {
     if (MODE === "local") { loaded = true; return read(); }
 
-    // ★ 실시간 연동(2026-11-02): TTL 캐시로 건너뛰지 않고 항상 시트에서 새로 읽음.
-    //   구글시트를 직접 고쳐도 새로고침 즉시 반영됨(예전 '실시간 연동'으로 복귀).
-    //   편집 직후 같은 페이지는 아래 write()가 메모리 cache 를 바로 갱신해 즉시 보임.
+    // ★ TTL 캐시가 살아있으면 네트워크 호출 없이 즉시 반환 (속도 개선)
+    const hit = readCache();
+    if (hit) { cache = hit; loaded = true; return cache; }
 
     if (MODE === "script") {
       let res, j;
       try {
-        // 항상 &fresh=1 → 클라 TTL 캐시 + 서버 캐시(PATCH_03) 둘 다 우회해 시트 live 읽기
-        res = await tryFetch(SCRIPT_URL + "?action=read&_=" + Date.now() + "&fresh=1", { redirect: "follow" });
+        // ?fresh=1 이면 서버 캐시(PATCH_03)까지 건너뛰도록 &fresh=1 전달
+        res = await tryFetch(SCRIPT_URL + "?action=read&_=" + Date.now() + (cacheAllowed() ? "" : "&fresh=1"), { redirect: "follow" });
         j = await res.json();
       } catch (e) {
         throw new Error("시트를 불러오지 못했습니다. Apps Script 주소와 배포 권한을 확인해 주세요.");
