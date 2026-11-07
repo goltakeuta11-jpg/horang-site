@@ -158,6 +158,7 @@ h1, h2, h3 { margin: 0; line-height: 1.25; letter-spacing: -0.02em; }
   padding: 9px 16px; border-radius: var(--radius-sm);
   border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
   cursor: pointer; transition: transform .12s ease, background .12s ease;
+  white-space: nowrap;   /* 한글 라벨이 flex에서 글자별로 쪼개지는 것 방지(전/송 깨짐) */
 }
 .btn:hover { background: var(--btn-hover); }
 .btn:active { transform: translateY(1px); }
