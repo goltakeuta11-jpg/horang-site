@@ -13,3 +13,7 @@ Desktop.ini
 Screenshot*.png
 Thumbs.db
 스크린샷*.png
+
+# 피카츄 배구 webpack 빌드물(3.4MB) — 소스는 별도 프로젝트(C:\AI_Projects\피카츄배구)에 있음.
+# deploy.sh가 로컬 pikachu/ 폴더를 서버로 직접 업로드하므로 git에는 안 올려 레포를 가볍게 유지.
+pikachu/

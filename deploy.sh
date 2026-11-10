@@ -17,6 +17,11 @@ ssh -i "$KEY" "$SERVER" "rm -rf $STAGING && mkdir -p $STAGING/assets"
 echo "② 파일 업로드 (html + version + assets)..."
 scp -i "$KEY" -q *.html version.txt "$SERVER:$STAGING/"
 scp -i "$KEY" -q assets/* "$SERVER:$STAGING/assets/"
+# 피카츄 배구(정적 webpack 빌드, 서브경로 /pikachu/) — 폴더째 업로드. 웹루트 교체 때 같이 반영돼 wipe에도 보존됨.
+if [ -d pikachu ]; then
+  echo "   피카츄 배구(게임) 업로드..."
+  scp -i "$KEY" -q -r pikachu "$SERVER:$STAGING/"
+fi
 
 echo "③ 웹 루트로 반영 (기존 정리 후 교체)..."
 ssh -i "$KEY" "$SERVER" "
