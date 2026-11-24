@@ -442,7 +442,16 @@ function stickListBust() { try { CacheService.getScriptCache().remove(STICK_LIST
    그 사람의 "유효 작대기" = 그 행의 마지막(가장 오른쪽) 항목. */
 var STICK_DATA_COL = 2;   // 이력이 시작되는 열(B열=2 부터). A열은 닉네임.
 
+/* 읽기 전용: 작대기 탭이 "있으면" 반환, 없으면 null — 절대 생성하지 않음.
+   keepWarm(5분)·status·list 같은 조회 경로가 빈 탭을 자동 생성해서, 지워도 자꾸
+   되살아나던 문제를 막는다. 탭은 실제 등록이 생길 때만 stickSheetEnsure()로 만든다. */
 function stickSheet() {
+  return book().getSheetByName(STICK_TAB) || null;
+}
+
+/* 쓰기용: 실제 작대기 등록/변경이 생길 때만 탭을 보장(없으면 생성).
+   stickAppend(등록/변경/취소)과 내보내기(writeStickHistory)에서만 호출. */
+function stickSheetEnsure() {
   var ss = book();
   var sh = ss.getSheetByName(STICK_TAB);
   if (!sh) {
@@ -468,6 +477,7 @@ function stickParseCell(s) {
 
 /* nick 의 행 번호(2행부터). 없으면 0. */
 function stickRowOf(sh, nick) {
+  if (!sh) return 0;                 // 탭 없음(조회 경로) → 행 없음
   var last = sh.getLastRow();
   if (last < 2) return 0;
   var col = sh.getRange(2, 1, last - 1, 1).getValues();  // A2부터
@@ -493,6 +503,7 @@ function stickReadRow(sh, row) {
 
 /* nick 행의 맨 오른쪽에 셀 추가(없으면 새 행 생성). 텍스트 형식 고정(날짜 자동변환 방지). */
 function stickAppend(sh, nick, cellVal) {
+  if (!sh) sh = stickSheetEnsure();  // 실제 등록이 생길 때만 탭 생성(조회로는 안 만들어짐)
   var row = stickRowOf(sh, nick);
   if (!row) {
     row = Math.max(2, sh.getLastRow() + 1);
@@ -510,6 +521,7 @@ function stickAppend(sh, nick, cellVal) {
 /* 모든 사람 행 → { order:[닉...], by:{닉:[{to,date}...]} } */
 function stickAll(sh) {
   var res = { order: [], by: {} };
+  if (!sh) return res;              // 탭 없음(조회 경로) → 빈 결과
   var last = sh.getLastRow();
   if (last < 2) return res;
   var nicks = sh.getRange(2, 1, last - 1, 1).getValues();
@@ -643,6 +655,7 @@ function writeStickHistory(rows) {
   });
   var ss = book();
   var sh = ss.getSheetByName(STICK_TAB);
+  if (!sh && !order.length) return;  // 내보낼 작대기 데이터도 없고 탭도 없으면 빈 탭을 만들지 않음
   if (!sh) sh = ss.insertSheet(STICK_TAB);
   sh.clear();
   sh.getRange(1, 1).setValue("닉네임").setFontWeight("bold");
